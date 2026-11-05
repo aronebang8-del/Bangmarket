@@ -318,30 +318,43 @@ input{font:inherit;border:0;outline:0;background:none;color:inherit}
 @keyframes lefeFloat{0%,100%{transform:translateY(0) rotate(-3deg) scale(1)}35%{transform:translateY(-5px) rotate(3deg) scale(1.06)}70%{transform:translateY(-1px) rotate(-1deg) scale(1.02)}}
 @media (prefers-reduced-motion:reduce){.cp .lefe{animation:none}}
 
-/* ===== Répartition couleur × taille ===== */
-.mxq{display:flex;gap:8px;align-items:center;background:#fff7f2;border:1px solid #ffd9c2;border-radius:12px;padding:8px 10px;margin-bottom:6px}
-.mxq label{font-size:11.5px;font-weight:600;white-space:nowrap}
-.mxq input{flex:1;min-width:0;height:34px;border-radius:17px;background:#fff;border:1px solid var(--line);text-align:center;font-size:16px}
-.mxq button{height:34px;padding:0 14px;border-radius:17px;background:var(--or);color:#fff;font-size:12px;font-weight:600;white-space:nowrap}
-.mxn{display:block;font-size:10.5px;color:var(--mut);margin:0 2px 10px;line-height:1.35}
+/* ===== Répartition couleur × taille (sélecteurs bornés) ===== */
+.od{background:#fff7f2;border:1px solid #ffd9c2;border-radius:14px;padding:10px 12px 12px;margin-bottom:10px}
+.od-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.od-top label{font-size:12px;font-weight:600}
+.od-st{display:flex;align-items:center;gap:6px}
+.od-st button{width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--line);font-size:18px;line-height:1;flex:none}
+.od-st button:disabled{opacity:.35;cursor:default}
+.od-st input{width:68px;height:36px;border-radius:18px;background:#fff;border:1px solid var(--line);text-align:center;font-size:16px;font-weight:700;-moz-appearance:textfield;appearance:textfield}
+.od-st input::-webkit-outer-spin-button,.od-st input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.od-ch{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.od-ch button{padding:6px 12px;border-radius:15px;background:#fff;border:1px solid var(--line);font-size:11.5px;font-weight:600}
+.od-ch button.on{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
+.od-pg{margin-top:10px}
+.od-pg .bar2{height:8px;background:#f1dfd3}
+.od-pg .bar2 i{background:var(--or);transition:width .25s}
+.od.done .od-pg .bar2 i{background:#2faa6b}
+.od-tx{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;font-size:11.5px;color:#555}
+.od-tx b{font-size:13px;color:var(--or)}
+.od.done .od-tx b{color:#1d9a5c}
+.od-auto{margin-top:8px;font-size:11.5px;color:var(--mut);text-decoration:underline}
 .mxw{display:flex;flex-direction:column;gap:8px}
 .mxw.need .mxc{border-color:rgba(229,56,59,.55)}
-.mxc{border:1.5px solid var(--line);border-radius:14px;padding:8px 10px 10px;background:#fff;transition:border-color .2s,background .2s}
+.mxc{border:1.5px solid var(--line);border-radius:14px;padding:10px;background:#fff;transition:border-color .2s,background .2s}
 .mxc.has{border-color:var(--or);background:#fffaf7}
-.mxh{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px}
-.mxh i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);flex:none}
+.mxh{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:10px}
+.mxh i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);flex:none}
 .mxh b{font-weight:600}.mxh span{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--mut)}
 .mxc.has .mxh span{color:var(--or)}
-.mxg{display:grid;grid-template-columns:repeat(auto-fit,minmax(46px,1fr));gap:6px}
-.mxg.wide{grid-template-columns:repeat(3,1fr)}
-.mxg label{display:flex;flex-direction:column;gap:3px}
-.mxg small{font-size:10.5px;font-weight:600;text-align:center;color:#555}
-.mxg input,.mxs input{width:100%;height:36px;border-radius:10px;background:var(--card);text-align:center;font-size:16px;font-weight:600;-moz-appearance:textfield;appearance:textfield}
-.mxg input::-webkit-outer-spin-button,.mxg input::-webkit-inner-spin-button,.mxs input::-webkit-outer-spin-button,.mxs input::-webkit-inner-spin-button,.mxq input::-webkit-outer-spin-button,.mxq input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.mxg input:focus,.mxs input:focus{background:#fff;box-shadow:0 0 0 2px var(--or)}
-.mxs{display:flex;align-items:center;gap:8px}
-.mxs button{width:36px;height:36px;border-radius:50%;background:var(--card);font-size:18px;flex:none}
-.mxs input{flex:1;min-width:0}
+.mxg{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:8px}
+.mxg label{display:flex;flex-direction:column;gap:4px;min-width:0}
+.mxg small{font-size:11px;font-weight:600;color:#555;text-align:center}
+.sel{position:relative;display:block}
+.sel select{display:block;width:100%;height:44px;padding:0 26px 0 12px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font:inherit;font-size:16px;font-weight:600;color:var(--ink);text-align:center;text-align-last:center;-webkit-appearance:none;-moz-appearance:none;appearance:none;cursor:pointer;transition:border-color .15s,background .15s}
+.sel::after{content:"";position:absolute;right:11px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg);pointer-events:none}
+.sel select.v{background:#fff2ea;border-color:var(--or);color:var(--or)}
+.sel select:focus-visible,.od-st button:focus-visible,.od-st input:focus-visible,.od-ch button:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+.sel select:disabled{opacity:.45;cursor:not-allowed}
 .mxt{display:flex;align-items:center;gap:8px;margin:12px 2px 0;font-size:13px;font-weight:600}
 .mxt b{color:var(--or);font-size:14px}
 .mxt button{margin-left:auto;font-size:11px;font-weight:400;color:var(--mut);text-decoration:underline}
@@ -622,7 +635,7 @@ function toastE(m){sfx('error');toast(m)}
 function sndIcon(){return SND_ON?'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.500 8.500a5 5 0 010 7M19 6a8.500 8.500 0 010 12"/></svg>':'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9l5 6M22 9l-5 6"/></svg>'}
 document.addEventListener('click',e=>{if(Date.now()-SFX.last<90)return;const b=e.target.closest&&e.target.closest('button,.pc,.bn');if(b&&b.id!=='snd')sfx('tap')});
 function addCart(p,color,size,qty){qty=qty||p.moq;const k=p.id+color+size;const f=st.cart.find(x=>x.k===k);f?f.q+=qty:st.cart.push({k,id:p.id,color,size,q:qty});renderTabs();sfx('add');addFx();toast(qty+' pcs added to cart')}
-function addMulti(p){const lines=mxCells(p).map(([c,z])=>[c,z,mxGet(c,z)]).filter(l=>l[2]>0);let n=0;lines.forEach(([c,z,q])=>{const k=p.id+c+z,f=st.cart.find(x=>x.k===k);f?f.q+=q:st.cart.push({k,id:p.id,color:c,size:z,q});n+=q});st.mx={};st.qty=0;st.mxT=0;renderTabs();sfx('add');addFx();toast(n+' pcs ajoutées au panier ('+lines.length+' ligne'+(lines.length>1?'s':'')+')');drawDetail()}
+function addMulti(p){const lines=mxCells(p).map(([c,z])=>[c,z,mxGet(c,z)]).filter(l=>l[2]>0);let n=0;lines.forEach(([c,z,q])=>{const k=p.id+c+z,f=st.cart.find(x=>x.k===k);f?f.q+=q:st.cart.push({k,id:p.id,color:c,size:z,q});n+=q});mxReset(p);renderTabs();sfx('add');addFx();toast(n+' pcs ajoutées au panier ('+lines.length+' ligne'+(lines.length>1?'s':'')+')');drawDetail()}
 function list(){let l=P.filter(p=>(!st.cat||(st.cat==='nouveautes'?p.nw:p.c===st.cat))&&(!st.cat||!st.sub||p.sc===st.sub)&&(!st.favOnly||st.fav.has(p.id))&&p.n.toLowerCase().includes(st.q.toLowerCase().trim()));if(st.sortBy==='asc')l=[...l].sort((a,b)=>pr(a)-pr(b));else if(st.sortBy==='desc')l=[...l].sort((a,b)=>pr(b)-pr(a));else if(st.sortBy==='az')l=[...l].sort((a,b)=>a.n.localeCompare(b.n));return l}
 function cards(l){l=l||list();return l.length?l.map((p,i)=>`<div class="pc ${isOut(p)?'out':''} ${ANIM?'in':''}" style="--i:${Math.min(i,11)}"><button style="display:block;width:100%;text-align:left" data-open="${p.id}"><div class="im">${isOut(p)?'<span class="sold">ÉPUISÉ</span>':''}${D[p.id]?`<em class="off">-${Math.round(D[p.id]*100)}%</em>`:''}${g(p.t,p.col)}</div><div class="n">${p.n}</div><div class="stk" data-stk="${p.id}">${stkInner(p)}</div></button><button class="h" data-fav="${p.id}">${st.fav.has(p.id)?'♥':'♡'}</button><div class="r"><span><b>${fmt(pr(p))}<small>/pc</small></b>${D[p.id]?`<s>${fmt(p.p)}</s>`:''}<em class="moq">MOQ ${p.moq} · ${fmt(moqTot(p))}</em><em class="moq bulk">${BULK.min}+ pcs · ${fmt(unitAt(p,BULK.min))}/pc</em></span><button class="plus" data-add="${p.id}" aria-label="Choose options">+</button></div></div>`).join(''):'<div class="empty">No products found. Try another search or category.</div>'}
 function renderHome(){ANIM=true;
@@ -748,24 +761,43 @@ const mxGet=(c,z)=>st.mx[mxK(c,z)]||0;
 const mxTot=()=>Object.values(st.mx).reduce((a,v)=>a+v,0);
 const mxCol=(p,c)=>(p.sizes||['']).reduce((a,z)=>a+mxGet(c,z),0);
 const mxMax=p=>Math.max(0,ST[p.id]-inCart(p.id));
-function mxSet(c,z,v){v=Math.max(0,Math.min(99999,parseInt(v,10)||0));if(v)st.mx[mxK(c,z)]=v;else delete st.mx[mxK(c,z)];st.qty=mxTot()}
+const mxRem=()=>Math.max(0,st.mxT-st.qty);
+function mxReset(p){st.mx={};st.qty=0;st.mxT=Math.min(p.moq,mxMax(p))}
+function mxSet(c,z,v){v=Math.max(0,parseInt(v,10)||0);if(v)st.mx[mxK(c,z)]=v;else delete st.mx[mxK(c,z)];st.qty=mxTot()}
+function mxSetTotal(p,v){v=parseInt(v,10)||0;const lo=Math.max(p.moq,st.qty),hi=mxMax(p);
+if(v<lo){v=lo;if(lo===st.qty&&st.qty>p.moq)toastE('Retire d’abord des pièces ci-dessous')}
+if(v>hi){v=hi;toastE('Stock maximum : '+hi+' pcs')}
+st.mxT=v;mxLive();return v}
 function mxSpread(p,target){const cells=mxCells(p),n=target-mxTot();if(n<=0)return;const b=Math.floor(n/cells.length),r=n%cells.length;cells.forEach(([c,z],i)=>mxSet(c,z,mxGet(c,z)+b+(i<r?1:0)))}
-function mxMiss(p){const t=st.qty;return t<p.moq?(t?'Encore '+(p.moq-t)+' pcs (min. '+p.moq+')':'Indique tes pièces (min. '+p.moq+')'):null}
-function mxHtml(p){const sz=p.sizes,wide=p.sl==='Capacity';
-return `<div class="lbl"><span>Répartis ta commande <em class="hint ${st.qty>=p.moq?'ok':''}" id="mxHint">${st.qty} pcs · min. ${p.moq}</em></span>${p.guide?'<button id="guide">▤ Size Guide</button>':''}</div>`
-+`<div class="mxq"><label for="mxT">Total voulu</label><input id="mxT" type="number" inputmode="numeric" min="0" placeholder="ex. 100" value="${st.mxT||''}"><button id="mxS">Répartir</button></div><small class="mxn">« Répartir » divise le total à parts égales entre les couleurs${sz?' et les tailles':''}. Tu ajustes ensuite chaque case.</small>`
+function mxMiss(p){const r=mxRem();return r>0?'Encore '+r+' pc'+(r>1?'s':'')+' à répartir':null}
+function mxPresets(p){const hi=mxMax(p),l=[p.moq,50,100,200,300].filter(v=>v>=p.moq&&v<=hi);return l.filter((v,i)=>l.indexOf(v)===i).slice(0,4)}
+function mxOpts(max,cur){let h='<option value="0">–</option>';for(let i=1;i<=max;i++)h+='<option value="'+i+'"'+(i===cur?' selected':'')+'>'+i+'</option>';return h}
+function mxSel(p,c,z){const cur=mxGet(c,z),max=cur+mxRem();return `<span class="sel"><select class="${cur?'v':''}" data-mc="${c}" data-ms="${z}" aria-label="Quantité ${c}${z?' taille '+z:''}">${mxOpts(max,cur)}</select></span>`}
+function mxHtml(p){const sz=p.sizes,wide=p.sl==='Capacity',hi=mxMax(p),pre=mxPresets(p);
+return `<div class="lbl"><span>Répartis ta commande</span>${p.guide?'<button id="guide">▤ Size Guide</button>':''}</div>`
++`<div class="od" id="od"><div class="od-top"><label for="mxT">1. Quantité totale</label><div class="od-st"><button id="mxM" aria-label="Moins" type="button">−</button><input id="mxT" type="number" inputmode="numeric" min="${p.moq}" max="${hi}" value="${st.mxT}"><button id="mxP" aria-label="Plus" type="button">+</button></div></div>`
++`<div class="od-ch" id="mxCh">${pre.map(v=>`<button type="button" data-pre="${v}">${v===p.moq?'Min. '+v:v}</button>`).join('')}</div>`
++`<div class="od-pg"><div class="bar2"><i id="odBar"></i></div><div class="od-tx"><span id="odA"></span><b id="odR"></b></div></div>`
++`<button class="od-auto" id="mxS" type="button">Répartir équitablement</button></div>`
++`<div class="lbl" style="margin-top:4px"><span>2. Choisis couleur${sz?' et taille':''} <em class="hint" id="mxHint"></em></span></div>`
 +`<div class="mxw">`+p.cols.map(c=>{const n=mxCol(p,c);return `<div class="mxc ${n?'has':''}"><div class="mxh"><i style="background:${COLORS[c]}"></i><b>${c}</b><span data-cs="${c}">${n} pcs</span></div>`
-+(sz?`<div class="mxg ${wide?'wide':''}">${sz.map(z=>`<label><small>${z}</small><input type="number" inputmode="numeric" min="0" placeholder="0" data-mc="${c}" data-ms="${z}" value="${mxGet(c,z)||''}"></label>`).join('')}</div>`
-:`<div class="mxs"><button data-mm="${c}" aria-label="Moins">−</button><input type="number" inputmode="numeric" min="0" placeholder="0" data-mc="${c}" data-ms="" value="${mxGet(c,'')||''}"><button data-mp="${c}" aria-label="Plus">+</button></div>`)+`</div>`}).join('')+`</div>`
-+`<div class="mxt"><span>Total commande</span><b id="mxTot"></b><button id="mxC">Tout effacer</button></div>`}
-function drawSum(){const p=st.cur,tq=inCart(p.id)+st.qty,u=unitAt(p,tq),bkOn=tq>=BULK.min,miss=mxMiss(p);
++`<div class="mxg">${(sz||['']).map(z=>`<label>${sz?`<small>${z}</small>`:''}${mxSel(p,c,z)}</label>`).join('')}</div></div>`}).join('')+`</div>`
++`<div class="mxt"><span>Total commande</span><b id="mxTot"></b><button id="mxC" type="button">Tout effacer</button></div>`}
+function drawSum(){const p=st.cur,tq=inCart(p.id)+st.mxT,u=unitAt(p,tq),bkOn=tq>=BULK.min,miss=mxMiss(p);
 $('#dPrice').innerHTML=fmt(u)+' <span style="font-size:12px;color:var(--mut);font-weight:500">/ pièce</span>'+(bkOn?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(pr(p))}</s><span class="bk">−${fmt(BULK.off)} gros</span>`:D[p.id]?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(p.p)}</s>`:'');
 $('#dWs').innerHTML=`<div><small>MOQ<br>(minimum)</small><b>${p.moq} pièces</b></div><div><small>Prix total du MOQ</small><b>${fmt(moqTot(p))}</b></div><div><small>Prix unitaire<br>(actuel)</small><b>${fmt(u)}</b></div>`;
-$('#dTier').innerHTML=tierHtml(p,tq);const q1=$('#dTier [data-q100]');if(q1)q1.onclick=()=>{const need=BULK.min-inCart(p.id);if(need>ST[p.id])toastE('Stock insuffisant pour atteindre '+BULK.min+' pcs');else{mxSpread(p,Math.max(st.qty,need));sfx('pop');toast('Tarif gros débloqué : '+fmt(unitAt(p,BULK.min))+'/pc')}drawDetail()};
-$('#addT').textContent=isOut(p)?'Épuisé':miss||('Add to Cart · '+fmt(r2(u*st.qty)));$('#add').classList.toggle('inc',!!miss||isOut(p));
-const h=$('#mxHint');if(h){h.textContent=st.qty+' pcs · min. '+p.moq;h.className='hint '+(st.qty>=p.moq?'ok':'')}
-const mt=$('#mxTot');if(mt)mt.textContent=st.qty+' pcs · '+fmt(r2(u*st.qty))}
-function mxLive(){const p=st.cur;p.cols.forEach(c=>{const n=mxCol(p,c),e=$('#opts [data-cs="'+c+'"]');if(e){e.textContent=n+' pcs';e.closest('.mxc').classList.toggle('has',n>0)}});drawSum()}
+$('#dTier').innerHTML=tierHtml(p,tq);const q1=$('#dTier [data-q100]');if(q1)q1.onclick=()=>{const need=BULK.min-inCart(p.id);if(need>ST[p.id])toastE('Stock insuffisant pour atteindre '+BULK.min+' pcs');else{st.mxT=Math.max(st.mxT,need);mxSpread(p,st.mxT);sfx('pop');toast('Tarif gros débloqué : '+fmt(unitAt(p,BULK.min))+'/pc')}drawDetail()};
+$('#addT').textContent=isOut(p)?'Épuisé':miss||('Add to Cart · '+fmt(r2(u*st.mxT)));$('#add').classList.toggle('inc',!!miss||isOut(p));
+const h=$('#mxHint');if(h){h.textContent=mxRem()?'':'✓ complet';h.className='hint ok'}
+const od=$('#od');if(od){od.classList.toggle('done',st.mxT>0&&mxRem()===0);$('#odBar').style.width=(st.mxT?Math.round(st.qty/st.mxT*100):0)+'%';$('#odA').textContent=st.qty+' / '+st.mxT+' pcs réparties';$('#odR').textContent=mxRem()?'Reste '+mxRem():'✓ Tout réparti';
+const t=$('#mxT');if(t&&document.activeElement!==t)t.value=st.mxT;const lo=Math.max(p.moq,st.qty),hi=mxMax(p);$('#mxM').disabled=st.mxT<=lo;$('#mxP').disabled=st.mxT>=hi;
+document.querySelectorAll('#mxCh [data-pre]').forEach(b=>b.classList.toggle('on',+b.dataset.pre===st.mxT))}
+const mt=$('#mxTot');if(mt)mt.textContent=st.mxT+' pcs · '+fmt(r2(u*st.mxT))}
+function mxLive(){const p=st.cur,rem=mxRem();p.cols.forEach(c=>{const n=mxCol(p,c),e=$('#opts [data-cs="'+c+'"]');if(e){e.textContent=n+' pcs';e.closest('.mxc').classList.toggle('has',n>0)}});
+document.querySelectorAll('#opts select[data-mc]').forEach(sel=>{const cur=mxGet(sel.dataset.mc,sel.dataset.ms),max=cur+rem;let len=sel.options.length-1;
+while(len>max){sel.remove(len);len--}while(len<max){len++;const o=document.createElement('option');o.value=len;o.textContent=len;sel.appendChild(o)}
+sel.value=String(cur);sel.classList.toggle('v',cur>0);sel.disabled=max===0});
+drawSum()}
 function drawHero(p){const col=st.color?COLORS[st.color]:p.col;
 const views=[()=>`<div style="width:230px;margin-bottom:60px">${g(p.t,col)}</div>`,()=>`<div style="width:270px;margin-bottom:50px">${g(p.t,col)}</div>`,()=>`<div style="width:430px;margin:0 0 -40px -70px">${g(p.t,col)}</div>`];
 if(p.t.startsWith('wimg'))views.splice(0,3,...[0,1,2].map(i=>()=>wzHtml(col,i,p.t)));heroSet(views[st.thumb](),p);
@@ -773,24 +805,24 @@ $('#th').innerHTML=views.map((v,i)=>`<button class="${st.thumb===i?'on':''}" dat
 $('#th').querySelectorAll('[data-th]').forEach(b=>b.onclick=()=>{if(b.dataset.th==='more'){toast('3 more photos coming soon');return}st.thumb=+b.dataset.th;drawDetail()});}
 function drawDetail(){const p=st.cur;$('#dName').textContent=p.n;$('#dRate').textContent=p.rate;$('#dRev').textContent=`(${p.rev} reviews)`;$('#dDesc').textContent=p.d||DESC[p.c];drawStk();
 $('#opts').innerHTML=mxHtml(p);drawSum();drawHero(p);
-$('#opts').querySelectorAll('input[data-mc]').forEach(i=>{const c=i.dataset.mc,z=i.dataset.ms;
-i.onfocus=()=>{try{i.select()}catch(e){}};
-i.oninput=()=>{mxSet(c,z,i.value);const ex=st.qty-mxMax(p);if(ex>0){mxSet(c,z,mxGet(c,z)-ex);i.value=mxGet(c,z)||'';toastE('Stock maximum atteint ('+mxMax(p)+' pcs)')}mxLive()};
-i.onchange=()=>{i.value=mxGet(c,z)||'';if(mxGet(c,z)>0&&st.color!==c){st.color=c;drawHero(p)}}});
-$('#opts').querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>{const c=b.dataset.mm,v=mxGet(c,'');if(v>0){mxSet(c,'',v-1);sfx('tick')}const i=$('#opts input[data-mc="'+c+'"]');i.value=mxGet(c,'')||'';mxLive()});
-$('#opts').querySelectorAll('[data-mp]').forEach(b=>b.onclick=()=>{const c=b.dataset.mp;if(st.qty+1>mxMax(p))toastE('Stock maximum atteint ('+mxMax(p)+' pcs)');else{mxSet(c,'',mxGet(c,'')+1);sfx('tick');if(st.color!==c){st.color=c;drawHero(p)}}const i=$('#opts input[data-mc="'+c+'"]');i.value=mxGet(c,'')||'';mxLive()});
-const mS=$('#mxS');if(mS)mS.onclick=()=>{const v=parseInt($('#mxT').value,10)||0;if(v<p.moq)return toastE('Minimum '+p.moq+' pièces pour ce produit');if(v>mxMax(p))return toastE('Stock maximum : '+mxMax(p)+' pcs');st.mxT=v;st.mx={};st.qty=0;mxSpread(p,v);sfx('pop');drawDetail()};
-const mC=$('#mxC');if(mC)mC.onclick=()=>{st.mx={};st.qty=0;st.mxT=0;sfx('remove');drawDetail()};
+$('#opts').querySelectorAll('select[data-mc]').forEach(i=>{const c=i.dataset.mc,z=i.dataset.ms;
+i.onchange=()=>{const v=parseInt(i.value,10)||0,max=mxGet(c,z)+mxRem();mxSet(c,z,Math.min(v,max));sfx('tick');if(v>0&&st.color!==c){st.color=c;drawHero(p)}mxLive()}});
+const tI=$('#mxT');tI.onchange=()=>{tI.value=mxSetTotal(p,tI.value)};tI.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();tI.blur()}};
+$('#mxM').onclick=()=>{mxSetTotal(p,st.mxT-1);sfx('tick')};$('#mxP').onclick=()=>{mxSetTotal(p,st.mxT+1);sfx('tick')};
+document.querySelectorAll('#mxCh [data-pre]').forEach(b=>b.onclick=()=>{mxSetTotal(p,+b.dataset.pre);sfx('pop')});
+const mS=$('#mxS');if(mS)mS.onclick=()=>{if(!mxRem())return toast('Tout est déjà réparti');mxSpread(p,st.mxT);sfx('pop');drawDetail()};
+const mC=$('#mxC');if(mC)mC.onclick=()=>{mxReset(p);sfx('remove');drawDetail()};
 const gd=$('#guide');if(gd)gd.onclick=()=>toast(p.c==='chaussures'?'EU 36 = 23 cm · 38 = 24 cm · 40 = 25.5 cm · 41 = 26 cm':'XS 34 · S 36 · M 38 · L 40 · XL 42');drawFav()}
 function drawStk(){const p=st.cur,e=$('#dStk');if(!e)return;const l=lvl(p);e.className='stkd '+l;
 e.innerHTML=`<div class="top"><span>Stock restant</span><b>${isOut(p)?'0%':pct(p)+'%'}</b></div><div class="bar2"><i style="width:${pct(p)}%"></i></div><small>${isOut(p)?'Produit épuisé':l==='lo'?'Dernières pièces ! Commande vite avant la rupture.':l==='mid'?'Ça part vite, ne tarde pas !':'Stock disponible'}</small>`}
 function drawFav(){$('#favI').setAttribute('fill',st.fav.has(st.cur.id)?'#fff':'none');$('#favI').setAttribute('stroke','#fff');$('#favI').setAttribute('stroke-width','2')}
-function openDetail(id){sfx('open');HERO.id=-1;const dt=$('#det');dt.classList.remove('open');void dt.offsetWidth;st.cur=P.find(p=>p.id===id);st.mx={};st.qty=0;st.mxT=0;st.color=null;st.size=null;st.need=null;st.thumb=0;drawDetail();dt.classList.add('open');document.querySelector('#det .sheet').scrollTop=0}
+function openDetail(id){sfx('open');HERO.id=-1;const dt=$('#det');dt.classList.remove('open');void dt.offsetWidth;st.cur=P.find(p=>p.id===id);mxReset(st.cur);st.color=null;st.size=null;st.need=null;st.thumb=0;drawDetail();dt.classList.add('open');document.querySelector('#det .sheet').scrollTop=0}
 $('#back').onclick=()=>{sfx('back');$('#det').classList.remove('open')};
 $('#fav').onclick=()=>{const i=st.cur.id;st.fav.has(i)?st.fav.delete(i):st.fav.add(i);sfx(st.fav.has(i)?'fav':'unfav');drawFav();toast(st.fav.has(i)?'Saved to favorites':'Removed from favorites');if(st.view==='home')refreshGrid()};
 $('#share').onclick=async()=>{try{await navigator.share({title:st.cur.n,text:st.cur.n+' · MOQ '+st.cur.moq+' · '+fmt(moqTot(st.cur))})}catch(e){toast('Link copied')}};
 $('#add').onclick=()=>{const p=st.cur;if(isOut(p))return toastE('Produit épuisé');const t=st.qty;
-if(t<p.moq){const o=$('#opts .mxw');if(o){o.classList.remove('need');void o.offsetWidth;o.classList.add('need')}return toastE(t?'Encore '+(p.moq-t)+' pcs pour atteindre le minimum ('+p.moq+')':'Indique le nombre de pièces par couleur'+(p.sizes?' et par taille':'')+' (min. '+p.moq+')')}
+if(t<st.mxT){const o=$('#opts .mxw');if(o){o.classList.remove('need');void o.offsetWidth;o.classList.add('need')}return toastE(t?'Encore '+mxRem()+' pcs à répartir sur tes couleurs'+(p.sizes?' / tailles':''):'Choisis une quantité pour chaque couleur'+(p.sizes?' et taille':''))}
+if(t<p.moq)return toastE('Minimum '+p.moq+' pièces');
 if(t>mxMax(p))return toastE('Stock insuffisant');addMulti(p)};
 document.addEventListener('pointermove',e=>{const w=$('#l3w');if(!w)return;const r=w.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(innerWidth/2),y=(e.clientY-r.top-r.height/2)/(innerHeight/2);const i=$('#l3i');i.style.setProperty('--ry',Math.max(-1,Math.min(1,x))*28+'deg');i.style.setProperty('--rx',Math.max(-1,Math.min(1,y))*-22+'deg')});
 document.addEventListener('click',e=>{if(e.target.closest('#l3w')){const l=$('#l3');l.classList.remove('spin');void l.offsetWidth;l.classList.add('spin');setTimeout(()=>l.classList.remove('spin'),950)}});
