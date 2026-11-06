@@ -435,7 +435,7 @@ input{font:inherit;border:0;outline:0;background:none;color:inherit}
   <div class="scroll" id="scroll"></div>
   <div class="scrim" id="scrim"></div>
   <nav class="tabs" id="tabs"></nav>
-  <div class="lfw off" id="lfw"><div class="sw3"><div class="lft" id="lft" role="button" tabindex="0" aria-label="Code promo LEFE10"><span class="mc"><img alt=""></span><span class="tx"><b>LEFE10</b><small id="lfs">−10% · dès 500 pcs</small></span><em class="p10">−10%</em><span class="x" id="lfx" role="button" aria-label="Fermer">×</span></div></div></div>
+  <div class="lfw off" id="lfw"><div class="sw3"><div class="lft" id="lft" role="button" tabindex="0" aria-label="Code promo LEFE10"><span class="mc"><img alt=""></span><span class="tx"><b>LEFE10</b><small id="lfs">−2% · dès 1000 pcs</small></span><em class="p10">−2%</em><span class="x" id="lfx" role="button" aria-label="Fermer">×</span></div></div></div>
   <div class="ballw" id="ballw" aria-hidden="true"><div class="ball" id="ball"><div class="bi" id="bi"></div></div></div>
   <div class="hbar"></div>
  </div>
@@ -591,7 +591,7 @@ user:'<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-widt
 const svg=n=>`<svg viewBox="0 0 24 24">${ic[n]}</svg>`;
 const st={view:'home',cat:null,q:'',sortBy:'default',cart:[],fav:new Set(),cur:P[0],color:null,size:null,need:null,sub:null,thumb:0,mx:{},qty:0,mxT:0,notif:true,coupon:'',menu:false,favOnly:false};
 const D={};P.forEach(p=>{if(p.id%3===1&&!p.nodisc)D[p.id]=[.2,.15,.25,.3,.1][p.id%5]});
-const COUPONS={LEFE10:{rate:.1,minQty:500}};
+const COUPONS={LEFE10:{rate:.02,minQty:1000}};
 const cartQty=()=>st.cart.reduce((a,x)=>a+x.q,0);
 const cpOk=c=>!!c&&cartQty()>=c.minQty;
 const pr=p=>Math.round(p.p*(1-(D[p.id]||0))*100)/100;
@@ -973,6 +973,244 @@ $('#scroll').innerHTML=`<div class="ok-ic">✓</div><div class="ok-t"><b>Command
 const _rc=renderCart;renderCart=function(){if(st.done)return renderDone();if(st.chk&&st.cart.length)return renderCheckout();st.chk=false;_rc()};
 const _go=go;go=function(v){st.chk=false;st.done=null;_go(v)};
 render();drawDetail();
+</script>
+
+<style id="cat3d-css">
+/* ===== Icônes de catégories : animation discrète et professionnelle =====
+   - Seules transform et opacity sont animées (composition GPU, aucun reflow)
+   - Amplitude faible (±3 px, ±1,5°), cycle lent, décalage régulier entre icônes
+   - Aucune perspective 3D ni filtre animé : rendu stable sur Chrome, Safari, Firefox, Edge
+   - Animations suspendues quand la rangée n’est plus visible
+   - Les icônes n’interceptent jamais les clics/touches ; le défilement horizontal reste natif
+   - prefers-reduced-motion respecté */
+.cats{position:relative;padding:30px 4px 14px;margin:-24px 0 -8px}
+.cat{position:relative;z-index:1;height:86px;justify-content:flex-end;padding-bottom:9px;gap:0;transform:none!important;overflow:visible;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+  transition:transform .15s ease-out,background-color .25s ease,color .25s ease,border-color .25s ease,box-shadow .25s ease}
+.cat:active{transform:scale(.97)!important}
+.cat:focus{outline:none}
+.cat:focus-visible{outline:2px solid var(--or);outline-offset:2px}
+.cat.on{background:transparent;border-color:transparent;box-shadow:none;color:var(--or);font-weight:600}
+
+.cat svg{
+  position:absolute;top:-14px;left:50%;margin-left:-28px;width:56px;height:56px;
+  pointer-events:none;transform-origin:50% 70%;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  filter:drop-shadow(0 1px 0 rgba(0,0,0,.12)) drop-shadow(0 6px 4px rgba(0,0,0,.16));
+  animation:catFloat 4.8s ease-in-out calc(var(--k,0)*-.6s) infinite;
+}
+/* ombre au sol : suit le mouvement de l’icône */
+.cat::before{
+  content:"";position:absolute;left:50%;top:48px;width:38px;height:8px;margin-left:-19px;border-radius:50%;pointer-events:none;
+  background:radial-gradient(ellipse at center,rgba(40,20,10,.26),rgba(40,20,10,0) 70%);
+  animation:catShadow 4.8s ease-in-out calc(var(--k,0)*-.6s) infinite;
+}
+@keyframes catFloat{
+  0%,100%{transform:translate3d(0,2px,0) rotate(-1.5deg)}
+  50%{transform:translate3d(0,-3px,0) rotate(1.5deg)}
+}
+@keyframes catShadow{0%,100%{transform:scale(1.04);opacity:1}50%{transform:scale(.86);opacity:.7}}
+
+/* catégorie active : un seul « pop » franc, puis flottement un peu plus haut */
+.cats .cat.on svg{
+  animation:catPop .5s cubic-bezier(.2,.8,.3,1) 1,catFloatOn 4.8s ease-in-out .5s infinite;
+  filter:drop-shadow(0 1px 0 rgba(0,0,0,.12)) drop-shadow(0 8px 5px rgba(255,106,26,.32));
+}
+.cat.on::before{
+  background:radial-gradient(ellipse at center,rgba(255,106,26,.38),rgba(255,106,26,0) 70%);
+  animation:catShadowOn 4.8s ease-in-out .5s infinite;
+}
+@keyframes catPop{
+  0%{transform:translate3d(0,2px,0) scale(1)}
+  45%{transform:translate3d(0,-7px,0) scale(1.14)}
+  100%{transform:translate3d(0,-4px,0) scale(1.1)}
+}
+@keyframes catFloatOn{
+  0%,100%{transform:translate3d(0,-4px,0) scale(1.1) rotate(-1deg)}
+  50%{transform:translate3d(0,-7px,0) scale(1.1) rotate(1deg)}
+}
+@keyframes catShadowOn{0%,100%{transform:scale(.95);opacity:.95}50%{transform:scale(.78);opacity:.65}}
+
+/* survol : uniquement sur appareils à souris, sans toucher à l’animation des icônes */
+@media (hover:hover) and (pointer:fine){
+  .cat:not(.on):hover{box-shadow:0 4px 14px rgba(0,0,0,.12)}
+}
+
+/* pastille qui glisse d’une catégorie à l’autre */
+.cat-ind{position:absolute;z-index:0;left:0;top:0;width:0;height:0;border-radius:14px;pointer-events:none;
+  background:linear-gradient(165deg,#fff 10%,#ffe6d6 100%);border:1.5px solid var(--or);
+  box-shadow:0 8px 18px rgba(255,106,26,.22),inset 0 1px 0 #fff;
+  opacity:0;-webkit-transform:scale(.92);transform:scale(.92);
+  transition:left .45s cubic-bezier(.3,.8,.3,1),width .45s cubic-bezier(.3,.8,.3,1),top .3s ease,height .3s ease,opacity .25s ease,transform .35s cubic-bezier(.3,.8,.3,1),-webkit-transform .35s cubic-bezier(.3,.8,.3,1)}
+.cat-ind.vis{opacity:1;-webkit-transform:scale(1);transform:scale(1)}
+.cat-ind.nt{transition:none}
+.cat-ind::after{content:"";position:absolute;left:-2px;right:-2px;top:-2px;bottom:-2px;border-radius:16px;border:2px solid var(--or);opacity:0}
+.cat-ind.ping::after{animation:catPing .5s ease-out}
+@keyframes catPing{0%{opacity:.45;transform:scale(1)}100%{opacity:0;transform:scale(1.1)}}
+
+/* économie d’énergie : on suspend tout quand la rangée est hors écran */
+.cats-idle .cat svg,.cats-idle .cat::before{animation-play-state:paused}
+
+/* accessibilité : aucune animation si l’utilisateur le demande */
+@media (prefers-reduced-motion:reduce){
+  .cat svg,.cat::before,.cats .cat.on svg,.cat.on::before,.cat-ind.ping::after{animation:none!important}
+  .cat,.cat-ind{transition:none!important}
+}
+</style>
+
+<script>
+/* ===== Catégories : icônes réalistes + pastille glissante ===== */
+(function(){
+const lg=(id,st,x1=0,y1=0,x2=0,y2=1)=>`<linearGradient id="${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${st.map(([o,c])=>`<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+const rg=(id,st,cx=.35,cy=.3,r=.8)=>`<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">${st.map(([o,c])=>`<stop offset="${o}" stop-color="${c}"/>`).join('')}</radialGradient>`;
+const star=(n,ro,ri,cx,cy)=>{let p='';for(let i=0;i<n*2;i++){const r=i%2?ri:ro,a=Math.PI*i/n-Math.PI/2;p+=(i?'L':'M')+(cx+r*Math.cos(a)).toFixed(1)+' '+(cy+r*Math.sin(a)).toFixed(1)}return p+'Z'};
+const spark=(x,y,s,f)=>`<path d="M${x} ${y-s}Q${x} ${y} ${x+s} ${y}Q${x} ${y} ${x} ${y+s}Q${x} ${y} ${x-s} ${y}Q${x} ${y} ${x} ${y-s}Z" fill="${f}"/>`;
+const SV=(b)=>`<svg data-r="1" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${b}</svg>`;
+function scr(){const p=[];for(let i=0;i<16;i++){const a=i/16*Math.PI*2;p.push([32+18*Math.cos(a),35+11*Math.sin(a)])}p.sort((a,b)=>a[1]-b[1]);
+ return p.map(q=>`<circle cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="8.6" fill="url(#cscA)" stroke="#a3154f" stroke-opacity=".35" stroke-width=".6"/>`).join('')}
+let ticks='';for(let i=0;i<12;i++){const a=i*Math.PI/6,l=i%3?.9:2,r1=11.6-l,r2=11.6;ticks+=`<path d="M${(32+r1*Math.sin(a)).toFixed(2)} ${(32-r1*Math.cos(a)).toFixed(2)}L${(32+r2*Math.sin(a)).toFixed(2)} ${(32-r2*Math.cos(a)).toFixed(2)}" stroke="#3b2f1c" stroke-width="${i%3?.7:1.2}" stroke-linecap="round"/>`}
+const ICONS={
+nouveautes:SV(`<defs>${lg('cnA',[[0,'#ffcf6b'],[.45,'#ff7a1f'],[1,'#d94100']],.2,0,.8,1)}</defs>
+<path d="${star(14,30,26,32,33)}" fill="#a33000" opacity=".35" transform="translate(0 2)"/>
+<path d="${star(14,30,26,32,32)}" fill="url(#cnA)" stroke="#c93c00" stroke-width=".8" stroke-linejoin="round"/>
+<circle cx="32" cy="32" r="20.5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="1" stroke-dasharray="1.6 2.2"/>
+<text x="32" y="38.4" font-size="16.5" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#8a2a00" opacity=".45" text-anchor="middle">NEW</text>
+<text x="32" y="37.4" font-size="16.5" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#fff" text-anchor="middle">NEW</text>
+<path d="M12 22C17 9 36 4 50 10C38 11 24 16 12 22Z" fill="#fff" opacity=".38"/>${spark(55,9,5,'#ffe27a')}${spark(8,52,4,'#ffe27a')}${spark(57,53,3,'#fff')}`),
+sacs:SV(`<defs>${lg('csA',[[0,'#ff6a6e'],[.5,'#d92b3a'],[1,'#8e1220']])}${lg('csB',[[0,'#e8333f'],[1,'#a31524']])}${lg('csC',[[0,'#fff3b8'],[.5,'#e8b838'],[1,'#8a6410']],0,0,1,1)}</defs>
+<path d="M20 26C20 4 44 4 44 26" fill="none" stroke="#7d0f1b" stroke-width="4.4" stroke-linecap="round"/>
+<path d="M21.5 24C22 8 42 8 42.5 24" fill="none" stroke="#ff8d92" stroke-width="1.2" stroke-linecap="round" opacity=".8"/>
+<path d="M8 26H56L52 56Q51.6 60 47.5 60H16.5Q12.4 60 12 56Z" fill="url(#csA)"/>
+<path d="M50 30L47 59" stroke="#5e0a14" stroke-width="5" opacity=".18" stroke-linecap="round"/>
+<path d="M8 26H56L54 37Q32 48 10 37Z" fill="url(#csB)" stroke="#8e1220" stroke-width=".8"/>
+<path d="M11.5 31Q32 42 52.500 31" fill="none" stroke="#ffd0d3" stroke-width=".9" stroke-dasharray="2 1.8" opacity=".85"/>
+<rect x="27.500" y="37" width="9" height="11" rx="2.600" fill="url(#csC)" stroke="#7a560c" stroke-width=".7"/>
+<circle cx="32" cy="41.500" r="1.500" fill="#7a560c"/><rect x="31.300" y="42" width="1.400" height="3.400" rx=".7" fill="#7a560c"/>
+<path d="M14.500 42L16.500 56" stroke="#fff" stroke-width="2.200" stroke-linecap="round" opacity=".35"/>
+<path d="M12 27H52" stroke="#fff" stroke-width="1" opacity=".5"/>`),
+montres:SV(`<defs>${lg('cwA',[[0,'#a2683f'],[.5,'#7a4727'],[1,'#4b2a15']],0,0,1,0)}${lg('cwB',[[0,'#fff3b8'],[.45,'#e0b53c'],[1,'#85620f']],0,0,1,1)}${rg('cwC',[[0,'#fffdf5'],[1,'#e9dfc8']],.4,.3,.9)}</defs>
+<path d="M23 1H41L43 18H21Z" fill="url(#cwA)"/><path d="M21 46H43L41 63H23Z" fill="url(#cwA)"/>
+<path d="M25 4L26 16M39 4L38 16M25 48L26 60M39 48L38 60" stroke="#e9c9a3" stroke-width=".7" stroke-dasharray="1.6 1.4" opacity=".65"/>
+<circle cx="32" cy="52" r=".9" fill="#2c1608"/><circle cx="32" cy="56" r=".9" fill="#2c1608"/>
+<rect x="48" y="28.500" width="5.500" height="7" rx="1.600" fill="url(#cwB)" stroke="#6d500c" stroke-width=".6"/>
+<circle cx="32" cy="32" r="18" fill="url(#cwB)" stroke="#6d500c" stroke-width=".8"/>
+<circle cx="32" cy="32" r="14.500" fill="#7d5c10"/><circle cx="32" cy="32" r="13.500" fill="url(#cwC)"/>
+${ticks}
+<path d="M32 32L26.800 29" stroke="#2a2a30" stroke-width="2" stroke-linecap="round"/><path d="M32 32L39.800 27.500" stroke="#2a2a30" stroke-width="1.500" stroke-linecap="round"/>
+<path d="M32 34.500L33.500 24" stroke="#d62839" stroke-width=".7" stroke-linecap="round"/>
+<circle cx="32" cy="32" r="1.800" fill="url(#cwB)" stroke="#6d500c" stroke-width=".4"/>
+<path d="M21.500 26A11.500 11.500 0 0 1 33 20.500" fill="none" stroke="#fff" stroke-width="1.800" stroke-linecap="round" opacity=".55"/>`),
+chaussures:SV(`<defs>${lg('chA',[[0,'#e5a171'],[.5,'#c0562f'],[1,'#7e2f14']])}${lg('chB',[[0,'#6b3417'],[1,'#3a1a0a']])}${lg('chC',[[0,'#fff3b8'],[1,'#c9972b']],0,0,1,1)}</defs>
+<path d="M7 33L45 44Q60 47.500 60 53Q60 58 55 58L44 56Q30 53 18 45L17 58H7Z" fill="url(#chB)"/>
+<path d="M7 31L45 42Q60 45.500 60 51Q60 54 56 54.500L44 52Q30 49 17 41Z" fill="url(#chA)" stroke="#7e2f14" stroke-width=".7"/>
+<path d="M9 33L44 43" stroke="#fff" stroke-width="1.200" stroke-linecap="round" opacity=".4"/>
+<path d="M8 29Q5 10 21 10Q32 11 31 41" fill="none" stroke="#7e2f14" stroke-width="6" stroke-linecap="round"/>
+<path d="M8 29Q5 10 21 10Q32 11 31 41" fill="none" stroke="url(#chA)" stroke-width="4.200" stroke-linecap="round"/>
+<path d="M33 40Q40 24 49 45" fill="none" stroke="#7e2f14" stroke-width="6.500" stroke-linecap="round"/>
+<path d="M33 40Q40 24 49 45" fill="none" stroke="url(#chA)" stroke-width="4.700" stroke-linecap="round"/>
+<path d="M36 36Q40 28 45 37" fill="none" stroke="#fff" stroke-width="1" opacity=".45" stroke-linecap="round"/>
+<rect x="9" y="12.500" width="7.500" height="6.500" rx="1.600" fill="url(#chC)" stroke="#7a560c" stroke-width=".6"/><path d="M11 15.700h3.500" stroke="#7a560c" stroke-width="1"/>
+<path d="M7.500 51h9v7h-9z" fill="#2a1206" opacity=".35"/>`),
+beaute:SV(`<defs>${lg('cbA',[[0,'#b01268'],[.35,'#ff6fb1'],[.7,'#e91e8c'],[1,'#a40e5f']],0,0,1,0)}${lg('cbB',[[0,'#a97829'],[.35,'#fff0c8'],[.65,'#e6b36a'],[1,'#8c611a']],0,0,1,0)}${rg('cbC',[[0,'#ffb3d6'],[1,'#e91e8c']],.35,.3,.8)}</defs>
+<rect x="22" y="26" width="20" height="33" rx="6.500" fill="url(#cbA)"/>
+<rect x="25" y="29" width="3" height="26" rx="1.500" fill="#fff" opacity=".5"/>
+<ellipse cx="32" cy="44" rx="6.500" ry="3" fill="#fff" opacity=".12"/>
+<rect x="20.500" y="23" width="23" height="5" rx="2.400" fill="url(#cbB)" stroke="#7a560c" stroke-width=".5"/>
+<path d="M22 24V12Q22 6 28 6H36Q42 6 42 12V24Z" fill="url(#cbB)" stroke="#7a560c" stroke-width=".6"/>
+<path d="M25 9V22" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>
+<path d="M50 34Q58 45 50 53Q42 45 50 34Z" fill="url(#cbC)" stroke="#b01268" stroke-width=".6" transform="translate(5 0) scale(.82)" transform-origin="50 44"/>
+<path d="M54 42Q55 45 53.500 47" stroke="#fff" stroke-width="1.200" stroke-linecap="round" fill="none" opacity=".8"/>${spark(10,14,5,'#ffd0e8')}${spark(55,18,3.500,'#ffe6f2')}`),
+cheveux:SV(`<defs>${rg('cscA',[[0,'#ffd1e3'],[.5,'#f06292'],[1,'#a3154f']],.35,.28,.85)}</defs>
+<ellipse cx="32" cy="58" rx="19" ry="3" fill="#000" opacity=".12"/>
+<ellipse cx="32" cy="35" rx="10" ry="3.800" fill="#6d1038" opacity=".65"/>${scr()}
+<path d="M12 33Q16 26 24 28M40 24Q48 24 52 31M18 44Q26 50 34 47M44 42Q50 40 53 36" fill="none" stroke="#a3154f" stroke-width="1" opacity=".3" stroke-linecap="round"/>
+<path d="M14 28Q19 18 29 17" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".5"/>${spark(54,10,4.500,'#ffd0e3')}`),
+hauts:SV(`<defs>${lg('chtA',[[0,'#ffa467'],[.5,'#ff6a1a'],[1,'#d44a08']])}</defs>
+<path d="M22 8L9 16L14 29L22 25V47Q32 52 42 47V25L50 29L55 16L42 8Q32 20 22 8Z" fill="url(#chtA)" stroke="#b83e04" stroke-width=".8" stroke-linejoin="round"/>
+<path d="M22 8Q32 20 42 8" fill="none" stroke="#b83e04" stroke-width="3" stroke-linecap="round"/><path d="M23 9.500Q32 20.500 41 9.500" fill="none" stroke="#ffb487" stroke-width="1" opacity=".7"/>
+<path d="M22 25L14 29M42 25L50 29" stroke="#b83e04" stroke-width=".9" opacity=".7"/>
+<path d="M24 46Q32 51 40 46" fill="none" stroke="#fff" stroke-width=".9" stroke-dasharray="2 1.800" opacity=".6"/>
+<path d="M27 26Q29 34 26 44M37 24Q35 34 38 43" fill="none" stroke="#9c3503" stroke-width="1.400" opacity=".22" stroke-linecap="round"/>
+<path d="M12 18L16 27" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".4"/>${spark(56,8,4,'#ffd0b0')}`),
+foot:SV(`<defs>${lg('cfA',[[0,'#4d93ff'],[.5,'#1f6feb'],[1,'#123f9c']])}</defs>
+<path d="M21 6L9 13L2 26L12 31L18 23V58H46V23L52 31L62 26L55 13L43 6Q32 17 21 6Z" fill="url(#cfA)" stroke="#0e2f78" stroke-width=".8" stroke-linejoin="round"/>
+<path d="M24 20V58M30 14V58M36 14V58M42 20V58" stroke="#fff" stroke-width="3" opacity=".07"/>
+<path d="M21 6L32 22L43 6" fill="none" stroke="#fff" stroke-width="3.400" stroke-linejoin="round" stroke-linecap="round"/>
+<path d="M3.500 25L13 30.500M60.500 25L51 30.500" stroke="#fff" stroke-width="3.400" stroke-linecap="round"/>
+<path d="M18 28V58" stroke="#fff" stroke-width="1.200" opacity=".35"/><path d="M46 28V58" stroke="#fff" stroke-width="1.200" opacity=".35"/>
+<text x="32" y="48" font-size="21" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#0b2a6b" opacity=".5" text-anchor="middle">10</text>
+<text x="32" y="46.800" font-size="21" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#fff" text-anchor="middle">10</text>
+<circle cx="42" cy="26" r="3.200" fill="#ffd24a" stroke="#b88a10" stroke-width=".6"/><path d="${star(5,2,.8,42,26)}" fill="#b88a10"/>
+<path d="M10 14L5 25" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".3"/>`),
+gourdes:SV(`<defs>${lg('cgA',[[0,'#0b6868'],[.3,'#3fe0dc'],[.65,'#16a5a5'],[1,'#0a5757']],0,0,1,0)}${lg('cgB',[[0,'#55555c'],[.4,'#8a8a93'],[1,'#26262b']],0,0,1,0)}${lg('cgC',[[0,'#9a9aa3'],[.4,'#f0f0f4'],[1,'#7a7a83']],0,0,1,0)}</defs>
+<path d="M27 5Q27 0 32 0Q37 0 37 5" fill="none" stroke="#333" stroke-width="2.200" stroke-linecap="round"/>
+<rect x="23" y="4" width="18" height="10" rx="3.400" fill="url(#cgB)"/><path d="M26 6.500V12M30 6.500V12M34 6.500V12M38 6.500V12" stroke="#000" stroke-width=".8" opacity=".35"/>
+<rect x="26" y="13" width="12" height="4.500" rx="1.200" fill="url(#cgC)"/>
+<path d="M22 18H42Q46 18 46 23V56Q46 61 41 61H23Q18 61 18 56V23Q18 18 22 18Z" fill="url(#cgA)"/>
+<rect x="18" y="31" width="28" height="15" fill="#fff" opacity=".9"/><rect x="18" y="31" width="28" height="15" fill="url(#cgA)" opacity=".18"/>
+<path d="M32 33.500Q37 39.500 32 44Q27 39.500 32 33.500Z" fill="#1b8fe0"/><path d="M30.500 38Q30.500 40.500 32 42" stroke="#fff" stroke-width=".9" fill="none" opacity=".8" stroke-linecap="round"/>
+<rect x="22" y="21" width="3.200" height="36" rx="1.600" fill="#fff" opacity=".5"/>
+<path d="M18 57H46V58Q46 61 42 61H22Q18 61 18 58Z" fill="#064646" opacity=".5"/>
+<circle cx="39" cy="51" r="1.500" fill="#fff" opacity=".6"/><circle cx="36" cy="25" r="1.100" fill="#fff" opacity=".6"/><circle cx="41" cy="27.500" r=".9" fill="#fff" opacity=".5"/><circle cx="29" cy="53" r="1" fill="#fff" opacity=".5"/>`),
+accessoires:SV(`<defs>${lg('caA',[[0,'#6b6296'],[.55,'#2b2740'],[1,'#100e1d']])}${lg('caB',[[0,'#a56be8'],[1,'#4f2290']])}</defs>
+<path d="M5 26L1 18M59 26L63 18" stroke="#4f2290" stroke-width="3.200" stroke-linecap="round"/>
+<path d="M7 24.500H30L28 40Q27 45 22 45H13Q8.500 45 8 40Z" fill="url(#caA)"/>
+<path d="M57 24.500H34L36 40Q37 45 42 45H51Q55.500 45 56 40Z" fill="url(#caA)"/>
+<path d="M12 28L19 28L11.500 40Z" fill="#fff" opacity=".28"/><path d="M52 28L45 28L52.500 40Z" fill="#fff" opacity=".28"/>
+<path d="M7 24.500H30L28 40Q27 45 22 45H13Q8.500 45 8 40Z" fill="none" stroke="url(#caB)" stroke-width="3" stroke-linejoin="round"/>
+<path d="M57 24.500H34L36 40Q37 45 42 45H51Q55.500 45 56 40Z" fill="none" stroke="url(#caB)" stroke-width="3" stroke-linejoin="round"/>
+<path d="M4 24H31M33 24H60" stroke="url(#caB)" stroke-width="5" stroke-linecap="round"/>
+<path d="M30 30Q32 26.500 34 30" fill="none" stroke="url(#caB)" stroke-width="3.200" stroke-linecap="round"/>
+<path d="M7 22.500H29M35 22.500H57" stroke="#d6b3ff" stroke-width="1" stroke-linecap="round" opacity=".7"/>${spark(54,8,4,'#e4ccff')}`),
+promos:SV(`<defs>${lg('cpA',[[0,'#ff7b7b'],[.5,'#e5383b'],[1,'#a4161a']])}${lg('cpB',[[0,'#c92a2d'],[1,'#7e0f14']])}</defs>
+<g transform="rotate(14 32 32)"><path d="M6 32L18 20H54Q58 20 58 24V40Q58 44 54 44H18Z" fill="url(#cpB)" opacity=".85"/></g>
+<g transform="rotate(-24 32 32)">
+<path d="M4 32L17 18H54Q58 18 58 22V42Q58 46 54 46H17Z" fill="url(#cpA)" stroke="#8e1015" stroke-width=".8" stroke-linejoin="round"/>
+<circle cx="14.500" cy="32" r="3" fill="#fff"/><circle cx="14.500" cy="32" r="3" fill="none" stroke="#8e1015" stroke-width=".7"/>
+<path d="M14.500 29Q6 24 8 12" fill="none" stroke="#f4d2a0" stroke-width="1.400" stroke-linecap="round"/>
+<path d="M20 21H54" stroke="#fff" stroke-width="1.600" opacity=".4" stroke-linecap="round"/>
+<text x="38" y="39.500" font-size="22" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#7a0b10" opacity=".5" text-anchor="middle">%</text>
+<text x="38" y="38.200" font-size="22" font-weight="800" font-family="Inter,Arial,sans-serif" fill="#fff" text-anchor="middle">%</text></g>${spark(55,9,4.500,'#ffe08a')}`)
+};
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches,root=document.getElementById('scroll');
+function setup(){
+  const box=root.querySelector('.cats');if(!box)return;
+  box.querySelectorAll('.cat').forEach((c,i)=>{c.style.setProperty('--k',i);const ic=ICONS[c.dataset.cat],s=c.querySelector('svg');
+    if(ic&&s&&!s.dataset.r)s.outerHTML=ic});
+  let ind=box.querySelector('.cat-ind'),fresh=false;
+  if(!ind){ind=document.createElement('span');ind.className='cat-ind nt';ind.setAttribute('aria-hidden','true');box.prepend(ind);fresh=true}
+  const on=box.querySelector('.cat.on');
+  if(!on){ind.classList.remove('vis');ind.dataset.id='';return}
+  const x=on.offsetLeft,y=on.offsetTop,w=on.offsetWidth,h=on.offsetHeight,id=on.dataset.cat;
+  if(ind.dataset.id===id&&!fresh)return;
+  const wasVis=ind.classList.contains('vis'),oldX=parseFloat(ind.style.left)||0;
+  if(fresh||!wasVis){
+    ind.classList.add('nt');
+    Object.assign(ind.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});
+    void ind.offsetWidth;ind.classList.remove('nt');
+    requestAnimationFrame(()=>ind.classList.add('vis'));
+  }else{
+    Object.assign(ind.style,{left:x+'px',top:y+'px',width:w+'px',height:h+'px'});
+    if(!RM&&typeof ind.animate==='function'){const d=Math.min(Math.abs(x-oldX)/500,.05);
+      try{ind.animate([{transform:'scale(1,1)'},{transform:`scale(${1+d},1)`,offset:.4},{transform:'scale(1,1)'}],{duration:450,easing:'ease-out'})}catch(e){}}
+    box.scrollTo({left:Math.max(0,x-(box.clientWidth-w)/2),behavior:RM?'auto':'smooth'});
+  }
+  ind.dataset.id=id;
+  if(!RM){ind.classList.remove('ping');void ind.offsetWidth;ind.classList.add('ping')}
+}
+const opt={childList:true,subtree:true,attributes:true,attributeFilter:['class']};
+let io=null,watched=null;
+function watch(){
+  if(!('IntersectionObserver' in window))return;
+  const el=root.querySelector('.cats');if(!el||el===watched)return;
+  if(!io)io=new IntersectionObserver(es=>{const e=es[es.length-1];document.documentElement.classList.toggle('cats-idle',!e.isIntersecting)},{threshold:0});
+  if(watched)io.unobserve(watched);
+  watched=el;io.observe(el);
+}
+function run(){mo.disconnect();try{setup();watch()}finally{mo.observe(root,opt)}}
+const mo=new MutationObserver(run);
+addEventListener('resize',()=>{const i=root.querySelector('.cat-ind');if(i)i.dataset.id='';run()});
+run();
+})();
 </script>
 </body>
 </html>
