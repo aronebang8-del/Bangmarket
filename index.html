@@ -428,6 +428,7 @@ button,[role=button],.cat,.pc,.tab,.plus,.sp,.lg,.add,.cta{-webkit-user-select:n
 @media (pointer:coarse){input,select,textarea{font-size:16px!important}}
 .pi{display:block;object-fit:contain;-webkit-user-drag:none;pointer-events:none}.pc .im .pi{width:78px;height:78px}.ci .im .pi{width:46px;height:50px}.hero .main .pi{height:88%;width:auto;max-width:92%}.th .pi{width:100%;height:100%;padding:3px}.gh .pi{width:100%;height:100%}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="stage">
@@ -619,7 +620,7 @@ const D={};P.forEach(p=>{if(p.id%3===1&&!p.nodisc)D[p.id]=[.2,.15,.25,.3,.1][p.i
 const COUPONS={LEFE10:{rate:.02,minQty:500}};
 const cartQty=()=>st.cart.reduce((a,x)=>a+x.q,0);
 const cpOk=c=>!!c&&cartQty()>=c.minQty;
-const pr=p=>Math.round(p.p*(1-(D[p.id]||0))*100)/100;
+const pr=p=>p.net!=null?p.net:Math.round(p.p*(1-(D[p.id]||0))*100)/100;
 /* ===== Tarif dégressif : −0,10 $/pièce dès 100 pièces du MÊME produit (couleurs/tailles cumulées, panier inclus) ===== */
 const BULK={min:100,off:0.1};
 const r2=v=>Math.round(v*100)/100;
@@ -885,7 +886,7 @@ if(t>mxMax(p))return toastE('Stock insuffisant');addMulti(p)};
 document.addEventListener('pointermove',e=>{const w=$('#l3w');if(!w)return;const r=w.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(innerWidth/2),y=(e.clientY-r.top-r.height/2)/(innerHeight/2);const i=$('#l3i');i.style.setProperty('--ry',Math.max(-1,Math.min(1,x))*28+'deg');i.style.setProperty('--rx',Math.max(-1,Math.min(1,y))*-22+'deg')});
 document.addEventListener('click',e=>{if(e.target.closest('#l3w')){const l=$('#l3');l.classList.remove('spin');void l.offsetWidth;l.classList.add('spin');setTimeout(()=>l.classList.remove('spin'),950)}});
 function updateStock(){document.querySelectorAll('[data-stk]').forEach(e=>{const p=P.find(p=>p.id===+e.dataset.stk);e.innerHTML=stkInner(p)});drawStk()}
-setInterval(()=>{const c=P.filter(p=>!isOut(p)&&p.id!==(st.cart[0]&&st.cart[0].id));if(!c.length)return;
+setInterval(()=>{if(window.LIVE)return;const c=P.filter(p=>!isOut(p)&&p.id!==(st.cart[0]&&st.cart[0].id));if(!c.length)return;
 const p=c[Math.floor(Math.random()*c.length)];ST[p.id]=Math.max(0,ST[p.id]-Math.max(1,Math.round(CAP(p)*(.01+Math.random()*.03))));
 if(ST[p.id]<p.moq)ST[p.id]=0;updateStock();
 if(isOut(p)){sfx('soldout');if(st.view==='home'&&$('#grid'))refreshGrid();if($('#det').classList.contains('open')&&st.cur.id===p.id){drawDetail();toast('Ce produit vient d\'être épuisé')}}},8000);
@@ -974,7 +975,7 @@ S.querySelectorAll('[data-prov]').forEach(b=>b.onclick=()=>{FM.prov=b.dataset.pr
  const c=$('#ckCity');c.classList.remove('bad');c.innerHTML=cityHtml();bindCity()});
 $('#ckBack').onclick=()=>{st.chk=false;sfx('back');renderCart()};$('#ckOk').onclick=ckSubmit}
 function bindCity(){const e=$('#ckV')||$('#ckRp');if(e)e.oninput=()=>{FM[e.id==='ckV'?'ville':'rp']=e.value;e.closest('.fld').classList.remove('bad')}}
-function ckSubmit(){const bad=[],chk=(sel,ok)=>{const e=$(sel);e.closest('.fld').classList.toggle('bad',!ok);if(!ok)bad.push(e)};
+async function ckSubmit(){const bad=[],chk=(sel,ok)=>{const e=$(sel);e.closest('.fld').classList.toggle('bad',!ok);if(!ok)bad.push(e)};
 chk('#ckNom',FM.nom.trim().length>=2);chk('#ckPre',FM.prenom.trim().length>=2);
 const kin=FM.prov==='Kinshasa';chk(FM.prov?'#ckProvF button':'#ckProvF button',!!FM.prov);
 if(FM.prov)chk(kin?'#ckRp':'#ckV',kin?FM.rp.trim().length>=3:!!FM.ville);
@@ -982,8 +983,13 @@ const wa=waNorm(FM.wa);chk('#ckWa',!!wa);
 if(bad.length){toastE('Complète les champs en rouge');bad[0].scrollIntoView({block:'center',behavior:'smooth'});if(bad[0].focus&&bad[0].tagName!=='BUTTON')bad[0].focus();return}
 for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq||inCart(pp.id)>ST[pp.id]){st.chk=false;renderCart();return toastE('Stock modifié, vérifie ton panier : '+pp.n)}}
 const total=ckTotal(),qty=cnt(),lines=st.cart.map(x=>({n:P.find(p=>p.id===x.id).n,c:x.color,z:x.size,q:x.q}));
+if(!sb||!window.LIVE||st.cart.some(x=>!P.find(p=>p.id===x.id).dbId))return toastE('Connexion impossible, réessaie dans un instant');
+const btn=$('#ckOk');if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='Envoi en cours…'}
+const items=st.cart.map(x=>({product_id:P.find(p=>p.id===x.id).dbId,color:x.color||'',size:x.size||'',qty:x.q}));
+let res;try{res=await sb.rpc('place_order',{p_name:FM.prenom.trim()+' '+FM.nom.trim(),p_wa:waFmt(wa),p_province:FM.prov,p_lieu:kin?FM.rp.trim():FM.ville,p_items:items,p_coupon:cpOk(COUPONS[st.coupon])?st.coupon:null})}catch(e){res={error:e}}
+if(res.error||!res.data){if(btn){btn.disabled=false;btn.textContent='Confirmer la commande · '+fmt(ckTotal())}return toastE('Commande non envoyée. Vérifie ta connexion et réessaie.')}
 st.cart.forEach(x=>{ST[x.id]=Math.max(0,ST[x.id]-x.q)});
-st.done={ref:'BM-'+Math.floor(10000+Math.random()*90000),nom:FM.nom.trim(),prenom:FM.prenom.trim(),prov:FM.prov,kin,lieu:kin?FM.rp.trim():FM.ville,wa:waFmt(wa),total,qty,lines};
+st.done={ref:res.data,nom:FM.nom.trim(),prenom:FM.prenom.trim(),prov:FM.prov,kin,lieu:kin?FM.rp.trim():FM.ville,wa:waFmt(wa),total,qty,lines};
 st.cart=[];st.coupon='';st.chk=false;sfx('success');renderTabs();renderCart();$('#scroll').scrollTop=0}
 function renderDone(){const d=st.done;
 $('#scroll').innerHTML=`<div class="ok-ic">✓</div><div class="ok-t"><b>Commande confirmée</b><small>Merci ${esc(d.prenom)} ! Réf. ${d.ref}</small></div>
@@ -993,6 +999,36 @@ $('#scroll').innerHTML=`<div class="ok-ic">✓</div><div class="ok-t"><b>Command
 <button class="cta" id="okHome">Retour à l’accueil</button>`;$('#okHome').onclick=()=>go('home')}
 const _rc=renderCart;renderCart=function(){if(st.done)return renderDone();if(st.chk&&st.cart.length)return renderCheckout();st.chk=false;_rc()};
 const _go=go;go=function(v){st.chk=false;st.done=null;_go(v)};
+/* ===== Supabase : catalogue et commandes en direct ===== */
+const SB_URL='https://fmbgxwqhxarpfnwxemxe.supabase.co',SB_KEY='sb_publishable_AoOhp570RvrOyEvKMjpj3w_uZdAemBm';
+let sb=null;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){}
+window.LIVE=false;
+const GEN_T={sacs:'tote',montres:'watch',chaussures:'sandal',beaute:'gloss',cheveux:'scrunch',hauts:'crop',tshirts:'tee',robes:'dress',foot:'jersey',gourdes:'bottle',accessoires:'glasses'};
+async function syncCatalog(){
+ if(!sb)return;
+ try{
+  const {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id');
+  if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
+  const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+(v.stock||0),0);
+  const known=id=>CATS.some(c=>c.id===id);
+  const by=new Map(data.map(r=>[r.name,r])),keep=[];let nextId=Math.max(0,...P.map(p=>p.id))+1;
+  for(const p of P){const r=by.get(p.n);if(!r)continue;by.delete(p.n);
+   p.dbId=r.id;p.net=+r.price;p.moq=r.moq;p.p=D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
+   if(known(r.category)){p.c=r.category;p.sc=r.subcategory||p.sc}
+   ST[p.id]=stockOf(r);keep.push(p)}
+  for(const r of by.values()){ /* produits ajoutés depuis l'espace admin */
+   const cat=known(r.category)?r.category:'accessoires',vs=r.variants||[];
+   const cols=[...new Set(vs.map(v=>v.color).filter(Boolean))],zs=[...new Set(vs.map(v=>v.size).filter(Boolean))];
+   if(!cols.length)cols.push('Standard');
+   cols.forEach(c=>{if(!COLORS[c])COLORS[c]='#9b9ba3'});
+   const p={id:nextId++,dbId:r.id,c:cat,sc:r.subcategory||'',t:GEN_T[cat]||'glasses',n:r.name,p:+r.price,net:+r.price,moq:r.moq,cols,col:COLORS[cols[0]],sizes:zs.length?zs:undefined,sl:zs.length?'Size':undefined,rate:'4.8',rev:0,d:DESC[cat]};
+   ST[p.id]=stockOf(r);keep.push(p)}
+  keep.sort((a,b)=>a.id-b.id);P.splice(0,P.length,...keep);
+  window.LIVE=true;st.cur=P.find(p=>p.id===st.cur.id)||P[0];
+  render();drawDetail();
+ }catch(e){}
+}
+syncCatalog();
 render();drawDetail();
 </script>
 <style id="cat3d-css">
