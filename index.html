@@ -636,6 +636,15 @@ const cartSub=()=>r2(st.cart.reduce((a,x)=>a+x.q*unitCart(P.find(p=>p.id===x.id)
 const hex=c=>COLORS[c];
 const CAP=p=>Math.max(p.moq*20,300); /* capacité min. 300 pour que le palier de 100 pcs soit atteignable */
 const ST={};P.forEach(p=>{const pc=p.id%7===0?6+p.id%9:12+(p.id*37%84);ST[p.id]=Math.round(CAP(p)*pc/100)});
+const AV={},RS={};
+const vk=(p,c,z)=>p.id+'|'+(c||'')+'|'+(z||'');
+const avRaw=(p,c,z)=>{const v=AV[vk(p,c,z)];return v===undefined?(window.LIVE?0:ST[p.id]):v};
+const cartV=(p,c,z)=>st.cart.reduce((a,x)=>a+(x.id===p.id&&(x.color||'')===(c||'')&&(x.size||'')===(z||'')?x.q:0),0);
+const avl=(p,c,z)=>Math.max(0,avRaw(p,c,z)-cartV(p,c,z));
+const vlabel=(p,c,z)=>p.n+' · '+c+(z?' · '+z:'');
+function stockMsg(p,c,z,qty){const a=avRaw(p,c,z),r=RS[vk(p,c,z)]||0,nm=vlabel(p,c,z);
+ if(a<=0)return r>0?'⏳ '+nm+' : tout le stock est réservé par une commande en attente de confirmation ('+r+' pcs). Reviens plus tard ou choisis une autre variante.':nm+' : épuisé.';
+ return (r>0?'⏳ Une commande précédente, pas encore confirmée, a déjà réservé '+r+' pcs. ':'')+nm+' : seulement '+a+' pc'+(a>1?'s':'')+' disponible'+(a>1?'s':'')+(qty?' (tu en voulais '+qty+')':'')+'.'}
 const isOut=p=>ST[p.id]<p.moq;
 const pct=p=>isOut(p)?0:Math.max(1,Math.round(ST[p.id]/CAP(p)*100));
 const lvl=p=>isOut(p)?'no':pct(p)<=20?'lo':pct(p)<=50?'mid':'hi';
@@ -712,7 +721,7 @@ $('#scroll').innerHTML=`<div class="hdr"><div class="l3w" id="l3w" role="img" ar
 function renderCart(){const sub=cartSub(),sv=bulkSaved(),c=COUPONS[st.coupon],d=cpOk(c)?Math.round(sub*c.rate*100)/100:0;
 $('#scroll').innerHTML=`<div class="logo" style="font-size:24px;margin-bottom:14px">Your Cart</div>`+(st.cart.length?st.cart.map((x,i)=>{const p=P.find(p=>p.id===x.id),u=unitCart(p),tq=inCart(p.id),bk=tq>=BULK.min;return `<div class="ci"><div class="im">${g(p.t,COLORS[x.color]||p.col)}</div><div class="t"><b>${p.n}</b><small>${x.color}${x.size?' · '+x.size:''}</small><small class="u">${fmt(u)}/pc${bk?`<span class="bk">−${fmt(BULK.off)} gros</span>`:''} · MOQ ${p.moq}</small><div class="q"><button data-m="${x.k}">${x.q>1?'−':'×'}</button>${x.q} pcs<button data-p="${x.k}">+</button></div>${st.cart.findIndex(y=>y.id===x.id)===i?(tq<p.moq?`<small class="u mqw">⚠ Minimum ${p.moq} pcs par produit : encore ${p.moq-tq} pcs</small>`:bk?`<small class="u bkh">✓ Tarif gros appliqué (${tq} pcs)</small>`:`<small class="u bkh">Encore ${BULK.min-tq} pcs pour −${fmt(BULK.off)}/pc <button class="bkb" data-b100="${x.k}">Passer à ${BULK.min}</button></small>`):''}</div><b>${fmt(r2(u*x.q))}</b></div>`}).join('')+`<div class="cpn"><input id="cpi" placeholder="Promo code" value="${st.coupon||''}"><button id="cpa">Apply</button></div><div class="sm"><span>Subtotal</span><span>${fmt(sub)}</span></div>${sv?`<div class="sm" style="color:#2faa6b"><span>Dont remise quantité (−${fmt(BULK.off)}/pc)</span><span>−${fmt(sv)}</span></div>`:''}${d?`<div class="sm" style="color:var(--or)"><span>${st.coupon} (−${Math.round(c.rate*100)}%)</span><span>−${fmt(d)}</span></div>`:''}${c&&!d?`<div class="sm" style="color:var(--mut);font-size:11px"><span>${st.coupon} : encore ${c.minQty-cartQty()} pcs (toutes catégories) pour −${Math.round(c.rate*100)}%</span><span></span></div>`:''}<div class="tot"><span>Total</span><span>${fmt(Math.round((sub-d)*100)/100)}</span></div><button class="cta" id="co">Checkout</button>`:'<div class="empty">Your cart is empty.<br>Browse the collection to add your first piece.</div>');
 $('#scroll').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const f=st.cart.find(x=>x.k===b.dataset.m),pp=P.find(p=>p.id===f.id);if(f.q>1){f.q--;sfx('tick')}else{st.cart=st.cart.filter(x=>x!==f);sfx('remove')}renderTabs();renderCart()});
-$('#scroll').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{{const f=st.cart.find(x=>x.k===b.dataset.p),pp=P.find(p=>p.id===f.id);if(inCart(pp.id)+1>ST[pp.id])return toastE('Stock maximum atteint');f.q++;sfx('tick')}renderTabs();renderCart()});
+$('#scroll').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{{const f=st.cart.find(x=>x.k===b.dataset.p),pp=P.find(p=>p.id===f.id);if(avl(pp,f.color,f.size)<1)return toastE(stockMsg(pp,f.color,f.size,f.q+1));f.q++;sfx('tick')}renderTabs();renderCart()});
 $('#scroll').querySelectorAll('[data-b100]').forEach(b=>b.onclick=()=>{const f=st.cart.find(x=>x.k===b.dataset.b100),pp=P.find(p=>p.id===f.id),need=BULK.min-inCart(pp.id);if(need<=0)return;if(inCart(pp.id)+need>ST[pp.id])return toastE('Stock insuffisant pour atteindre '+BULK.min+' pcs');f.q+=need;sfx('pop');toast('Tarif gros débloqué : −'+fmt(BULK.off)+'/pc');renderTabs();renderCart()});
 const cpa=$('#cpa');if(cpa)cpa.onclick=()=>{const k=$('#cpi').value.replace(/\s+/g,'').toUpperCase();if(!k){st.coupon='';return renderCart()}if(!COUPONS[k])return toastE('Invalid promo code');st.coupon=k;sfx('pop');toast(!cpOk(COUPONS[k])?`${k} : ${COUPONS[k].minQty} pcs minimum (${cartQty()} dans le panier)`:k+' applied');renderCart()};
 const co=$('#co');if(co)co.onclick=()=>{for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq)return toastE('Minimum '+pp.moq+' pcs pour : '+pp.n+' (encore '+(pp.moq-inCart(pp.id))+')');if(inCart(pp.id)>ST[pp.id])return toastE('Stock insuffisant : '+pp.n)}st.chk=true;sfx('open');renderCart();$('#scroll').scrollTop=0}}
@@ -828,11 +837,12 @@ function mxSetTotal(p,v){v=parseInt(v,10)||0;const lo=Math.max(p.moq,st.qty),hi=
 if(v<lo){v=lo;if(lo===st.qty&&st.qty>p.moq)toastE('Retire d’abord des pièces ci-dessous')}
 if(v>hi){v=hi;toastE('Stock maximum : '+hi+' pcs')}
 st.mxT=v;mxLive();return v}
-function mxSpread(p,target){const cells=mxCells(p),n=target-mxTot();if(n<=0)return;const b=Math.floor(n/cells.length),r=n%cells.length;cells.forEach(([c,z],i)=>mxSet(c,z,mxGet(c,z)+b+(i<r?1:0)))}
+function mxSpread(p,target){const cells=mxCells(p);let n=target-mxTot();while(n>0){let moved=0;for(const [c,z] of cells){if(n<=0)break;if(mxGet(c,z)<avl(p,c,z)+mxGet(c,z)){mxSet(c,z,mxGet(c,z)+1);n--;moved++}}if(!moved)break}if(n>0){st.mxT=Math.max(mxTot(),Math.min(st.mxT,mxMax(p)));toastE('Stock limité : '+mxTot()+' pcs répartissables sur les variantes disponibles')}}
+function mxClamp(p){let ch=false;mxCells(p).forEach(([c,z])=>{const m=mxGet(c,z),a=avl(p,c,z);if(m>a){mxSet(c,z,a);ch=true}});st.qty=mxTot();st.mxT=Math.max(st.qty,Math.min(st.mxT,mxMax(p)));return ch}
 function mxMiss(p){const r=mxRem();return r>0?'Encore '+r+' pc'+(r>1?'s':'')+' à répartir':null}
 function mxPresets(p){const hi=mxMax(p),l=[p.moq,50,100,200,300].filter(v=>v>=p.moq&&v<=hi);return l.filter((v,i)=>l.indexOf(v)===i).slice(0,4)}
 function mxOpts(max,cur){let h='<option value="0">–</option>';for(let i=1;i<=max;i++)h+='<option value="'+i+'"'+(i===cur?' selected':'')+'>'+i+'</option>';return h}
-function mxSel(p,c,z){const cur=mxGet(c,z),max=cur+mxRem();return `<span class="sel"><select class="${cur?'v':''}" data-mc="${c}" data-ms="${z}" aria-label="Quantité ${c}${z?' taille '+z:''}">${mxOpts(max,cur)}</select></span>`}
+function mxSel(p,c,z){const cur=mxGet(c,z),a=avl(p,c,z)+cur,max=Math.min(cur+mxRem(),a),r=RS[vk(p,c,z)]||0;return `<span class="sel"><select class="${cur?'v':''}" data-mc="${c}" data-ms="${z}" ${a<=0?'disabled':''} aria-label="Quantité ${c}${z?' taille '+z:''}">${mxOpts(max,cur)}</select></span><em class="av ${a<=0?'z':''}">${a<=0?(r?'réservé':'épuisé'):a+' dispo'}</em>${r>0&&a>0?`<em class="av r">${r} réservées</em>`:''}`}
 function mxHtml(p){const sz=p.sizes,wide=p.sl==='Capacity',hi=mxMax(p),pre=mxPresets(p);
 return `<div class="lbl"><span>Répartis ta commande</span>${p.guide?'<button id="guide">▤ Size Guide</button>':''}</div>`
 +`<div class="od" id="od"><div class="od-top"><label for="mxT">1. Quantité totale</label><div class="od-st"><button id="mxM" aria-label="Moins" type="button">−</button><input id="mxT" type="number" inputmode="numeric" min="${p.moq}" max="${hi}" value="${st.mxT}"><button id="mxP" aria-label="Plus" type="button">+</button></div></div>`
@@ -982,13 +992,22 @@ const kin=FM.prov==='Kinshasa';chk(FM.prov?'#ckProvF button':'#ckProvF button',!
 if(FM.prov)chk(kin?'#ckRp':'#ckV',kin?FM.rp.trim().length>=3:!!FM.ville);
 const wa=waNorm(FM.wa);chk('#ckWa',!!wa);
 if(bad.length){toastE('Complète les champs en rouge');bad[0].scrollIntoView({block:'center',behavior:'smooth'});if(bad[0].focus&&bad[0].tagName!=='BUTTON')bad[0].focus();return}
-for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq||inCart(pp.id)>ST[pp.id]){st.chk=false;renderCart();return toastE('Stock modifié, vérifie ton panier : '+pp.n)}}
+for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq){st.chk=false;renderCart();return toastE('Minimum '+pp.moq+' pcs pour : '+pp.n)}if(x.q>avRaw(pp,x.color,x.size)){st.chk=false;renderCart();return toastE(stockMsg(pp,x.color,x.size,x.q))}}
 const total=ckTotal(),qty=cnt(),lines=st.cart.map(x=>({n:P.find(p=>p.id===x.id).n,c:x.color,z:x.size,q:x.q}));
 if(!sb||!window.LIVE||st.cart.some(x=>!P.find(p=>p.id===x.id).dbId))return toastE('Connexion impossible, réessaie dans un instant');
 const btn=$('#ckOk');if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='Envoi en cours…'}
 const items=st.cart.map(x=>({product_id:P.find(p=>p.id===x.id).dbId,color:x.color||'',size:x.size||'',qty:x.q}));
 let res;try{res=await sb.rpc('place_order',{p_name:FM.prenom.trim()+' '+FM.nom.trim(),p_wa:waFmt(wa),p_province:FM.prov,p_lieu:kin?FM.rp.trim():FM.ville,p_items:items,p_coupon:cpOk(COUPONS[st.coupon])?st.coupon:null})}catch(e){res={error:e}}
-if(res.error||!res.data){if(btn){btn.disabled=false;btn.textContent='Confirmer la commande · '+fmt(ckTotal())}return toastE('Commande non envoyée. Vérifie ta connexion et réessaie.')}
+if(res.error||!res.data){if(btn){btn.disabled=false;btn.textContent='Confirmer la commande · '+fmt(ckTotal())}
+ const m=/STOCK\|(\d+)\|([^|]*)\|([^|]*)\|(\d+)\|(\d+)\|(\d+)/.exec((res.error&&res.error.message)||'');
+ if(m){const pp=P.find(p=>p.dbId==m[1]),c=m[2],z=m[3],a=+m[4],r=+m[6];
+  if(pp){AV[vk(pp,c,z)]=a;RS[vk(pp,c,z)]=r;const f=st.cart.find(x=>x.id===pp.id&&(x.color||'')===c&&(x.size||'')===z);const want=f?f.q:0;
+   if(f){if(a>0)f.q=a;else st.cart=st.cart.filter(x=>x!==f)}
+   st.chk=false;renderTabs();renderCart();toastE(stockMsg(pp,c,z,want)+(a>0?' Ton panier a été ajusté, vérifie puis confirme.':' Cette ligne a été retirée du panier.'))}
+  else toastE('Stock modifié, vérifie ton panier.');
+  lastSig='';syncCatalog();return}
+ return toastE('Commande non envoyée. Vérifie ta connexion et réessaie.')}
+st.cart.forEach(x=>{const pp=P.find(p=>p.id===x.id);if(pp){const k=vk(pp,x.color,x.size);if(AV[k]!==undefined)AV[k]=Math.max(0,AV[k]-x.q);RS[k]=(RS[k]||0)+x.q}});
 st.cart.forEach(x=>{ST[x.id]=Math.max(0,ST[x.id]-x.q)});
 st.done={ref:res.data,nom:FM.nom.trim(),prenom:FM.prenom.trim(),prov:FM.prov,kin,lieu:kin?FM.rp.trim():FM.ville,wa:waFmt(wa),total,qty,lines};
 st.cart=[];st.coupon='';st.chk=false;sfx('success');renderTabs();renderCart();$('#scroll').scrollTop=0}
@@ -1008,15 +1027,17 @@ const GEN_T={sacs:'tote',montres:'watch',chaussures:'sandal',beaute:'gloss',chev
 const REG=new Map(P.map(p=>[p.n,p]));let NEXTID=Math.max(0,...P.map(p=>p.id))+1;
 const knownCat=id=>CATS.some(c=>c.id===id);
 const hexFor=c=>{if(COLORS[c])return COLORS[c];let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;const hx='#'+[0,1,2].map(k=>(70+((h>>(k*8))&0x7f)).toString(16).padStart(2,'0')).join('');COLORS[c]=hx;HEXN[hx]=c;return hx};
-const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+(v.stock||0),0);
-const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(',')+'|'+(p.imgs||[]).map(i=>i.url+i.color+i.main).join(','):'';
+const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+Math.max(0,(v.stock||0)-(v.reserved||0)),0);
+const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(',')+'|'+(p.imgs||[]).map(i=>i.url+i.color+i.main).join(',')+'|'+Object.keys(AV).filter(k=>k.startsWith(p.id+'|')).map(k=>AV[k]+'/'+RS[k]).join(','):'';
 let syncing=false,again=false,lastSig='';
 async function syncCatalog(){
  if(!sb)return;
  if(syncing){again=true;return}
  syncing=true;
  try{
-  let {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock),product_images(color,path,is_main)').order('id');
+  let {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock,reserved),product_images(color,path,is_main)').order('id');
+  if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock,reserved)').order('id'));
+  if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock),product_images(color,path,is_main)').order('id'));
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id'));
   if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
   const first=!window.LIVE,sig=JSON.stringify(data);
@@ -1038,7 +1059,9 @@ async function syncCatalog(){
    p.imgs=(r.product_images||[]).map(i=>({color:i.color||'',main:!!i.is_main,url:SB_URL+'/storage/v1/object/public/product-images/'+i.path})).sort((a,b)=>b.main-a.main);
    const mc=p.imgs[0]&&p.imgs[0].main&&p.imgs[0].color&&p.cols.includes(p.imgs[0].color)?p.imgs[0].color:p.cols[0];
    p.col=COLORS[mc];p.t=p.imgs.length?'upl:'+p.id:p.t0;
-   ST[p.id]=stockOf(r);keep.push(p);
+   ST[p.id]=stockOf(r);
+   Object.keys(AV).forEach(k=>{if(k.startsWith(p.id+'|')){delete AV[k];delete RS[k]}});
+   vs.forEach(v=>{const k=vk(p,v.color,v.size);AV[k]=Math.max(0,(v.stock||0)-(v.reserved||0));RS[k]=v.reserved||0});keep.push(p);
   }
   keep.sort((x,y)=>x.id-y.id);
   P.splice(0,P.length,...keep);
@@ -1052,7 +1075,8 @@ async function syncCatalog(){
   renderTabs();
   if(st.view==='home'&&$('#grid'))refreshGrid();
   else if(st.view==='offers')renderOffers();
-  if(open&&det.classList.contains('open')&&sigOf(st.cur)!==curBefore)drawDetail();
+  if(open&&det.classList.contains('open')&&sigOf(st.cur)!==curBefore){if(mxClamp(st.cur))toastE('⏳ Le stock vient de changer : tes quantités ont été ajustées au disponible');drawDetail()}
+  const cl=[];st.cart.forEach(x=>{const pp=P.find(p=>p.id===x.id);if(pp&&x.q>avRaw(pp,x.color,x.size)){const a=avRaw(pp,x.color,x.size);cl.push(vlabel(pp,x.color,x.size)+' → '+a);x.q=a}});st.cart=st.cart.filter(x=>x.q>0);if(cl.length)toastE('Stock modifié, panier ajusté : '+cl.join(' ; '));
   if(n0!==st.cart.length)toast('Un produit de ton panier n’est plus disponible');
   if(st.view==='cart'&&!st.done){
    if(st.chk&&st.cart.length){if(ckTotal()!==totBefore){toast('Les prix ont été mis à jour');renderCheckout()}}
@@ -1069,6 +1093,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCatalo
 syncCatalog();
 render();drawDetail();
 </script>
+<style>.mxg .av{font-style:normal;font-size:10px;color:#2a9d4a;text-align:center;font-weight:600;line-height:1.2}.mxg .av.r{color:#b8741a}.mxg .av.z{color:#e5383b}.mxg select:disabled{opacity:.45}</style>
 <style id="cat3d-css">
 .cats{position:relative;padding:30px 4px 14px;margin:-24px 0 -8px}
 .cat{position:relative;z-index:1;height:86px;justify-content:flex-end;padding-bottom:9px;gap:0;transform:none!important;overflow:visible;
