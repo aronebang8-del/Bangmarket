@@ -285,6 +285,44 @@ button.lrow:hover b{color:var(--or-ink)}
 .ga{display:flex;justify-content:space-between}
 .ga button{width:30px;height:28px;border-radius:8px;background:var(--surface);font-size:16px;line-height:1}.ga button.on{background:var(--or);color:#fff}
 .addimg{display:inline-flex;cursor:pointer}
+.ft .dl{margin-right:auto}
+.dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,0,0,.2);display:inline-block;flex:none}
+.gchips button{display:inline-flex;align-items:center;gap:6px}.gchips em{font-style:normal;opacity:.65;font-weight:500}
+.gnote{font-size:13px;color:var(--mut)}
+/* Facture professionnelle */
+.sheet.wide:has(.iv){width:min(860px,100%)}
+.iv{background:#fff;color:#1c1c1e;border:1px solid #e3e3e6;border-radius:6px;padding:0;overflow:hidden;position:relative;font-size:13.5px;line-height:1.45;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.iv *{box-sizing:border-box}
+.iv-bar{height:8px;background:linear-gradient(90deg,#ff6a1a,#ffb27a)}
+.iv-in{padding:34px 40px 28px;position:relative}
+.iv-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap}
+.iv-brand b{font:700 30px/1 'Playfair Display',Georgia,serif;display:block}
+.iv-brand span{display:block;color:#6b6b70;font-size:12.5px;margin-top:3px}
+.iv-title{text-align:right}.iv-title h2{margin:0;font:700 26px/1 Inter,system-ui,sans-serif;letter-spacing:3px;color:#ff6a1a}
+.iv-title div{margin-top:6px;font-size:15px;font-weight:600}
+.iv-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin:26px 0 22px;border:1px solid #e3e3e6;border-radius:8px;overflow:hidden}
+.iv-meta div{padding:10px 14px;border-right:1px solid #e3e3e6}.iv-meta div:last-child{border-right:0}
+.iv-meta small{display:block;color:#6b6b70;font-size:11px;letter-spacing:.7px;text-transform:uppercase;margin-bottom:2px}.iv-meta b{font-size:13.5px}
+.iv-parties{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-bottom:24px}
+.iv-parties small{display:block;color:#6b6b70;font-size:11px;letter-spacing:.7px;text-transform:uppercase;margin-bottom:5px;border-bottom:1.5px solid #ff6a1a;padding-bottom:4px;width:max-content}
+.iv-parties b{font-size:15px;display:block}.iv-parties span{display:block;color:#3c3c40}
+.iv table{width:100%;border-collapse:collapse}
+.iv th{background:#1c1c1e;color:#fff;font-size:11.5px;letter-spacing:.6px;text-transform:uppercase;text-align:left;padding:9px 12px;border:0}
+.iv th.r,.iv td.r{text-align:right}.iv td{padding:10px 12px;border:0;border-bottom:1px solid #ececee;vertical-align:top}
+.iv tbody tr:nth-child(even) td{background:#fafafa}.iv td .v{display:block;color:#6b6b70;font-size:12px}
+.iv-tot{display:flex;justify-content:flex-end;margin-top:14px}
+.iv-tot table{width:300px}.iv-tot td{border:0;padding:6px 12px;background:none!important}
+.iv-tot tr.g td{background:#1c1c1e!important;color:#fff;font-weight:700;font-size:16px;border-radius:0}
+.iv-pay{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:22px;flex-wrap:wrap}
+.iv-stamp{border:2.5px solid #14663a;color:#14663a;border-radius:8px;padding:6px 18px;font:700 20px/1 Inter,system-ui,sans-serif;letter-spacing:3px;transform:rotate(-5deg)}
+.iv-stamp.x{border-color:#c62828;color:#c62828}
+.iv-foot{display:flex;align-items:center;gap:16px;margin-top:26px;padding-top:18px;border-top:1px solid #e3e3e6}
+.iv-foot .qr{width:96px;height:96px;flex:none}
+.iv-foot p{margin:0;color:#4b4b50;font-size:12.5px}.iv-foot .code{font-size:17px;color:#1c1c1e}
+.iv-legal{margin-top:16px;text-align:center;color:#8a8a8e;font-size:11.5px}
+.iv-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font:800 110px/1 Inter,system-ui,sans-serif;color:rgba(198,40,40,.12);transform:rotate(-24deg);letter-spacing:8px}
+@media (max-width:640px){.iv-in{padding:22px 16px}.iv-meta{grid-template-columns:1fr 1fr}.iv-meta div:nth-child(2){border-right:0}.iv-meta div:nth-child(-n+2){border-bottom:1px solid #e3e3e6}.iv-parties{grid-template-columns:1fr}.iv-tot table{width:100%}.iv-wm{font-size:60px}}
+@media print{@page{size:A4;margin:10mm}.iv{border:0;border-radius:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
@@ -508,16 +546,23 @@ function openManage(id,tab){
 const code=()=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(8));return [...r].map(x=>A[x%A.length]).join('').replace(/(.{4})(.{4})/,'$1-$2')};
 function fillQR(f){const b=$('#qrbox');if(!b)return;
  try{const url=new URL('verify.html?c='+encodeURIComponent(f.code),location.href).href;const q=qrcode(0,'M');q.addData(url);q.make();b.innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});b.classList.add('on')}catch(e){b.textContent='QR indisponible'}}
+/* Coordonnées de l'entreprise affichées sur la facture : complétez les lignes vides ci-dessous */
+const COMPANY={name:'Bang Market',tagline:'Vente en gros',address:'',phone:'',email:'',rccm:'',idnat:'',nif:''};
+const vurl=f=>new URL('verify.html?c='+encodeURIComponent(f.code),location.href).href;
 function showInvoice(f){
- const o=order(f.orderId);
- modal(head(`Facture ${f.no}`)+`<div class="inv" id="print"><div class="ih"><div><h4>Bang Market</h4><div style="color:#6b6b70;font-size:13px">Facture</div></div><div style="text-align:right"><b>${f.no}</b><br><span style="color:#6b6b70">${fdatel(f.d)}</span></div></div>
- <div style="margin-bottom:14px"><span style="color:#6b6b70;font-size:13px">Facturé à</span><br><b>${esc(o.client)}</b><br>${esc(o.wa)}</div>
- <table><thead><tr><th>Article</th><th class="r">Qté</th><th class="r">Prix</th><th class="r">Total</th></tr></thead><tbody>${o.items.map(it=>`<tr><td>${esc(iname(it))}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r">${fmt(it.qty*it.price)}</td></tr>`).join('')}</tbody></table>
- <div class="tot"><span>Total payé</span><span>${fmt(total(o))}</span></div>
- <div class="ft2"><div><span style="color:#6b6b70;font-size:13px">Code de vérification</span><br><span class="code">${f.code}</span>${f.status==='annulee'?'<br><b style="color:#c62828">FACTURE ANNULÉE</b>':''}</div><div class="qr" id="qrbox"></div></div></div>
- <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f);
-}
-
+ const o=order(f.orderId),ann=f.status==='annulee',sub=total(o),n=count(o),C=COMPANY;
+ const co=[C.address,[C.phone,C.email].filter(Boolean).join(' · '),[C.rccm&&'RCCM '+C.rccm,C.idnat&&'ID Nat. '+C.idnat,C.nif&&'NIF '+C.nif].filter(Boolean).join(' · ')].filter(Boolean);
+ const rows=o.items.map((it,k)=>`<tr><td>${k+1}</td><td>${esc(prod(it.pid)?prod(it.pid).name:'Produit supprimé')}${(it.color||it.size)?`<span class="v">${esc(vlabel(it))}</span>`:''}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r"><b>${fmt(it.qty*it.price)}</b></td></tr>`).join('');
+ modal(head(`Facture ${f.no}`)+`<div class="iv" id="print"><div class="iv-bar"></div>${ann?'<div class="iv-wm">ANNULÉE</div>':''}<div class="iv-in">
+ <div class="iv-top"><div class="iv-brand"><b>${esc(C.name)}</b><span>${esc(C.tagline)}</span>${co.map(x=>`<span>${esc(x)}</span>`).join('')}</div><div class="iv-title"><h2>FACTURE</h2><div>N° ${f.no}</div></div></div>
+ <div class="iv-meta"><div><small>Date d'émission</small><b>${fdatel(f.d)}</b></div><div><small>Commande</small><b>${o.id}</b></div><div><small>Mode de paiement</small><b>${o.pay?esc(o.pay.mode||'—'):'—'}</b></div><div><small>Date de paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div></div>
+ <div class="iv-parties"><div><small>Émetteur</small><b>${esc(C.name)}</b>${co.map(x=>`<span>${esc(x)}</span>`).join('')||`<span>${esc(C.tagline)}</span>`}</div><div><small>Facturé à</small><b>${esc(o.client)}</b><span>WhatsApp : ${esc(o.wa)}</span>${(o.prov||o.lieu)?`<span>${esc([o.prov,o.lieu].filter(Boolean).join(' · '))}</span>`:''}</div></div>
+ <table><thead><tr><th style="width:34px">#</th><th>Désignation</th><th class="r" style="width:70px">Qté</th><th class="r" style="width:100px">Prix unit.</th><th class="r" style="width:110px">Montant</th></tr></thead><tbody>${rows}</tbody></table>
+ <div class="iv-tot"><table><tr><td>Nombre d'articles</td><td class="r">${n.toLocaleString('fr-FR')}</td></tr><tr><td>Sous-total</td><td class="r">${fmt(sub)}</td></tr><tr class="g"><td>TOTAL ${ann?'':'PAYÉ'}</td><td class="r">${fmt(sub)}</td></tr></table></div>
+ <div class="iv-pay"><span class="mut" style="color:#6b6b70">Montants exprimés en dollars américains (USD).</span><span class="iv-stamp ${ann?'x':''}">${ann?'ANNULÉE':'PAYÉE'}</span></div>
+ <div class="iv-foot"><div class="qr" id="qrbox"></div><div><p>Vérifiez l'authenticité de cette facture en scannant le QR code ou sur :<br><span style="word-break:break-all">${esc(vurl(f))}</span></p><p style="margin-top:6px">Code de vérification : <span class="code">${f.code}</span></p></div></div>
+ <div class="iv-legal">Merci pour votre confiance. · ${esc(C.name)}</div></div></div>
+ <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn" data-act="sendinv" data-n="${f.no}">Envoyer au client</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f)}
 /* ============ Produits ============ */
 VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>
  <div class="chips">${['Toutes',...Object.keys(CATS)].map(c=>`<button class="chip ${S.pcat===c?'on':''}" data-act="pcat" data-c="${esc(c)}">${c}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')}</div>
@@ -539,6 +584,8 @@ function paintProducts(){
   else body=`<div class="pgrid">${list.map(pcard).join('')}</div>`;
   return `<section class="pcat"><h2><i style="background:${CATS[l]||'#6b6b70'}"></i>${esc(l)}<em>${list.length} produit${list.length>1?'s':''}</em></h2>${body}</section>`}).join('')}
 let ED=null,IMGN=0;
+const CLR={Noir:'#2a2a2e',Beige:'#e6d8c8',Rose:'#f4a6bd',Marron:'#8a5a3b',Or:'#d4af37',Argent:'#c3c6cf',Rouge:'#d62f1f',Bleu:'#3f6fd6',Blanc:'#f4f4f4',Vert:'#3f9b6b',Nude:'#e0a98e',Corail:'#ff7f6b',Bordeaux:'#7b2230',Marine:'#2c4a7c',Sapin:'#2f6b4f','Bleu Marine':'#1b2748',Chocolat:'#5b2a18',Ciel:'#9ec9ee',Lilas:'#b9a2e0',Menthe:'#a8dcc3',Jaune:'#f3d250',Cerise:'#c2185b'};
+const hexOf=c=>{if(CLR[c])return CLR[c];let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;return '#'+[0,1,2].map(k=>(70+((h>>(k*8))&0x7f)).toString(16).padStart(2,'0')).join('')};
 const SZ_CLOTH=['XS','S','M','L','XL','XXL'],SZ_SHOE=['36','37','38','39','40','41','42','43','44'];
 const sizeList=lbl=>{const id=CAT_ID[lbl];return ['hauts','tshirts','robes','foot'].includes(id)?SZ_CLOTH:id==='chaussures'?SZ_SHOE:[]};
 function paintSizes(){const sel=$('[data-form="prod"] [name=cat]'),l=sizeList(sel?sel.value:'');
@@ -546,12 +593,19 @@ function paintSizes(){const sel=$('[data-form="prod"] [name=cat]'),l=sizeList(se
  d.innerHTML=l.map(x=>`<option value="${x}">`).join('');
  r.innerHTML=l.length?`<span>Ajouter la taille :</span>${l.map(x=>`<button type="button" data-act="addsize" data-s="${x}">${x}</button>`).join('')}<button type="button" data-act="addsize" data-s="*">Toutes</button>`:''}
 function paintImgs(){const w=$('#imgs');if(!w)return;
- const cols=[...new Set(ED.variants.map(v=>v.color.trim()).filter(Boolean))],L=ED.images;
- const cur=L.find(i=>i.key===ED.sel)||L.find(i=>i.main)||L[0],f=ED.imf||'';
- const shown=L.filter(i=>!f||i.color===f),all=[...new Set([...cols,...L.map(i=>i.color).filter(Boolean)])];
- const opts=c=>`<option value="">Toutes les couleurs</option>`+all.map(x=>`<option ${x===c?'selected':''}>${esc(x)}</option>`).join('');
- w.innerHTML=`<div class="gal"><div class="gprev">${cur?`<img src="${cur.url}" alt="">`:'Aucune photo pour le moment'}${cur?`<span class="gtag">${esc(cur.color||'Toutes les couleurs')}${cur.main?' · Principale':''}</span>`:''}</div>
- ${all.length&&L.length?`<div class="gchips"><button type="button" class="${f?'':'on'}" data-act="imgfil" data-c="">Toutes</button>${all.map(c=>`<button type="button" class="${f===c?'on':''}" data-act="imgfil" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>`:''}
+ const cols=[...new Set(ED.variants.map(v=>v.color.trim()).filter(Boolean))],L=ED.images,f=ED.imf||'';
+ const all=[...new Set([...cols,...L.map(i=>i.color).filter(Boolean)])],stk=c=>ED.variants.filter(v=>v.color.trim()===c).reduce((a,v)=>a+(v.stock||0),0);
+ let cur=L.find(i=>i.key===ED.sel&&(!f||i.color===f));
+ if(!cur&&f)cur=L.find(i=>i.color===f&&i.main)||L.find(i=>i.color===f);
+ if(!cur&&!f)cur=L.find(i=>i.main)||L[0];
+ const art=(window.BM_IMG||{})[(window.BM_PHOTOS||{})[ED.name]]||(window.BM_IMG||{})[(window.BM_CAT_PHOTOS||{})[ED.catId]];
+ const fb=!cur&&L.length?(L.find(i=>i.main)||L[0]):null;
+ const shownImg=cur||fb,preview=shownImg?shownImg.url:(!L.length&&art?art:null);
+ const tag=cur?`${cur.color||'Toutes les couleurs'}${cur.main?' · Principale':''}`:fb?`Aucune photo en ${f} · la boutique affichera la photo principale`:(!L.length&&art?'Illustration actuelle de la boutique':'');
+ const shown=L.filter(i=>!f||i.color===f),opts=c=>`<option value="">Toutes les couleurs</option>`+all.map(x=>`<option ${x===c?'selected':''}>${esc(x)}</option>`).join('');
+ w.innerHTML=`<div class="gal"><div class="gprev">${preview?`<img src="${preview}" alt="">`:'Aucune photo pour le moment'}${tag?`<span class="gtag">${esc(tag)}</span>`:''}</div>
+ ${all.length?`<div class="gchips"><button type="button" class="${f?'':'on'}" data-act="imgfil" data-c="">Toutes</button>${all.map(c=>`<button type="button" class="${f===c?'on':''}" data-act="imgfil" data-c="${esc(c)}"><span class="dot" style="background:${hexOf(c)}"></span>${esc(c)}<em>${stk(c)} en stock</em></button>`).join('')}</div>`:''}
+ ${!L.length?`<div class="gnote">Aucune photo envoyée pour ce produit : la boutique affiche son illustration actuelle. Ajoutez vos photos pour les remplacer.</div>`:''}
  ${shown.length?`<div class="gstrip">${shown.map(i=>`<div class="gt ${i===cur?'on':''}"><img src="${i.url}" alt="" data-act="imgsel" data-k="${i.key}"><select data-imgc="${i.key}" aria-label="Couleur de la photo">${opts(i.color)}</select><div class="ga"><button type="button" class="${i.main?'on':''}" data-act="imgmain" data-k="${i.key}" title="Photo principale" aria-label="Photo principale">★</button><button type="button" data-act="imgdel" data-k="${i.key}" title="Supprimer" aria-label="Supprimer la photo">×</button></div></div>`).join('')}</div>`:''}</div>`}
 async function shrink(file){const bmp=await createImageBitmap(file),k=Math.min(1,900/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
  c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
@@ -587,7 +641,7 @@ function editProd(id){
  <h3 style="font-size:16px;margin:20px 0 8px">Variantes et stock</h3><div class="szrow" id="szrow"></div><datalist id="szl"></datalist><div id="vars"></div>
  <button type="button" class="btn sm" data-act="addvar" style="margin-top:8px">${ic('plus')}Ajouter une variante</button>
  <div class="note">Une variante à 0 est affichée « épuisée » sur la boutique. La taille et la couleur sont facultatives.</div>
- <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
+ <div class="ft">${id?'<button type="button" class="btn dng dl" data-act="delprod">Supprimer le produit</button>':''}<button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
  paintVars();paintSizes();paintImgs();
 }
 function paintVars(){
@@ -671,6 +725,9 @@ const A={
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
+ sendinv:d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);
+  const msg=`Bonjour ${o.client.split(' ')[0]}, voici votre facture ${f.no} de ${fmt(total(o))} chez ${COMPANY.name}.\nVous pouvez vérifier son authenticité ici : ${vurl(f)}\nMerci pour votre confiance !`;
+  window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
  cancelinv:d=>{if(confirm('Annuler la facture '+d.n+' ? Elle restera dans l\'historique, marquée annulée.'))run(async()=>must(await sb.from('invoices').update({status:'annulee'}).eq('no',d.n)),'Facture annulée')},
@@ -690,6 +747,10 @@ const A={
  addsize:d=>{const l=d.s==='*'?sizeList($('[data-form="prod"] [name=cat]').value):[d.s],colors=[...new Set(ED.variants.map(v=>v.color))];if(!colors.length)colors.push('');
   l.forEach(sz=>colors.forEach(c=>{if(ED.variants.some(v=>v.color===c&&v.size===sz))return;
    const blank=ED.variants.find(v=>v.color===c&&v.size===''&&!v.id&&!v.stock);if(blank)blank.size=sz;else ED.variants.push({color:c,size:sz,stock:0})}));paintVars()},
+ delprod:async()=>{const p=prod(ED.id);if(!p)return;
+  const pend=S.orders.filter(o=>(o.status==='nouvelle'||o.status==='contacte')&&o.items.some(i=>i.pid===p.id)).length;
+  if(!confirm(`Supprimer définitivement « ${p.name} » ?\n\nSes variantes, son stock et ses photos seront effacés. Les anciennes commandes et factures sont conservées.`+(pend?`\n\nAttention : ${pend} commande(s) en cours contiennent ce produit et ne pourront plus être confirmées.`:'')+'\n\nPour seulement le retirer de la boutique, décochez « Visible sur la boutique » à la place.'))return;
+  if(await run(async()=>{const paths=(p.images||[]).map(i=>i.path);must(await sb.from('products').delete().eq('id',p.id));if(paths.length)await sb.storage.from(BUCKET).remove(paths)},'Produit supprimé'))closeModal()},
  imgsel:d=>{ED.sel=d.k;paintImgs()},
  imgfil:d=>{ED.imf=d.c;paintImgs()},
  imgmain:d=>{ED.images.forEach(i=>i.main=i.key===d.k);ED.sel=d.k;paintImgs()},
