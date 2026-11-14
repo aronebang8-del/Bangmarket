@@ -356,6 +356,13 @@ body{background:var(--bg)}
 .ptabs{display:flex;gap:6px;margin:0 0 6px}.ptabs button{flex:1;min-height:42px;border-radius:99px;background:var(--card);font-weight:700}.ptabs button.on{background:var(--or);color:#fff}
 .pvk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.pvk div{background:var(--card);border-radius:12px;padding:10px;text-align:center}.pvk b{display:block;font-size:20px}.pvk span{font-size:12px;color:var(--mut)}
 .vcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.vc{background:var(--card);border-radius:10px;padding:6px 10px;font-size:13px}.vc.z{background:#fde0dd;color:#a3231a}.vc.w{background:#fff1cf}.vc em{font-style:normal;color:#b8741a;font-size:11px;margin-left:4px}
+
+.mhd{display:flex;justify-content:space-between;align-items:center;margin:18px 4px 8px;font-size:14px;text-transform:capitalize}.mhd span{display:flex;gap:8px;font-size:12.5px;text-transform:none}.mhd em{font-style:normal;font-weight:700;padding:3px 10px;border-radius:99px}.mhd .ok{background:#dff3e6;color:#14663a}.mhd .out{background:#fde5d9;color:#b8400c}
+.mh{display:grid;grid-template-columns:56px minmax(0,1fr) auto;gap:12px;align-items:center;background:var(--surface);border-radius:14px;padding:9px 12px 9px 9px;margin-bottom:6px;border-left:5px solid #2e9e5b;box-shadow:var(--sh)}.mh.sortie{border-left-color:#e8651a}
+.mph{width:56px;height:56px;border-radius:12px;overflow:hidden;background:var(--card);display:grid;place-items:center;color:var(--mut);font-weight:700}.mph img{width:100%;height:100%;object-fit:cover}
+.mhb{display:grid;gap:2px;min-width:0}.mhb>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mhb .mut{font-size:12.5px}
+.mhv{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;width:fit-content}.mhv .dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)}
+.mhq{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:6px 10px;border-radius:12px;font-size:18px;font-weight:800;line-height:1.1}.mhq small{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.mhq.entree{background:#dff3e6;color:#14663a}.mhq.sortie{background:#fde5d9;color:#b8400c}
 </style>
 </head>
 <body>
@@ -408,7 +415,7 @@ const CATS={},CAT_ID={},CAT_LBL={},SUBS={};
 CATDEF.forEach(([id,n,c,sb2])=>{CATS[n]=c;CAT_ID[n]=id;CAT_LBL[id]=n;SUBS[id]=sb2});
 const MOQ0={sacs:3,montres:5,cheveux:12,hauts:6,tshirts:6,robes:10,foot:6,gourdes:6,accessoires:6,chaussures:6,beaute:12};
 const subOpts=(label,cur)=>{const l=SUBS[CAT_ID[label]]||[];return l.length?'<option value="">Aucun</option>'+l.map(([k,t])=>`<option value="${k}" ${k===cur?'selected':''}>${t}</option>`).join(''):''};
-const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',mq:'',sv:'list',lf:'tous',reveal:new Set(),
+const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',mq:'',sv:'list',sc:'Toutes',lf:'tous',reveal:new Set(),
  products:[],orders:[],invoices:[],sales:[],moves:[],achats:[],depenses:[]};
 const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Confirmée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
@@ -423,6 +430,9 @@ const iname=i=>{const p=prod(i.pid);return (p?p.name:'Produit supprimé')+((i.co
 const total=o=>o.items.reduce((a,i)=>a+i.qty*i.price,0);
 const count=o=>o.items.reduce((a,i)=>a+i.qty,0);
 const order=id=>S.orders.find(o=>o.id===id);
+const allCats=()=>[...Object.keys(CATS),...new Set(S.products.map(p=>p.cat).filter(c=>!CATS[c]))];
+const catCol=c=>CATS[c]||hexOf(c);
+const dayLbl=d=>{const t=new Date(),z=x=>new Date(x.getFullYear(),x.getMonth(),x.getDate()).getTime(),k=Math.round((z(t)-z(d))/864e5);return k===0?"Aujourd'hui":k===1?'Hier':d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})};
 const movName=m=>iname({pid:m.pid,color:m.color,size:m.size});
 const isoToday=()=>{const t=new Date();return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')};
 const inv=o=>S.invoices.find(f=>f.orderId===o.id);
@@ -591,10 +601,10 @@ function showInvoice(f){
  <div class="iv-pay"><span class="mut" style="color:#6b6b70">Montants exprimés en dollars américains (USD).</span><span class="iv-stamp ${ann?'x':''}">${ann?'ANNULÉE':'PAYÉE'}</span></div>
  <div class="iv-foot"><div class="qr" id="qrbox"></div><div><p>Vérifiez l'authenticité de cette facture en scannant le QR code ou sur :<br><span style="word-break:break-all">${esc(vurl(f))}</span></p><p style="margin-top:6px">Code de vérification : <span class="code">${f.code}</span></p></div></div>
  <div class="iv-legal">Merci pour votre confiance. · ${esc(C.name)}</div></div></div>
- <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn" data-act="sendinv" data-n="${f.no}">Envoyer au client</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f)}
+ <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn" data-act="sendinv" data-n="${f.no}">Envoyer au client</button><button class="btn dng" data-act="delinv" data-n="${f.no}">Supprimer</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f)}
 /* ============ Produits ============ */
 VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>
- <div class="chips">${['Toutes',...Object.keys(CATS)].map(c=>`<button class="chip ${S.pcat===c?'on':''}" data-act="pcat" data-c="${esc(c)}">${c}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')}</div>
+ <div class="chips">${['Toutes',...allCats()].map(c=>`<button class="chip ${S.pcat===c?'on':''}" data-act="pcat" data-c="${esc(c)}">${esc(c)}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')}<button class="chip" data-act="addcat">+ Catégorie</button></div>
  <label class="search">${ic('search')}<input id="pq" type="search" placeholder="Rechercher un produit" value="${esc(S.pq)}" aria-label="Rechercher un produit"></label><div id="pgrid"></div>`;
 AFTER.products=paintProducts;
 const photo=p=>{const mi=(p.images||[]).find(i=>i.main)||(p.images||[])[0];if(mi)return `<img src="${mi.url}" alt="" draggable="false">`;const k=(window.BM_PHOTOS||{})[p.name]||(window.BM_CAT_PHOTOS||{})[p.catId],src=k&&(window.BM_IMG||{})[k];return src?`<img src="${src}" alt="" draggable="false">`:esc(p.name.slice(0,2))};
@@ -672,10 +682,10 @@ function openProd(id){const p=prod(id);if(!p)return;
  <div class="pvk"><div><b>${tot.toLocaleString('fr-FR')}</b><span>En stock</span></div><div><b>${res.toLocaleString('fr-FR')}</b><span>Réservées</span></div><div><b>${Math.max(0,tot-res).toLocaleString('fr-FR')}</b><span>Disponibles</span></div></div>
  ${cols.map(blk).join('')}${ims('').length?blk(''):''}${!p.images.length?`<div class="note">Aucune photo envoyée : la boutique affiche son illustration actuelle.</div>`:''}
  <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button type="button" class="btn pri" data-act="pedit" data-id="${id}">Modifier</button></div>`,'wide')}
-function editProd(id){
- const base=id?prod(id):{id:0,name:'',cat:'Sacs',catId:'sacs',sub:'',price:'',bulk:'',moq:1,visible:true,variants:[{color:'',size:'',stock:0}],images:[]};
+function editProd(id,newCat){
+ const base=id?prod(id):{id:0,name:'',cat:newCat||'Sacs',catId:newCat?(CAT_ID[newCat]||newCat):'sacs',sub:'',price:'',bulk:'',moq:1,visible:true,variants:[{color:'',size:'',stock:0}],images:[]};
  ED=JSON.parse(JSON.stringify(base));ED.images=ED.images||[];ED.sel=null;ED.imf='';if(id)ED.variants.forEach(v=>v._s=v.stock);edInit();
- const copts=Object.keys(CATS).map(c=>`<option ${c===ED.cat?'selected':''}>${c}</option>`).join('')+(CAT_ID[ED.cat]?'':`<option selected>${esc(ED.cat)}</option>`);
+ const copts=[...new Set([...allCats(),ED.cat])].map(c=>`<option ${c===ED.cat?'selected':''}>${esc(c)}</option>`).join('');
  const so=subOpts(ED.cat,ED.sub);
  modal(head(id?'Modifier le produit':'Ajouter un produit')+ptabs(id,'e')+`<form data-form="prod">
  <section class="fs"><h3><span>1</span>Informations</h3><label class="fld">Nom du produit<input name="name" value="${esc(ED.name)}" required placeholder="Ex. Sac cabas Safi"></label>
@@ -686,9 +696,10 @@ function editProd(id){
  <div class="ft">${id?'<button type="button" class="btn dng dl" data-act="delprod">Supprimer</button>':''}<button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
  paintImgs();paintSizes()}
 /* ============ Stock : liste, entrées, historique ============ */
-VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div>
+VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="addcat">${ic('plus')}Catégorie</button><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div></div>
  <div class="kpis k3" id="skpi"></div>
  <div class="seg pg" id="sseg"></div>
+ <div class="chips" id="cchips"></div>
  <div class="chips" id="mchips"></div>
  <label class="search">${ic('search')}<input id="mq" type="search" placeholder="Produit, couleur ou taille" value="${esc(S.mq)}" aria-label="Rechercher dans le stock"></label><div id="mlist"></div>`;
 AFTER.stock=paintStock;
@@ -697,25 +708,33 @@ function paintStock(){
  $('#skpi').innerHTML=`<div class="card kpi"><span>Entrées, 30 jours</span><b class="ok">+${ent.toLocaleString('fr-FR')}</b></div><div class="card kpi"><span>Sorties, 30 jours</span><b>−${sor.toLocaleString('fr-FR')}</b></div><div class="card kpi"><span>Pièces en stock</span><b>${tot.toLocaleString('fr-FR')}</b></div>`;
  $('#sseg').innerHTML=[['list','Liste du stock'],['hist','Historique']].map(([k,l])=>`<button class="${S.sv===k?'on':''}" data-act="sview" data-v="${k}">${l}</button>`).join('');
  const q=S.mq.trim().toLowerCase();
+ $('#cchips').innerHTML=['Toutes',...allCats()].map(c=>`<button class="chip ${S.sc===c?'on':''}" data-act="scat" data-c="${esc(c)}">${c!=='Toutes'?`<i class="dot" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:${catCol(c)};margin-right:6px"></i>`:''}${esc(c)}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')+'<button class="chip" data-act="addcat">+ Catégorie</button>';
+ const inSc=p=>S.sc==='Toutes'||(p&&p.cat===S.sc);
  if(S.sv==='list'){
   const all=S.products.flatMap(p=>p.variants),F=[['tous','Tout',()=>true],['bas','Stock bas',v=>v.stock>0&&v.stock<=3],['epuise','Épuisés',v=>v.stock===0]],fn=F.find(f=>f[0]===S.lf)[2];
   $('#mchips').innerHTML=F.map(([k,l,f])=>`<button class="chip ${S.lf===k?'on':''}" data-act="schip" data-k="${k}">${l}<em>${all.filter(f).length}</em></button>`).join('');
-  const groups=S.products.map(p=>({p,vs:p.variants.map((v,i)=>({v,i})).filter(({v})=>fn(v)&&(!q||(p.name+' '+vlabel(v)).toLowerCase().includes(q)))})).filter(g=>g.vs.length);
-  $('#mlist').innerHTML=groups.length?groups.map(({p,vs})=>{const c=CATS[p.cat]||'#6b6b70',t=p.variants.reduce((a,v)=>a+v.stock,0);
+  const groups=S.products.map(p=>({p,vs:p.variants.map((v,i)=>({v,i})).filter(({v})=>fn(v)&&(!q||(p.name+' '+vlabel(v)).toLowerCase().includes(q)))})).filter(g=>g.vs.length&&inSc(g.p));
+  const card=({p,vs})=>{const c=CATS[p.cat]||'#6b6b70',t=p.variants.reduce((a,v)=>a+v.stock,0);
    return `<section class="card sg"><div class="sgh"><span class="sw2">${photo(p)}</span><div><b>${esc(p.name)}</b><br><span class="mut">${esc(p.cat)} · ${t.toLocaleString('fr-FR')} pièces</span></div><button class="btn sm" data-act="addlist" data-pid="${p.id}">${ic('plus')}Taille ou couleur</button></div>
-   ${vs.map(({v,i})=>`<div class="vr"><div class="vl"><b>${esc(vlabel(v))}</b>${v.stock===0?'<span class="tag e">Épuisé</span>':v.stock<=3?'<span class="tag w">Stock bas</span>':''}</div><span class="qn ${v.stock===0?'z':v.stock<=3?'l':''}" aria-label="${v.stock} en stock">${v.stock.toLocaleString('fr-FR')}${v.reserved?`<small style="display:block;font-size:11px;font-weight:600;color:#b8741a">dispo ${Math.max(0,v.stock-v.reserved)} · rés. ${v.reserved}</small>`:''}</span><div class="va"><input type="number" min="1" step="1" inputmode="numeric" placeholder="Qté à ajouter" aria-label="Quantité à ajouter pour ${esc(p.name)} ${esc(vlabel(v))}"><button class="plus" data-act="qadd" data-pid="${p.id}" data-vi="${i}" aria-label="Ajouter au stock">+</button></div></div>`).join('')}</section>`}).join(''):'<div class="card empty"><b>Aucune ligne de stock</b>Changez le filtre, ou ajoutez un produit avec « Ajouter un produit ».</div>';
+   ${vs.map(({v,i})=>`<div class="vr"><div class="vl"><b>${esc(vlabel(v))}</b>${v.stock===0?'<span class="tag e">Épuisé</span>':v.stock<=3?'<span class="tag w">Stock bas</span>':''}</div><span class="qn ${v.stock===0?'z':v.stock<=3?'l':''}" aria-label="${v.stock} en stock">${v.stock.toLocaleString('fr-FR')}${v.reserved?`<small style="display:block;font-size:11px;font-weight:600;color:#b8741a">dispo ${Math.max(0,v.stock-v.reserved)} · rés. ${v.reserved}</small>`:''}</span><div class="va"><input type="number" min="1" step="1" inputmode="numeric" placeholder="Qté à ajouter" aria-label="Quantité à ajouter pour ${esc(p.name)} ${esc(vlabel(v))}"><button class="plus" data-act="qadd" data-pid="${p.id}" data-vi="${i}" aria-label="Ajouter au stock">+</button></div></div>`).join('')}</section>`};
+  $('#mlist').innerHTML=groups.length?allCats().map(c=>{const gs=groups.filter(g=>g.p.cat===c);if(!gs.length)return '';const pcs=gs.reduce((a,g)=>a+g.p.variants.reduce((b,v)=>b+v.stock,0),0);
+   return `<section class="pcat"><h2><i style="background:${catCol(c)}"></i>${esc(c)}<em>${gs.length} produit${gs.length>1?'s':''} · ${pcs.toLocaleString('fr-FR')} pièces</em></h2>${gs.map(card).join('')}</section>`}).join(''):'<div class="card empty"><b>Aucune ligne de stock</b>Changez le filtre, ou ajoutez un produit avec « Ajouter un produit ».</div>';
  }else{
   const F=[['tous','Tous',()=>true],['entree','Entrées',m=>m.type==='entree'],['sortie','Sorties',m=>m.type==='sortie']];
   $('#mchips').innerHTML=F.map(([k,l,f])=>`<button class="chip ${S.mf===k?'on':''}" data-act="schip" data-k="${k}">${l}<em>${S.moves.filter(f).length}</em></button>`).join('');
-  const rows=S.moves.filter(m=>S.mf==='tous'||m.type===S.mf).filter(m=>!q||(movName(m)+' '+m.reason+' '+m.ref).toLowerCase().includes(q)).sort((a,b)=>b.d-a.d);
-  $('#mlist').innerHTML=`<div class="card" style="padding:4px 16px">${rows.length?rows.map(m=>`<div class="mv"><span class="mi ${m.type}">${ic(m.type==='entree'?'in':'out')}</span><span class="mt"><b>${esc(movName(m))}</b><span class="mut">${esc(m.reason)}${m.ref?' · '+esc(m.ref):''} · ${fdate(m.d)}</span></span><b class="mq ${m.type}">${m.type==='entree'?'+':'−'}${m.qty.toLocaleString('fr-FR')}</b></div>`).join(''):'<div class="empty"><b>Aucun mouvement</b>Les entrées et sorties apparaîtront ici.</div>'}</div>`;
+  const rows=S.moves.filter(m=>S.mf==='tous'||m.type===S.mf).filter(m=>inSc(prod(m.pid))).filter(m=>!q||(movName(m)+' '+m.reason+' '+m.ref).toLowerCase().includes(q)).sort((a,b)=>b.d-a.d),shown=rows.slice(0,300);
+  const days=[];shown.forEach(m=>{const k=m.d.toDateString();let g=days[days.length-1];if(!g||g.k!==k){g={k,d:m.d,l:[]};days.push(g)}g.l.push(m)});
+  const row=m=>{const p=prod(m.pid),e=m.type==='entree',hm=m.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+   return `<div class="mh ${m.type}"><span class="mph">${p?photo(p):'?'}</span><div class="mhb"><b>${p?esc(p.name):'Produit supprimé'}</b><span class="mhv">${m.color?`<i class="dot" style="background:${hexOf(m.color)}"></i>`:''}${esc([m.color,m.size].filter(Boolean).join(' · ')||'Modèle unique')}</span><span class="mut">${e?'Entrée':'Sortie'} · ${esc(m.reason)}${m.ref?' · <b>'+esc(m.ref)+'</b>':''} · ${hm}</span></div><span class="mhq ${m.type}">${e?'+':'−'}${m.qty.toLocaleString('fr-FR')}<small>${e?'entrée':'sortie'}</small></span></div>`};
+  $('#mlist').innerHTML=days.length?days.map(g=>{const en=g.l.filter(m=>m.type==='entree').reduce((a,m)=>a+m.qty,0),so=g.l.filter(m=>m.type==='sortie').reduce((a,m)=>a+m.qty,0);
+   return `<div class="mhd"><b>${esc(dayLbl(g.d))}</b><span>${en?`<em class="ok">+${en.toLocaleString('fr-FR')} entrées</em>`:''}${so?`<em class="out">−${so.toLocaleString('fr-FR')} sorties</em>`:''}</span></div>${g.l.map(row).join('')}`}).join('')+(rows.length>shown.length?`<div class="note">Les ${shown.length} mouvements les plus récents sont affichés. Utilisez la recherche pour retrouver les autres.</div>`:''):'<div class="card empty"><b>Aucun mouvement</b>Les entrées et sorties apparaîtront ici.</div>';
  }
 }
 function openAdd(pid){
  if(pid===undefined||(pid&&!prod(pid)))pid=0;
  modal(head('Ajouter à la liste')+`<form data-form="addlist"><label class="fld">Produit<select name="pid" id="ap">${S.products.map(p=>`<option value="${p.id}" ${p.id===pid?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="new" ${pid===0?'selected':''}>+ Nouveau produit…</option></select></label>
   <div id="newp" style="display:grid;gap:12px;margin-top:12px" ${pid===0?'':'hidden'}><label class="fld">Nom du produit<input name="name" placeholder="Ex. Sac cabas Safi"></label>
-   <div class="grid2"><label class="fld">Catégorie<select name="cat">${Object.keys(CATS).map(c=>`<option>${c}</option>`).join('')}</select></label><label class="fld">Prix unitaire ($)<input name="price" type="number" min="0" step="0.01" inputmode="decimal"></label></div></div>
+   <div class="grid2"><label class="fld">Catégorie<select name="cat">${allCats().map(c=>`<option>${esc(c)}</option>`).join('')}</select></label><label class="fld">Prix unitaire ($)<input name="price" type="number" min="0" step="0.01" inputmode="decimal"></label></div></div>
   <div class="grid2" style="margin-top:12px"><label class="fld">Couleur<input name="color" placeholder="Noir"></label><label class="fld">Taille ou pointure<input name="size" placeholder="39"></label></div>
   <label class="fld" style="margin-top:12px">Quantité à ajouter<input name="qty" type="number" min="1" step="1" inputmode="numeric" required></label>
   <div class="note">Si cette couleur et cette taille existent déjà, la quantité s'ajoute au stock. Sinon, une nouvelle ligne est créée. Un nouveau produit apparaît aussi dans la section Produits.</div>
@@ -728,7 +747,7 @@ VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérifi
 AFTER.invoices=paintInvoices;
 function paintInvoices(){
  const q=S.iq.trim().toLowerCase(),rows=S.invoices.filter(f=>!q||(f.no+f.code+order(f.orderId).client).toLowerCase().includes(q)).sort((a,b)=>b.no.localeCompare(a.no));
- $('#ilist').innerHTML=rows.length?`<table><thead><tr><th>Facture</th><th>Client</th><th class="r">Montant</th><th>Code</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(f=>{const o=order(f.orderId),sh=S.reveal.has(f.no);return `<tr><td><b>${f.no}</b><br><span class="mut">${fdate(f.d)} · ${o.id}</span></td><td>${esc(o.client)}</td><td class="r">${fmt(total(o))}</td><td><button class="code" data-act="reveal" data-n="${f.no}" aria-label="${sh?'Masquer':'Afficher'} le code">${sh?f.code:'••••-••••'}</button><br><span class="mut" style="font-size:12.5px">Vérifié ${f.checks} fois</span></td><td>${f.status==='valide'?'<span class="pill s-p">Valide</span>':'<span class="pill s-x">Annulée</span>'}</td><td class="r"><button class="btn sm" data-act="viewinv" data-n="${f.no}">Voir</button> ${f.status==='valide'?`<button class="btn sm dng" data-act="cancelinv" data-n="${f.no}">Annuler</button>`:''}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty"><b>Aucune facture</b>Générez-en une depuis une commande payée.</div>';
+ $('#ilist').innerHTML=rows.length?`<table><thead><tr><th>Facture</th><th>Client</th><th class="r">Montant</th><th>Code</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(f=>{const o=order(f.orderId),sh=S.reveal.has(f.no);return `<tr><td><b>${f.no}</b><br><span class="mut">${fdate(f.d)} · ${o.id}</span></td><td>${esc(o.client)}</td><td class="r">${fmt(total(o))}</td><td><button class="code" data-act="reveal" data-n="${f.no}" aria-label="${sh?'Masquer':'Afficher'} le code">${sh?f.code:'••••-••••'}</button><br><span class="mut" style="font-size:12.5px">Vérifié ${f.checks} fois</span></td><td>${f.status==='valide'?'<span class="pill s-p">Valide</span>':'<span class="pill s-x">Annulée</span>'}</td><td class="r"><button class="btn sm" data-act="viewinv" data-n="${f.no}">Voir</button> ${f.status==='valide'?`<button class="btn sm dng" data-act="cancelinv" data-n="${f.no}">Annuler</button> `:''}<button class="btn sm dng" data-act="delinv" data-n="${f.no}" title="Supprimer définitivement">Supprimer</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty"><b>Aucune facture</b>Générez-en une depuis une commande payée.</div>';
 }
 
 /* ============ Achats et dépenses ============ */
@@ -767,8 +786,12 @@ const A={
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
+ delinv:d=>{const f=S.invoices.find(x=>x.no===d.n);if(!f)return;if(!confirm('Supprimer définitivement la facture '+d.n+' ?\n\nElle disparaît de la liste et son QR code ne sera plus valide. La commande revient à « payée » et vous pourrez générer une nouvelle facture.'))return;
+  run(async()=>{must(await sb.from('invoices').delete().eq('no',d.n));const o=order(f.orderId);if(o)must(await sb.from('orders').update({status:'payee'}).eq('id',o.dbId).eq('status','facturee'))},'Facture supprimée').then(ok=>{if(ok)closeModal()})},
  cancelinv:d=>{if(confirm('Annuler la facture '+d.n+' ? Elle restera dans l\'historique, marquée annulée.'))run(async()=>must(await sb.from('invoices').update({status:'annulee'}).eq('no',d.n)),'Facture annulée')},
  pcat:d=>{S.pcat=d.c;render()},
+ scat:d=>{S.sc=d.c;paintStock()},
+ addcat:()=>modal(head('Nouvelle catégorie')+`<form data-form="addcat"><label class="fld">Nom de la catégorie<input name="name" required maxlength="30" placeholder="Ex. Parfums" autofocus></label><div class="note">Une catégorie apparaît dès qu'elle contient un produit : on vous ouvre donc directement la fiche de son premier produit.</div><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Créer et ajouter un produit</button></div></form>`),
  sview:d=>{S.sv=d.v;paintStock()},
  schip:d=>{if(S.sv==='list')S.lf=d.k;else S.mf=d.k;paintStock()},
  addlist:d=>openAdd(+d.pid),
@@ -833,6 +856,9 @@ document.addEventListener('submit',async e=>{const f=e.target.closest('[data-for
   const {error}=await sb.auth.signInWithPassword({email:String(fd.get('email')).trim(),password:String(fd.get('pw'))});b.disabled=false;
   if(error){$('#lerr').textContent=/Invalid login/i.test(error.message)?'E-mail ou mot de passe incorrect.':/not confirmed/i.test(error.message)?"Cette adresse e-mail n'est pas encore confirmée.":errMsg(error);return}
   f.reset();await boot()}
+ if(k==='addcat'){const n=String(fd.get('name')).trim();if(!n)return;
+  const ex=allCats().find(c=>c.toLowerCase()===n.toLowerCase());if(ex){toast('La catégorie « '+ex+' » existe déjà');return}
+  closeModal();editProd(0,n);toast('Enregistrez le premier produit pour créer la catégorie « '+n+' »');return}
  if(k==='confirm'){const o=order(f.dataset.id);
   if(await run(async()=>must(await sb.rpc('confirm_order',{p_order:o.dbId,p_mode:fd.get('mode'),p_date:fd.get('date')})),'Commande confirmée et payée. Vous pouvez générer la facture.'))closeModal()}
  if(k==='adjust'){const o=order(f.dataset.id),q=o.items.map((_,i)=>Math.max(0,parseInt(fd.get('q'+i))||0)),empty=q.every(x=>x===0);
