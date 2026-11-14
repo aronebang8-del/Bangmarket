@@ -352,7 +352,7 @@ body{background:var(--bg)}
 .ct .ms{left:3px;color:#aaa}.ct.on .ms{color:var(--or)}.ct .md{right:3px;color:#c62828}
 .ct.add{border:2px dashed var(--line);cursor:pointer;color:var(--mut);font-size:12px;gap:2px;align-content:center}
 .mxs{overflow-x:auto}.mxs table{min-width:0}.mxs td input{width:78px;text-align:center}.mxs td small{display:block;font-size:11px;color:#b8741a}
-.rh{text-align:left;white-space:nowrap}
+.rh{text-align:left;white-space:nowrap}.cc .sub{font-size:12.5px;font-weight:700;color:var(--mut);margin:10px 0 4px}.stkrow{display:flex;flex-wrap:wrap;gap:8px}.stkrow label{display:flex;flex-direction:column;gap:3px;align-items:center}.stkrow small{font-size:12px;font-weight:700}.stkrow input{width:82px;text-align:center}.stkrow em{font-style:normal;font-size:11px;color:#b8741a}.pvc{display:flex;gap:12px;align-items:flex-start}.pvc .cover{position:relative;flex:0 0 120px;height:120px;border-radius:14px;overflow:hidden;background:var(--card);display:grid;place-items:center;color:var(--mut);font-size:12px;text-align:center}.pvc .cover img{width:100%;height:100%;object-fit:cover}.pvc .inf{flex:1;min-width:0}
 .ptabs{display:flex;gap:6px;margin:0 0 6px}.ptabs button{flex:1;min-height:42px;border-radius:99px;background:var(--card);font-weight:700}.ptabs button.on{background:var(--or);color:#fff}
 .pvk{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.pvk div{background:var(--card);border-radius:12px;padding:10px;text-align:center}.pvk b{display:block;font-size:20px}.pvk span{font-size:12px;color:var(--mut)}
 .vcs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.vc{background:var(--card);border-radius:10px;padding:6px 10px;font-size:13px}.vc.z{background:#fde0dd;color:#a3231a}.vc.w{background:#fff1cf}.vc em{font-style:normal;color:#b8741a;font-size:11px;margin-left:4px}
@@ -617,21 +617,31 @@ const CLR={Noir:'#2a2a2e',Beige:'#e6d8c8',Rose:'#f4a6bd',Marron:'#8a5a3b',Or:'#d
 const hexOf=c=>{if(CLR[c])return CLR[c];let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;return '#'+[0,1,2].map(k=>(70+((h>>(k*8))&0x7f)).toString(16).padStart(2,'0')).join('')};
 const SZ_CLOTH=['XS','S','M','L','XL','XXL'],SZ_SHOE=['36','37','38','39','40','41','42','43','44'];
 const sizeList=lbl=>{const id=CAT_ID[lbl];return ['hauts','tshirts','robes','foot'].includes(id)?SZ_CLOTH:id==='chaussures'?SZ_SHOE:[]};
-function edInit(){const v=ED.variants;ED.cols=[...new Set(v.map(x=>x.color.trim()).filter(Boolean))];ED.szs=[...new Set(v.map(x=>x.size.trim()).filter(Boolean))];ED.map={};v.forEach(x=>{ED.map[x.color.trim()+'|'+x.size.trim()]=x})}
+function edInit(){const v=ED.variants;ED.cols=[...new Set(v.map(x=>x.color.trim()).filter(Boolean))];ED.csz={};ED.map={};
+ ED.cols.forEach(c=>{ED.csz[c]=v.filter(x=>x.color.trim()===c).map(x=>x.size.trim()).filter(Boolean).sort((a,b)=>szRank(a)-szRank(b))});
+ v.forEach(x=>{ED.map[x.color.trim()+'|'+x.size.trim()]=x})}
 const cell=(c,z)=>ED.map[c+'|'+z]||(ED.map[c+'|'+z]={color:c,size:z,stock:0});
-function buildVars(){const cs=ED.cols.length?ED.cols:[''],zs=ED.szs.length?ED.szs:[''];ED.variants=[];cs.forEach(c=>zs.forEach(z=>ED.variants.push(cell(c,z))))}
+function buildVars(){ED.variants=[];(ED.cols.length?ED.cols:['']).forEach(c=>{const zs=(ED.csz[c]||[]);(zs.length?zs:['']).forEach(z=>ED.variants.push(cell(c,z)))})}
 const szRank=z=>{const i=[...SZ_CLOTH,...SZ_SHOE].indexOf(z);return i<0?99:i};
-function addSz(z){if(ED.szs.includes(z))return;if(!ED.szs.length)(ED.cols.length?ED.cols:['']).forEach(c=>{const o=ED.map[c+'|'];if(o){delete ED.map[c+'|'];o.size=z;ED.map[c+'|'+z]=o}});ED.szs.push(z);ED.szs.sort((a,b)=>szRank(a)-szRank(b))}
-const colStock=c=>ED.variants.filter(v=>v.color.trim()===c).reduce((a,v)=>a+(v.stock||0),0);
-function paintSizes(){const r=$('#szrow');if(!r||!ED)return;const sel=$('[data-form="prod"] [name=cat]'),all=[...new Set([...sizeList(sel?sel.value:''),...ED.szs])];
- r.innerHTML=`<div class="chipset">${all.map(z=>`<button type="button" class="chp ${ED.szs.includes(z)?'on':''}" data-act="tglsize" data-s="${esc(z)}">${esc(z)}</button>`).join('')}</div><div class="addrow"><input id="newsz" placeholder="Autre taille (ex. 3XL, 45)" maxlength="12"><button type="button" class="btn sm" data-act="addsz">Ajouter</button></div>`;paintMx()}
+function addSz(c,z){const l=ED.csz[c]||(ED.csz[c]=[]);if(l.includes(z))return;
+ if(!l.length){const o=ED.map[c+'|'];if(o){delete ED.map[c+'|'];o.size=z;ED.map[c+'|'+z]=o}}
+ l.push(z);l.sort((a,b)=>szRank(a)-szRank(b))}
+const colStock=c=>{const zs=ED.csz[c]||[];return (zs.length?zs:['']).reduce((a,z)=>a+cell(c,z).stock,0)};
+function paintSizes(){paintImgs()}
+function paintMx(){paintImgs()}
 let FID=0;
-function paintImgs(){const w=$('#clrs');if(!w||!ED)return;const L=ED.images;
+function paintImgs(){const w=$('#clrs');if(!w||!ED)return;const L=ED.images,sel=$('[data-form="prod"] [name=cat]'),sg=sizeList(sel?sel.value:'');
  const card=c=>{const im=L.filter(i=>(i.color||'')===c),id='f'+(++FID);
-  return `<div class="cc"><div class="cch">${c?`<i class="dot" style="background:${hexOf(c)}"></i><b>${esc(c)}</b><em>${colStock(c)} en stock</em><button type="button" class="x" data-act="rmcol" data-c="${esc(c)}" aria-label="Retirer la couleur">${ic('x')}</button>`:`<b>Photos générales</b><em>affichées pour les couleurs sans photo</em>`}</div>
-  <div class="cstrip">${im.map(i=>`<div class="ct ${i.main?'on':''}"><img src="${i.url}" alt=""><button type="button" class="ms" data-act="imgmain" data-k="${i.key}" title="Photo principale" aria-label="Photo principale">★</button><button type="button" class="md" data-act="imgdel" data-k="${i.key}" title="Supprimer" aria-label="Supprimer la photo">×</button></div>`).join('')}<label class="ct add" for="${id}">${ic('plus')}<span>Photo</span></label><input id="${id}" type="file" accept="image/*" multiple hidden data-imgcol="${esc(c)}"></div></div>`};
+  const strip=`<div class="cstrip">${im.map(i=>`<div class="ct ${i.main?'on':''}"><img src="${i.url}" alt=""><button type="button" class="ms" data-act="imgmain" data-k="${i.key}" title="Photo principale" aria-label="Photo principale">★</button><button type="button" class="md" data-act="imgdel" data-k="${i.key}" title="Supprimer" aria-label="Supprimer la photo">×</button></div>`).join('')}<label class="ct add" for="${id}">${ic('plus')}<span>Photo</span></label><input id="${id}" type="file" accept="image/*" multiple hidden data-imgcol="${esc(c)}"></div>`;
+  if(!c)return `<div class="cc"><div class="cch"><b>Photos générales</b><em>affichées pour les couleurs sans photo</em></div>${strip}</div>`;
+  const zs=ED.csz[c]||[],all=[...new Set([...sg,...zs])];
+  return `<div class="cc"><div class="cch"><i class="dot" style="background:${hexOf(c)}"></i><b>${esc(c)}</b><em data-ct="${esc(c)}">${colStock(c)} en stock</em><button type="button" class="x" data-act="rmcol" data-c="${esc(c)}" aria-label="Retirer la couleur">${ic('x')}</button></div>
+  <div class="sub">Photos</div>${strip}
+  <div class="sub">Tailles de cette couleur <small class="mut">(facultatif)</small></div><div class="chipset">${all.map(z=>`<button type="button" class="chp ${zs.includes(z)?'on':''}" data-act="tglsize" data-c="${esc(c)}" data-s="${esc(z)}">${esc(z)}</button>`).join('')}</div>
+  <div class="addrow"><input class="newsz" placeholder="Autre taille (ex. 3XL, 45)" maxlength="12"><button type="button" class="btn sm" data-act="addsz" data-c="${esc(c)}">Ajouter</button></div>
+  <div class="sub">Stock ${zs.length?'par taille':''}</div><div class="stkrow">${(zs.length?zs:['']).map(z=>{const v=cell(c,z);return `<label><small>${esc(z)||'Quantité'}</small><input type="number" min="0" data-mx data-c="${esc(c)}" data-z="${esc(z)}" value="${v.stock}">${v.reserved?`<em>${v.reserved} réservées</em>`:''}</label>`}).join('')}</div></div>`};
  const sug=['Noir','Blanc','Beige','Rose','Marron','Rouge','Bleu','Vert'].filter(c=>!ED.cols.some(x=>x.toLowerCase()===c.toLowerCase()));
- w.innerHTML=`<div class="addrow"><input id="newcol" placeholder="Ajouter une couleur (ex. Noir)" maxlength="30"><button type="button" class="btn sm" data-act="addcol">Ajouter</button></div>${sug.length?`<div class="qk">${sug.map(c=>`<button type="button" data-act="addcol" data-c="${c}">+ ${c}</button>`).join('')}</div>`:''}`+ED.cols.map(card).join('')+card('')+`<div class="note">★ = photo principale de la boutique. Sans photo pour une couleur, la boutique affiche la photo principale.</div>`}
+ w.innerHTML=`<div class="addrow"><input id="newcol" placeholder="Ajouter une couleur (ex. Noir)" maxlength="30"><button type="button" class="btn sm" data-act="addcol">Ajouter</button></div>${sug.length?`<div class="qk">${sug.map(c=>`<button type="button" data-act="addcol" data-c="${c}">+ ${c}</button>`).join('')}</div>`:''}`+ED.cols.map(card).join('')+card('')+`<div class="note">★ = photo principale de la boutique. Chaque couleur a ses propres tailles et son propre stock. Les pièces « réservées » viennent de commandes en attente.</div>`}
 async function shrink(file){const bmp=await createImageBitmap(file),k=Math.min(1,900/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
  c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
  let b=await new Promise(r=>c.toBlob(r,'image/webp',.82));if(!b||b.type!=='image/webp')b=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));return b}
@@ -656,7 +666,8 @@ function openProd(id){const p=prod(id);if(!p)return;
  const cols=[...new Set(p.variants.map(v=>v.color).filter(Boolean))],ims=c=>p.images.filter(i=>(i.color||'')===c);
  const tot=p.variants.reduce((a,v)=>a+v.stock,0),res=p.variants.reduce((a,v)=>a+(v.reserved||0),0);
  const strip=l=>l.length?`<div class="pvs">${l.map(i=>`<div class="ct ${i.main?'on':''}"><img src="${i.url}" alt="">${i.main?'<span style="position:absolute;left:4px;top:2px;color:var(--or)">★</span>':''}</div>`).join('')}</div>`:'<div class="mut" style="font-size:13px">Pas de photo</div>';
- const blk=c=>{const vs=p.variants.filter(v=>v.color===c);return `<div class="cc"><div class="cch">${c?`<i class="dot" style="background:${hexOf(c)}"></i><b>${esc(c)}</b><em>${vs.reduce((a,v)=>a+v.stock,0)} en stock</em>`:'<b>Photos générales</b>'}</div>${strip(ims(c))}${c?`<div class="vcs">${vs.map(v=>{const d=Math.max(0,v.stock-(v.reserved||0));return `<span class="vc ${d===0?'z':d<=3?'w':''}">${esc(v.size||'Unique')} · <b>${d}</b> dispo${v.reserved?`<em>${v.reserved} réservées</em>`:''}</span>`}).join('')}</div>`:''}</div>`};
+ const cover=c=>{const l=ims(c),m=l.find(i=>i.main)||l[0]||(c?null:null);const fb=!m?(p.images.find(i=>i.main)||p.images[0]):null,u=m?m.url:fb?fb.url:null;return u?`<div class="cover"><img src="${u}" alt="">${!m&&fb?'<span style="position:absolute;bottom:4px;font-size:10px;background:rgba(255,255,255,.8);padding:1px 6px;border-radius:8px">photo générale</span>':''}</div>`:`<div class="cover" style="position:relative">${photo(p)}</div>`};
+ const blk=c=>{const vs=p.variants.filter(v=>v.color===c);return `<div class="cc"><div class="pvc">${c?cover(c):''}<div class="inf"><div class="cch">${c?`<i class="dot" style="background:${hexOf(c)}"></i><b>${esc(c)}</b><em>${vs.reduce((a,v)=>a+v.stock,0)} en stock</em>`:'<b>Photos générales</b>'}</div>${c?`<div class="vcs">${vs.map(v=>{const d=Math.max(0,v.stock-(v.reserved||0));return `<span class="vc ${d===0?'z':d<=3?'w':''}">${esc(v.size||'Unique')} · <b>${d}</b> dispo${v.reserved?`<em>${v.reserved} réservées</em>`:''}</span>`}).join('')}</div>`:''}</div></div>${ims(c).length>1||!c?`<div style="margin-top:8px">${strip(ims(c))}</div>`:''}</div>`};
  modal(head(esc(p.name))+ptabs(id,'v')+`<div class="mut" style="margin:4px 0">${esc(p.cat)} · ${fmt(p.price)} · MOQ ${p.moq} · ${p.visible?'Visible':'Masqué'} sur la boutique</div>
  <div class="pvk"><div><b>${tot.toLocaleString('fr-FR')}</b><span>En stock</span></div><div><b>${res.toLocaleString('fr-FR')}</b><span>Réservées</span></div><div><b>${Math.max(0,tot-res).toLocaleString('fr-FR')}</b><span>Disponibles</span></div></div>
  ${cols.map(blk).join('')}${ims('').length?blk(''):''}${!p.images.length?`<div class="note">Aucune photo envoyée : la boutique affiche son illustration actuelle.</div>`:''}
@@ -671,14 +682,9 @@ function editProd(id){
  <div class="grid2" style="margin-top:10px"><label class="fld">Catégorie<select name="cat">${copts}</select></label><label class="fld" id="subw" ${so?'':'hidden'}>Rayon<select name="sub">${so}</select></label>
  <label class="fld">Prix unitaire ($)<input name="price" type="number" min="0" step="0.01" value="${ED.price}" required></label><label class="fld">Quantité minimale (MOQ)<input name="moq" type="number" min="1" step="1" value="${ED.moq}" required></label></div>
  <label class="chk" style="margin-top:10px"><input type="checkbox" name="visible" ${ED.visible?'checked':''}>Visible sur la boutique</label></section>
- <section class="fs"><h3><span>2</span>Couleurs et photos</h3><div id="clrs"></div></section>
- <section class="fs"><h3><span>3</span>Tailles <small class="mut">(facultatif)</small></h3><div id="szrow"></div></section>
- <section class="fs"><h3><span>4</span>Stock par couleur et taille</h3><div class="hint">Quantité physique en rayon. Les pièces réservées par des commandes en attente sont déduites automatiquement pour les clients.</div><div id="mx"></div></section>
+ <section class="fs"><h3><span>2</span>Couleurs, photos, tailles et stock</h3><div id="clrs"></div></section>
  <div class="ft">${id?'<button type="button" class="btn dng dl" data-act="delprod">Supprimer</button>':''}<button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
  paintImgs();paintSizes()}
-function paintMx(){const w=$('#mx');if(!w||!ED)return;buildVars();const cs=ED.cols.length?ED.cols:[''],zs=ED.szs.length?ED.szs:[''];
- w.innerHTML=`<div class="mxs"><table><thead><tr><th></th>${zs.map(z=>`<th>${esc(z)||'Quantité'}</th>`).join('')}<th class="r">Total</th></tr></thead><tbody>${cs.map(c=>`<tr><th class="rh">${c?`<i class="dot" style="background:${hexOf(c)}"></i>${esc(c)}`:'Stock'}</th>${zs.map(z=>{const v=cell(c,z);return `<td><input type="number" min="0" data-mx data-c="${esc(c)}" data-z="${esc(z)}" value="${v.stock}" aria-label="Stock ${esc(c)} ${esc(z)}">${v.reserved?`<small>${v.reserved} réservées</small>`:''}</td>`}).join('')}<td class="r"><b data-ct="${esc(c)}">${zs.reduce((a,z)=>a+cell(c,z).stock,0)}</b></td></tr>`).join('')}</tbody></table></div>`}
-
 /* ============ Stock : liste, entrées, historique ============ */
 VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div>
  <div class="kpis k3" id="skpi"></div>
@@ -779,14 +785,15 @@ const A={
  addcol:d=>{const inp=$('#newcol'),c=String(d.c!==undefined?d.c:(inp?inp.value:'')).trim();
   if(!c)return toast('Écrivez le nom de la couleur');
   if(ED.cols.some(x=>x.toLowerCase()===c.toLowerCase()))return toast('Cette couleur existe déjà');
-  if(!ED.cols.length)(ED.szs.length?ED.szs:['']).forEach(z=>{const o=ED.map['|'+z];if(o){delete ED.map['|'+z];o.color=c;ED.map[c+'|'+z]=o}});
-  ED.cols.push(c);paintImgs();paintMx();const n=$('#newcol');if(n)n.focus()},
+  if(!ED.cols.length){const o=ED.map['|'];if(o){delete ED.map['|'];o.color=c;ED.map[c+'|']=o}}
+  ED.cols.push(c);ED.csz[c]=ED.csz[c]||[];paintImgs();paintMx();const n=$('#newcol');if(n)n.focus()},
  rmcol:d=>{const c=d.c,n=colStock(c);if(n>0&&!confirm(`Retirer « ${c} » ? Son stock (${n} pièces) sera supprimé à l'enregistrement.`))return;
   ED.cols=ED.cols.filter(x=>x!==c);ED.images.forEach(i=>{if(i.color===c)i.color=''});paintImgs();paintMx()},
- tglsize:d=>{const z=d.s;
-  if(ED.szs.includes(z)){const n=ED.variants.filter(v=>v.size.trim()===z).reduce((a,v)=>a+(v.stock||0),0);if(n>0&&!confirm(`Retirer la taille ${z} ? Son stock (${n} pièces) sera supprimé à l'enregistrement.`))return;ED.szs=ED.szs.filter(x=>x!==z)}else addSz(z);
-  paintSizes()},
- addsz:()=>{const i=$('#newsz'),z=i?i.value.trim():'';if(!z)return toast('Écrivez la taille');addSz(z);paintSizes()},
+tglsize:d=>{const c=d.c,z=d.s,zs=ED.csz[c]||(ED.csz[c]=[]);
+  if(zs.includes(z)){const n=cell(c,z).stock;if(n>0&&!confirm(`Retirer la taille ${z} de ${c} ? Son stock (${n} pièces) sera supprimé à l'enregistrement.`))return;ED.csz[c]=zs.filter(x=>x!==z)}else addSz(c,z);
+  paintImgs()},
+  addsz:(d,el)=>{const i=el.closest('.cc').querySelector('.newsz'),z=i?i.value.trim():'';if(!z)return toast('Écrivez la taille');addSz(d.c,z);paintImgs()},
+
  addvar:()=>{ED.variants.push({color:'',size:'',stock:0});paintVars()},
  addsize:d=>{const l=d.s==='*'?sizeList($('[data-form="prod"] [name=cat]').value):[d.s],colors=[...new Set(ED.variants.map(v=>v.color))];if(!colors.length)colors.push('');
   l.forEach(sz=>colors.forEach(c=>{if(ED.variants.some(v=>v.color===c&&v.size===sz))return;
@@ -808,7 +815,7 @@ document.addEventListener('input',e=>{const t=e.target;
  else if(t.id==='pq'){S.pq=t.value;paintProducts()}
  else if(t.id==='iq'){S.iq=t.value;paintInvoices()}
  else if(t.id==='mq'){S.mq=t.value;paintStock()}
- else if(t.hasAttribute('data-mx')&&ED){const v=cell(t.dataset.c,t.dataset.z);v.stock=Math.max(0,parseInt(t.value)||0);const b=[...document.querySelectorAll('[data-ct]')].find(x=>x.dataset.ct===t.dataset.c);if(b)b.textContent=(ED.szs.length?ED.szs:['']).reduce((a,z)=>a+cell(t.dataset.c,z).stock,0)}
+ else if(t.hasAttribute('data-mx')&&ED){const v=cell(t.dataset.c,t.dataset.z);v.stock=Math.max(0,parseInt(t.value)||0);const b=[...document.querySelectorAll('[data-ct]')].find(x=>x.dataset.ct===t.dataset.c);if(b)b.textContent=colStock(t.dataset.c)+' en stock'}
  else if(t.dataset.in&&ED){const v=ED.variants[+t.dataset.k];if(t.dataset.in==='vc')v.color=t.value;if(t.dataset.in==='vs')v.size=t.value;if(t.dataset.in==='vq')v.stock=Math.max(0,parseInt(t.value)||0)}
  else if(t.closest('[data-form="adjust"]')){const s=$$('[data-form="adjust"] input[data-price]').reduce((a,i)=>a+(+i.value||0)*+i.dataset.price,0);$('#adjtot').textContent=fmt(s)}});
 document.addEventListener('change',e=>{const t=e.target;
@@ -819,7 +826,7 @@ document.addEventListener('change',e=>{const t=e.target;
  if(t.name==='cat'&&t.closest('[data-form="prod"]'))paintSizes();
  if(t.id==='ap')$('#newp').hidden=t.value!=='new';
  if(t.name==='cat'&&t.closest('[data-form="prod"]')){const w=$('#subw'),o=subOpts(t.value,'');w.hidden=!o;w.querySelector('select').innerHTML=o}});
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='newcol'||e.target.id==='newsz')){e.preventDefault();e.target.nextElementSibling.click();return}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='newcol'||(e.target.classList&&e.target.classList.contains('newsz')))){e.preventDefault();e.target.nextElementSibling.click();return}
  if(e.key==='Enter'&&e.target.closest&&e.target.closest('.va')){e.preventDefault();e.target.closest('.va').querySelector('[data-act=qadd]').click()}});
 document.addEventListener('submit',async e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();const k=f.dataset.form,fd=new FormData(f);
  if(k==='login'){const b=f.querySelector('button');b.disabled=true;$('#lerr').textContent='';
