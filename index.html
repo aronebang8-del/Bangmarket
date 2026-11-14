@@ -1004,30 +1004,61 @@ const SB_URL='https://fmbgxwqhxarpfnwxemxe.supabase.co',SB_KEY='sb_publishable_A
 let sb=null;try{sb=window.supabase.createClient(SB_URL,SB_KEY)}catch(e){}
 window.LIVE=false;
 const GEN_T={sacs:'tote',montres:'watch',chaussures:'sandal',beaute:'gloss',cheveux:'scrunch',hauts:'crop',tshirts:'tee',robes:'dress',foot:'jersey',gourdes:'bottle',accessoires:'glasses'};
+const REG=new Map(P.map(p=>[p.n,p]));let NEXTID=Math.max(0,...P.map(p=>p.id))+1;
+const knownCat=id=>CATS.some(c=>c.id===id);
+const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+(v.stock||0),0);
+const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(','):'';
+let syncing=false,again=false,lastSig='';
 async function syncCatalog(){
  if(!sb)return;
+ if(syncing){again=true;return}
+ syncing=true;
  try{
   const {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id');
   if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
-  const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+(v.stock||0),0);
-  const known=id=>CATS.some(c=>c.id===id);
-  const by=new Map(data.map(r=>[r.name,r])),keep=[];let nextId=Math.max(0,...P.map(p=>p.id))+1;
-  for(const p of P){const r=by.get(p.n);if(!r)continue;by.delete(p.n);
-   p.dbId=r.id;p.net=+r.price;p.moq=r.moq;p.p=D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
-   if(known(r.category)){p.c=r.category;p.sc=r.subcategory||p.sc}
-   ST[p.id]=stockOf(r);keep.push(p)}
-  for(const r of by.values()){ /* produits ajoutés depuis l'espace admin */
-   const cat=known(r.category)?r.category:'accessoires',vs=r.variants||[];
-   const cols=[...new Set(vs.map(v=>v.color).filter(Boolean))],zs=[...new Set(vs.map(v=>v.size).filter(Boolean))];
-   if(!cols.length)cols.push('Standard');
-   cols.forEach(c=>{if(!COLORS[c])COLORS[c]='#9b9ba3'});
-   const p={id:nextId++,dbId:r.id,c:cat,sc:r.subcategory||'',t:GEN_T[cat]||'glasses',n:r.name,p:+r.price,net:+r.price,moq:r.moq,cols,col:COLORS[cols[0]],sizes:zs.length?zs:undefined,sl:zs.length?'Size':undefined,rate:'4.8',rev:0,d:DESC[cat]};
-   ST[p.id]=stockOf(r);keep.push(p)}
-  keep.sort((a,b)=>a.id-b.id);P.splice(0,P.length,...keep);
-  window.LIVE=true;st.cur=P.find(p=>p.id===st.cur.id)||P[0];
-  render();drawDetail();
+  const first=!window.LIVE,sig=JSON.stringify(data);
+  if(!first&&sig===lastSig)return;
+  lastSig=sig;
+  const curBefore=sigOf(st.cur),totBefore=st.cart.length?ckTotal():0,keep=[];
+  for(const r of data){
+   let p=REG.get(r.name);
+   const vs=r.variants||[],cat=knownCat(r.category)?r.category:'accessoires';
+   if(!p){p={id:NEXTID++,dyn:true,t:GEN_T[cat]||'glasses',n:r.name,rate:'4.8',rev:0};REG.set(r.name,p)}
+   p.dbId=r.id;p.net=+r.price;p.moq=r.moq;p.c=cat;p.sc=r.subcategory||'';
+   if(p.dyn){
+    const cols=[...new Set(vs.map(v=>v.color).filter(Boolean))],zs=[...new Set(vs.map(v=>v.size).filter(Boolean))];
+    if(!cols.length)cols.push('Standard');
+    cols.forEach(c=>{if(!COLORS[c])COLORS[c]='#9b9ba3'});
+    p.cols=cols;p.col=COLORS[cols[0]];p.sizes=zs.length?zs:undefined;p.sl=zs.length?'Size':undefined;p.d=DESC[cat];p.t=GEN_T[cat]||'glasses';p.p=p.net;
+   }else p.p=D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
+   ST[p.id]=stockOf(r);keep.push(p);
+  }
+  keep.sort((x,y)=>x.id-y.id);
+  P.splice(0,P.length,...keep);
+  window.LIVE=true;
+  if(first){st.cur=P.find(p=>p.id===st.cur.id)||P[0];render();drawDetail();return}
+  /* Mise à jour en direct, sans recharger la page ni perdre ce que le client est en train de faire */
+  const ids=new Set(keep.map(p=>p.id)),n0=st.cart.length;
+  st.cart=st.cart.filter(x=>ids.has(x.id));
+  const det=$('#det'),open=det&&det.classList.contains('open');
+  if(!P.find(p=>p.id===st.cur.id)){st.cur=P[0];if(open)det.classList.remove('open')}
+  renderTabs();
+  if(st.view==='home'&&$('#grid'))refreshGrid();
+  else if(st.view==='offers')renderOffers();
+  if(open&&det.classList.contains('open')&&sigOf(st.cur)!==curBefore)drawDetail();
+  if(n0!==st.cart.length)toast('Un produit de ton panier n’est plus disponible');
+  if(st.view==='cart'&&!st.done){
+   if(st.chk&&st.cart.length){if(ckTotal()!==totBefore){toast('Les prix ont été mis à jour');renderCheckout()}}
+   else renderCart();
+  }
  }catch(e){}
+ finally{syncing=false;if(again){again=false;setTimeout(syncCatalog,300)}}
 }
+/* Temps réel : dès que l'admin enregistre, la boutique se met à jour. Relecture de secours toutes les 45 s. */
+let _lt=null;const later=()=>{clearTimeout(_lt);_lt=setTimeout(syncCatalog,800)};
+try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).subscribe()}catch(e){}
+setInterval(()=>{if(!document.hidden)syncCatalog()},45000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCatalog()});
 syncCatalog();
 render();drawDetail();
 </script>
