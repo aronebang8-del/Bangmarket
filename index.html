@@ -560,7 +560,8 @@ R("rose","Robe Bustier Nœuds & Dentelle",3.5,["Rose", "Blanc", "Ciel"],143,"Rob
 R("papillons","Robe Papillons Bretelles Nouées",2.5,["Blanc", "Rose", "Ciel"],102,"Robe évasée à bretelles à nouer, buste ruché et imprimé papillons. Légère et fraîche pour l’été. Existe en blanc, rose et ciel."))}
 P.forEach((p,i)=>p.id=i+1);
 function lum(h){const n=parseInt(h.slice(1),16);return(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255}
-function g(t,c){if(t.startsWith('pimg:'))return pimg(t,c);if(t.startsWith('wimg'))return wimg(c,0,t);const d='#0003',w='#fff7',ink=lum(c)>.72?'#2a2a2e':'#fff';const S={
+function uplImg(p,n){const L=p.imgs||[],by=L.filter(i=>i.color===n),k=by.find(i=>i.main)||by[0]||L.find(i=>i.main)||L[0];return k?k.url:null}
+function g(t,c){if(t.startsWith('upl:')){const p=P.find(x=>x.id===+t.slice(4)),u=p&&uplImg(p,HEXN[c]);return u?`<img class="pi" alt="" draggable="false" src="${u}">`:g((p&&p.t0)||'tote',c)}if(t.startsWith('pimg:'))return pimg(t,c);if(t.startsWith('wimg'))return wimg(c,0,t);const d='#0003',w='#fff7',ink=lum(c)>.72?'#2a2a2e':'#fff';const S={
 tote:`<path d="M20 24c0-15 20-15 20 0" fill="none" stroke="${c}" stroke-width="3.2" stroke-linecap="round"/><path d="M11 23h38l-3.500 32h-31z" fill="${c}"/><path d="M11 23h38l-.5 6H11.500z" fill="${d}"/>`,
 pack:`<path d="M23 12c0-6 14-6 14 0" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/><rect x="13" y="11" width="34" height="44" rx="13" fill="${c}"/><rect x="19" y="35" width="22" height="15" rx="5" fill="${d}"/><path d="M19 29h22" stroke="${w}" stroke-width="2" stroke-linecap="round"/>`,
 clutch:`<rect x="7" y="20" width="46" height="26" rx="7" fill="${c}"/><path d="M7 29h46" stroke="${d}" stroke-width="2"/><circle cx="30" cy="35" r="3.200" fill="#ffd24a"/><path d="M12 20c2-8 34-8 36 0" fill="none" stroke="#ffd24a" stroke-width="1.600"/>`,
@@ -1006,15 +1007,17 @@ window.LIVE=false;
 const GEN_T={sacs:'tote',montres:'watch',chaussures:'sandal',beaute:'gloss',cheveux:'scrunch',hauts:'crop',tshirts:'tee',robes:'dress',foot:'jersey',gourdes:'bottle',accessoires:'glasses'};
 const REG=new Map(P.map(p=>[p.n,p]));let NEXTID=Math.max(0,...P.map(p=>p.id))+1;
 const knownCat=id=>CATS.some(c=>c.id===id);
+const hexFor=c=>{if(COLORS[c])return COLORS[c];let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;const hx='#'+[0,1,2].map(k=>(70+((h>>(k*8))&0x7f)).toString(16).padStart(2,'0')).join('');COLORS[c]=hx;HEXN[hx]=c;return hx};
 const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+(v.stock||0),0);
-const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(','):'';
+const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(',')+'|'+(p.imgs||[]).map(i=>i.url+i.color+i.main).join(','):'';
 let syncing=false,again=false,lastSig='';
 async function syncCatalog(){
  if(!sb)return;
  if(syncing){again=true;return}
  syncing=true;
  try{
-  const {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id');
+  let {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock),product_images(color,path,is_main)').order('id');
+  if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id'));
   if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
   const first=!window.LIVE,sig=JSON.stringify(data);
   if(!first&&sig===lastSig)return;
@@ -1028,9 +1031,13 @@ async function syncCatalog(){
    if(p.dyn){
     const cols=[...new Set(vs.map(v=>v.color).filter(Boolean))],zs=[...new Set(vs.map(v=>v.size).filter(Boolean))];
     if(!cols.length)cols.push('Standard');
-    cols.forEach(c=>{if(!COLORS[c])COLORS[c]='#9b9ba3'});
-    p.cols=cols;p.col=COLORS[cols[0]];p.sizes=zs.length?zs:undefined;p.sl=zs.length?'Size':undefined;p.d=DESC[cat];p.t=GEN_T[cat]||'glasses';p.p=p.net;
+    cols.forEach(hexFor);
+    p.cols=cols;p.sizes=zs.length?zs:undefined;p.sl=zs.length?'Size':undefined;p.d=DESC[cat];p.t=GEN_T[cat]||'glasses';p.p=p.net;
    }else p.p=D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
+   if(p.t0===undefined)p.t0=p.t;
+   p.imgs=(r.product_images||[]).map(i=>({color:i.color||'',main:!!i.is_main,url:SB_URL+'/storage/v1/object/public/product-images/'+i.path})).sort((a,b)=>b.main-a.main);
+   const mc=p.imgs[0]&&p.imgs[0].main&&p.imgs[0].color&&p.cols.includes(p.imgs[0].color)?p.imgs[0].color:p.cols[0];
+   p.col=COLORS[mc];p.t=p.imgs.length?'upl:'+p.id:p.t0;
    ST[p.id]=stockOf(r);keep.push(p);
   }
   keep.sort((x,y)=>x.id-y.id);
@@ -1056,7 +1063,7 @@ async function syncCatalog(){
 }
 /* Temps réel : dès que l'admin enregistre, la boutique se met à jour. Relecture de secours toutes les 45 s. */
 let _lt=null;const later=()=>{clearTimeout(_lt);_lt=setTimeout(syncCatalog,800)};
-try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).subscribe()}catch(e){}
+try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).on('postgres_changes',{event:'*',schema:'public',table:'product_images'},later).subscribe()}catch(e){}
 setInterval(()=>{if(!document.hidden)syncCatalog()},45000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCatalog()});
 syncCatalog();
