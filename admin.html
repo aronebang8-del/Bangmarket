@@ -395,6 +395,8 @@ body{background:var(--bg)}
 .lbs img{max-width:100%;max-height:calc(100vh - 150px);object-fit:contain;border-radius:8px;cursor:zoom-in;background:#222}
 .lbs.z{place-items:start center}.lbs.z img{max-width:none;max-height:none;width:210%;cursor:zoom-out}
 .lbf{display:flex;gap:10px;justify-content:center;padding:12px 16px calc(14px + env(safe-area-inset-bottom))}.lbf button,.lbf a{min-height:46px;padding:0 20px;border-radius:99px;background:rgba(255,255,255,.14);color:#fff;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
+.ncm{display:flex;gap:12px;align-items:center}.ncm small{font-weight:400;color:var(--mut)}.ncp{flex:none;width:76px;height:76px;border-radius:16px;border:2px dashed #cdbfb3;display:grid;place-items:center;overflow:hidden;cursor:pointer;background:#fff;text-align:center;font-weight:600;color:#8a7a6e}.ncp img{width:100%;height:100%;object-fit:cover}.ncp span{display:grid;font-size:20px;line-height:1}.ncp small{font-size:10.5px;font-weight:600}.ncp.sm{width:52px;height:52px;border-radius:12px}.ncp.sm small{display:none}
+.ncl{display:grid;gap:8px;margin-bottom:6px}.ncr{display:flex;gap:8px;align-items:center}.ncr input[data-ncn]{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -481,6 +483,9 @@ const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMont
 async function loadAll(){
  const [pr,va,or,oi,iv,pu,ex]=await Promise.all(['products','variants','orders','order_items','invoices','purchases','expenses'].map(fetchAll));
  const mv=must(await sb.from('stock_moves').select('*').order('id',{ascending:false}).limit(500));
+ try{const [ca,sa]=await Promise.all([sb.from('categories').select('*').order('position').order('created_at'),sb.from('subcategories').select('*').order('id')]);
+  S.catRows=ca.error?[]:ca.data;S.subRows=sa.error?[]:sa.data;
+  if(!ca.error&&ca.data)ca.data.forEach(c=>{CATS[c.name]=hexOf(c.name);CAT_ID[c.name]=c.id;CAT_LBL[c.id]=c.name;SUBS[c.id]=(sa.data||[]).filter(s=>s.category===c.id).map(s=>[s.slug,s.name])})}catch(e){}
  S.products=pr.map(p=>({id:p.id,name:p.name,catId:p.category,cat:CAT_LBL[p.category]||p.category,sub:p.subcategory||'',price:+p.price,bulk:p.bulk_price==null?0:+p.bulk_price,moq:p.moq,visible:p.visible,variants:[],images:[]}));
  const byP=new Map(S.products.map(p=>[p.id,p]));
  va.forEach(v=>{const p=byP.get(v.product_id);if(p)p.variants.push({id:v.id,color:v.color,size:v.size,stock:v.stock,reserved:v.reserved||0})});
@@ -710,9 +715,16 @@ function paintImgs(){const w=$('#clrs');if(!w||!ED)return;const L=ED.images,sel=
   <div class="sub">Stock ${zs.length?'par taille':''}</div><div class="stkrow">${(zs.length?zs:['']).map(z=>{const v=cell(c,z);return `<label><small>${esc(z)||'Quantité'}</small><input type="number" min="0" data-mx data-c="${esc(c)}" data-z="${esc(z)}" value="${v.stock}">${v.reserved?`<em>${v.reserved} réservées</em>`:''}</label>`}).join('')}</div></div>`};
  const sug=['Noir','Blanc','Beige','Rose','Marron','Rouge','Bleu','Vert'].filter(c=>!ED.cols.some(x=>x.toLowerCase()===c.toLowerCase()));
  w.innerHTML=`<div class="addrow"><input id="newcol" placeholder="Ajouter une couleur (ex. Noir)" maxlength="30"><button type="button" class="btn sm" data-act="addcol">Ajouter</button></div>${sug.length?`<div class="qk">${sug.map(c=>`<button type="button" data-act="addcol" data-c="${c}">+ ${c}</button>`).join('')}</div>`:''}`+ED.cols.map(card).join('')+card('')+`<div class="note">★ = photo principale de la boutique. Chaque couleur a ses propres tailles et son propre stock. Les pièces « réservées » viennent de commandes en attente.</div>`}
-async function shrink(file){const bmp=await createImageBitmap(file),k=Math.min(1,900/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');
- c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
- let b=await new Promise(r=>c.toBlob(r,'image/webp',.82));if(!b||b.type!=='image/webp')b=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));return b}
+let NC=null;
+function ncPaint(){const b=$('#ncbody');if(!b||!NC)return;const th=p=>p?`<img src="${p.url}" alt="">`:'<span>＋<small>Photo</small></span>';
+ b.innerHTML=`<div class="fld">Photo de la catégorie<div class="ncm"><label class="ncp" for="ncmain">${th(NC.photo)}</label><input id="ncmain" type="file" accept="image/*" hidden data-ncf="main"><small>Image carrée recommandée. Elle apparaît à la place de l'icône sur la boutique.</small></div></div><div class="fld">Rayons (sous-catégories)<div class="ncl">${NC.subs.map((s,i)=>`<div class="ncr"><label class="ncp sm" for="ncf${i}">${th(s.photo)}</label><input id="ncf${i}" type="file" accept="image/*" hidden data-ncf="${i}"><input data-ncn="${i}" value="${esc(s.name)}" placeholder="Nom du rayon" maxlength="30"><button type="button" class="btn sm" data-act="ncdel" data-i="${i}" aria-label="Retirer">✕</button></div>`).join('')}</div><button type="button" class="btn sm" data-act="ncadd">＋ Ajouter un rayon</button></div>`}
+async function ncPhoto(k,f){if(!f||!/^image\//.test(f.type)||!NC)return;try{const blob=await shrinkTo(f,320,18,.75),p={blob,url:URL.createObjectURL(blob)};k==='main'?NC.photo=p:(NC.subs[+k].photo=p);ncPaint()}catch(e){toast('Image illisible')}}
+async function shrinkTo(file,dim,kb,q0){const bmp=await createImageBitmap(file);let d=dim,q=q0,b=null;
+ for(let t=0;t<9;t++){const k=Math.min(1,d/Math.max(bmp.width,bmp.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(bmp.width*k));c.height=Math.max(1,Math.round(bmp.height*k));c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  b=await new Promise(r=>c.toBlob(r,'image/webp',q));if(!b||b.type!=='image/webp')b=await new Promise(r=>c.toBlob(r,'image/jpeg',q));
+  if(!b||b.size<=kb*1024)break;if(q>.42)q=Math.max(.4,q-.1);else d=Math.round(d*.82)}
+ try{bmp.close()}catch(e){}return b}
+const shrink=f=>shrinkTo(f,640,40,.72);
 async function addImages(files,color){let n=0;
  for(const f of files){if(!/^image\//.test(f.type))continue;
   try{const blob=await shrink(f);ED.images.push({key:'n'+(++IMGN),blob,url:URL.createObjectURL(blob),color:color||'',main:!ED.images.length});n++}catch(e){toast('Image illisible : '+f.name)}}
@@ -754,7 +766,7 @@ function editProd(id,newCat){
  <div class="ft">${id?'<button type="button" class="btn dng dl" data-act="delprod">Supprimer</button>':''}<button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
  paintImgs();paintSizes()}
 /* ============ Stock : liste, entrées, historique ============ */
-VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="addcat">${ic('plus')}Catégorie</button><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div></div>
+VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="addcat">${ic('plus')}Catégorie</button><button class="btn" data-act="catmgr">Gérer les catégories</button><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div></div>
  <div class="kpis k3" id="skpi"></div>
  <div class="seg pg" id="sseg"></div>
  <div class="chips" id="cchips"></div>
@@ -910,7 +922,18 @@ const A={
  cancelinv:d=>{if(confirm('Annuler la facture '+d.n+' ? Elle restera dans l\'historique, marquée annulée.'))run(async()=>must(await sb.from('invoices').update({status:'annulee'}).eq('no',d.n)),'Facture annulée')},
  pcat:d=>{S.pcat=d.c;render()},
  scat:d=>{S.sc=d.c;paintStock()},
- addcat:()=>modal(head('Nouvelle catégorie')+`<form data-form="addcat"><label class="fld">Nom de la catégorie<input name="name" required maxlength="30" placeholder="Ex. Parfums" autofocus></label><div class="note">Une catégorie apparaît dès qu'elle contient un produit : on vous ouvre donc directement la fiche de son premier produit.</div><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Créer et ajouter un produit</button></div></form>`),
+ catmgr:()=>{const rows=S.catRows||[];modal(head('Mes catégories')+(rows.length?rows.map(c=>{const n=S.products.filter(p=>p.catId===c.id).length,rs=(S.subRows||[]).filter(s=>s.category===c.id).length;return `<div class="card" style="display:flex;gap:12px;align-items:center;margin-bottom:8px"><div class="ncp sm" style="border-style:solid">${c.photo?`<img src="${imgUrl(c.photo)}" alt="">`:'<span>•</span>'}</div><div style="flex:1;min-width:0"><b>${esc(c.name)}</b><div class="mut" style="font-size:13px">${n} produit${n>1?'s':''} · ${rs} rayon${rs>1?'s':''}</div></div><button class="btn sm" data-act="editcat" data-id="${esc(c.id)}">Modifier</button><button class="btn sm dng" data-act="delcat" data-id="${esc(c.id)}">Supprimer</button></div>`}).join(''):'<div class="note">Aucune catégorie personnalisée pour l\'instant. Les catégories de départ (Sacs, Montres…) ne se modifient pas ici.</div>')+'<div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn pri" data-act="addcat">Nouvelle catégorie</button></div>')},
+ editcat:d=>{const c=(S.catRows||[]).find(x=>x.id===d.id);if(!c)return;
+  NC={id:c.id,name:c.name,photo:c.photo?{url:imgUrl(c.photo),path:c.photo}:null,subs:(S.subRows||[]).filter(s=>s.category===c.id).map(s=>({id:s.id,slug:s.slug,name:s.name,photo:s.photo?{url:imgUrl(s.photo),path:s.photo}:null})),gone:[]};
+  modal(head('Modifier la catégorie')+`<form data-form="addcat"><label class="fld">Nom de la catégorie<input name="name" required maxlength="30" value="${esc(c.name)}"></label><div id="ncbody"></div><div class="note">Les produits déjà dans cette catégorie y restent.</div><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`);ncPaint()},
+ delcat:async d=>{const c=(S.catRows||[]).find(x=>x.id===d.id);if(!c)return;const n=S.products.filter(p=>p.catId===c.id).length;
+  if(n)return toast('« '+c.name+' » contient '+n+' produit'+(n>1?'s':'')+' : déplacez-les ou supprimez-les d\'abord');
+  if(!confirm('Supprimer la catégorie « '+c.name+' » et ses rayons ?'))return;
+  const paths=[c.photo,...(S.subRows||[]).filter(s=>s.category===c.id).map(s=>s.photo)].filter(Boolean);
+  if(await run(async()=>{must(await sb.from('categories').delete().eq('id',c.id));try{paths.length&&await sb.storage.from(BUCKET).remove(paths)}catch(e){}},'Catégorie supprimée')){closeModal()}},
+ addcat:()=>{NC={id:null,photo:null,subs:[],gone:[]};modal(head('Nouvelle catégorie')+`<form data-form="addcat"><label class="fld">Nom de la catégorie<input name="name" required maxlength="30" placeholder="Ex. Parfums" autofocus></label><div id="ncbody"></div><div class="note">Les photos sont réduites automatiquement (quelques Ko). La catégorie et ses rayons apparaissent sur la boutique dès qu'un produit y est ajouté.</div><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Créer la catégorie</button></div></form>`);ncPaint()},
+ ncadd:()=>{NC.subs.push({name:'',photo:null});ncPaint();const l=$$('[data-ncn]');l.length&&l[l.length-1].focus()},
+ ncdel:d=>{const s=NC.subs.splice(+d.i,1)[0];if(s&&s.id)NC.gone.push(s);ncPaint()},
  sview:d=>{S.sv=d.v;paintStock()},
  schip:d=>{if(S.sv==='list')S.lf=d.k;else S.mf=d.k;paintStock()},
  addlist:d=>openAdd(+d.pid),
@@ -958,9 +981,11 @@ document.addEventListener('input',e=>{const t=e.target;
  else if(t.id==='iq'){S.iq=t.value;paintInvoices()}
  else if(t.id==='mq'){S.mq=t.value;paintStock()}
  else if(t.hasAttribute('data-mx')&&ED){const v=cell(t.dataset.c,t.dataset.z);v.stock=Math.max(0,parseInt(t.value)||0);const b=[...document.querySelectorAll('[data-ct]')].find(x=>x.dataset.ct===t.dataset.c);if(b)b.textContent=colStock(t.dataset.c)+' en stock'}
+ else if(t.dataset.ncn!==undefined&&NC){NC.subs[+t.dataset.ncn].name=t.value}
  else if(t.dataset.in&&ED){const v=ED.variants[+t.dataset.k];if(t.dataset.in==='vc')v.color=t.value;if(t.dataset.in==='vs')v.size=t.value;if(t.dataset.in==='vq')v.stock=Math.max(0,parseInt(t.value)||0)}
  else if(t.closest('[data-form="adjust"]')){const s=$$('[data-form="adjust"] input[data-price]').reduce((a,i)=>a+(+i.value||0)*+i.dataset.price,0);$('#adjtot').textContent=fmt(s)}});
 document.addEventListener('change',e=>{const t=e.target;
+ if(t.dataset.ncf!==undefined&&NC){ncPhoto(t.dataset.ncf,t.files[0]);t.value=''}
  if(t.dataset.imgcol!==undefined&&ED){addImages([...t.files],t.dataset.imgcol);t.value=''}
  if(t.id==='imgf'&&ED){addImages([...t.files]);t.value=''}
  if(t.dataset.imgc&&ED){const i=ED.images.find(x=>x.key===t.dataset.imgc);if(i){i.color=t.value;paintImgs()}}
@@ -975,9 +1000,23 @@ document.addEventListener('submit',async e=>{const f=e.target.closest('[data-for
   const {error}=await sb.auth.signInWithPassword({email:String(fd.get('email')).trim(),password:String(fd.get('pw'))});b.disabled=false;
   if(error){$('#lerr').textContent=/Invalid login/i.test(error.message)?'E-mail ou mot de passe incorrect.':/not confirmed/i.test(error.message)?"Cette adresse e-mail n'est pas encore confirmée.":errMsg(error);return}
   f.reset();await boot()}
- if(k==='addcat'){const n=String(fd.get('name')).trim();if(!n)return;
-  const ex=allCats().find(c=>c.toLowerCase()===n.toLowerCase());if(ex){toast('La catégorie « '+ex+' » existe déjà');return}
-  closeModal();editProd(0,n);toast('Enregistrez le premier produit pour créer la catégorie « '+n+' »');return}
+ if(k==='addcat'){const n=String(fd.get('name')).trim();if(!n||!NC)return;
+  const ex=allCats().find(c=>c.toLowerCase()===n.toLowerCase()&&CAT_ID[c]!==NC.id);if(ex){toast('La catégorie « '+ex+' » existe déjà');return}
+  const slug=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'cat';
+  const edit=!!NC.id;let id=NC.id;if(!edit){id=slug(n);const used=new Set(Object.values(CAT_ID));while(used.has(id))id+='-'+Math.random().toString(36).slice(2,4)}
+  const seen=new Set(NC.subs.filter(s=>s.slug).map(s=>s.slug));
+  const subs=[];NC.subs.forEach(s=>{const nm=s.name.trim();if(!nm)return;if(!s.slug){let sl=slug(nm);while(seen.has(sl))sl+='x';seen.add(sl);s.slug=sl;s.fresh=true}subs.push({...s,nm})});
+  const up=async(p,tag)=>{if(!p||!p.blob)return p?p.path:null;const path=`cat/${id}/${tag}-${Math.random().toString(36).slice(2,7)}.${p.blob.type==='image/webp'?'webp':'jpg'}`;const r=await sb.storage.from(BUCKET).upload(path,p.blob,{contentType:p.blob.type,cacheControl:'31536000'});if(r.error)throw r.error;return path};
+  const old=edit?(S.catRows||[]).find(c=>c.id===id):null,oldSubs=edit?(S.subRows||[]).filter(s=>s.category===id):[];
+  if(await run(async()=>{const mp=await up(NC.photo,'main');
+    if(edit)must(await sb.from('categories').update({name:n,photo:mp}).eq('id',id));else must(await sb.from('categories').insert({id,name:n,photo:mp,position:Object.keys(CATS).length}));
+    const trash=[];if(edit&&old&&old.photo&&old.photo!==mp)trash.push(old.photo);
+    for(const g of NC.gone){must(await sb.from('subcategories').delete().eq('id',g.id));must(await sb.from('products').update({subcategory:''}).eq('category',id).eq('subcategory',g.slug));if(g.photo&&g.photo.path)trash.push(g.photo.path)}
+    for(const s of subs){const sp=await up(s.photo,s.slug);
+     if(s.id){must(await sb.from('subcategories').update({name:s.nm,photo:sp}).eq('id',s.id));const o=oldSubs.find(x=>x.id===s.id);if(o&&o.photo&&o.photo!==sp)trash.push(o.photo)}
+     else must(await sb.from('subcategories').insert({category:id,slug:s.slug,name:s.nm,photo:sp}))}
+    try{trash.length&&await sb.storage.from(BUCKET).remove(trash)}catch(e){}},edit?'Catégorie enregistrée':'Catégorie « '+n+' » créée. Ajoutez-y un produit pour la faire apparaître sur la boutique.')){closeModal();NC=null}
+  return}
  if(k==='confirm'){const o=order(f.dataset.id);
   if(await run(async()=>must(await sb.rpc('confirm_order',{p_order:o.dbId,p_mode:fd.get('mode'),p_date:fd.get('date')})),'Paiement validé. Vous pouvez générer la facture.'))closeModal()}
  if(k==='adjust'){const o=order(f.dataset.id),q=o.items.map((_,i)=>Math.max(0,parseInt(fd.get('q'+i))||0)),empty=q.every(x=>x===0);
