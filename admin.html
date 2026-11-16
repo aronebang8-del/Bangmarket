@@ -416,8 +416,8 @@ CATDEF.forEach(([id,n,c,sb2])=>{CATS[n]=c;CAT_ID[n]=id;CAT_LBL[id]=n;SUBS[id]=sb
 const MOQ0={sacs:3,montres:5,cheveux:12,hauts:6,tshirts:6,robes:10,foot:6,gourdes:6,accessoires:6,chaussures:6,beaute:12};
 const subOpts=(label,cur)=>{const l=SUBS[CAT_ID[label]]||[];return l.length?'<option value="">Aucun</option>'+l.map(([k,t])=>`<option value="${k}" ${k===cur?'selected':''}>${t}</option>`).join(''):''};
 const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',mq:'',sv:'list',sc:'Toutes',lf:'tous',reveal:new Set(),
- products:[],orders:[],invoices:[],pays:[],pf:'attente',sales:[],moves:[],achats:[],depenses:[]};
-const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Confirmée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
+ products:[],orders:[],invoices:[],pays:[],pf:'apayer',sales:[],moves:[],achats:[],depenses:[]};
+const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Validée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
 const pill=s=>`<span class="pill s-${ST[s][1]}">${ST[s][0]}</span>`;
 const prod=id=>S.products.find(p=>p.id===id);
@@ -542,7 +542,7 @@ function paintOrders(){
 }
 function detail(o){
  const i=FLOW.indexOf(o.status),f=inv(o),canWa=o.status!=='annulee';
- const manageLabel={nouvelle:'Confirmer = paiement reçu et stock sorti',contacte:'Confirmer = paiement reçu et stock sorti',payee:'Annuler possible, pensez au remboursement',facturee:'Commande facturée',annulee:'Commande annulée'}[o.status];
+ const manageLabel={nouvelle:'Valider la commande, ajuster ou annuler',contacte:'Valider la commande, ajuster ou annuler',confirmee:'Commande validée · paiement à valider dans Bang Pay',payee:'Annuler possible, pensez au remboursement',facturee:'Commande facturée',annulee:'Commande annulée'}[o.status];
  return `<div class="card"><div class="dhead"><button class="back" data-act="back">${ic('back')}Commandes</button><h2>${o.id}</h2>${pill(o.status)}<span class="mut">Reçue le ${fdatel(o.d)}</span></div>
  ${o.status==='annulee'?`<div class="banner">Commande annulée. Le stock sorti a été remis en rayon.</div>`:`<div class="steps" aria-label="Avancement">${FLOW.map((s,k)=>`<div class="stp ${k<i?'d':k===i?'n':''}">${ST[s][0]}</div>`).join('')}</div>`}
  <div class="who"><div><b>${esc(o.client)}</b><span class="mut">WhatsApp ${esc(o.wa)}</span>${o.prov?`<span class="mut">${esc(o.prov)}${o.lieu?' · '+esc(o.lieu):''}</span>`:''}</div>${o.pay?`<div><b>Paiement reçu</b><span class="mut">${esc(o.pay.mode)} · ${fdate(o.pay.date)}</span></div>`:''}</div>
@@ -551,7 +551,7 @@ function detail(o){
  <div class="acts">
   <button class="act" data-act="wa" data-id="${o.id}" ${canWa?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>Écrire au client</b><br><small>Ouvre WhatsApp avec le message prêt</small></span></button>
   <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
-  <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${o.status==='annulee'?'disabled':''} ${(o.status==='payee'||o.status==='facturee')?'':'style="opacity:.75"'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':(o.status==='payee'?'Générer la facture':'🔒 Facture verrouillée')}</b><br><small>${f?f.no:(o.status==='payee'?'Paiement validé':'Validez d\'abord le paiement')}</small></span></button>
+  <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${o.status==='annulee'?'disabled':''} ${(o.status==='payee'||o.status==='facturee')?'':'style="opacity:.75"'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':(o.status==='payee'?'Générer la facture':'🔒 Facture verrouillée')}</b><br><small>${f?f.no:(o.status==='payee'?'Paiement validé':'Paiement à valider dans Bang Pay')}</small></span></button>
  </div></div>`}
 
 /* ============ Fenêtres ============ */
@@ -560,18 +560,23 @@ function modal(html,cls=''){closeModal();const m=document.createElement('div');m
 const head=t=>`<div class="sh"><h3>${t}</h3><button class="x" data-act="close" aria-label="Fermer">${ic('x')}</button></div>`;
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
 
+function openPayManual(id){const o=order(id);
+ modal(head('Enregistrer un paiement')+`<form data-form="confirm" data-id="${id}"><div class="note" style="margin-top:0">Commande <b>${o.id}</b> · ${esc(o.client)}<br>Total à recevoir : <b>${fmt(total(o))}</b></div>
+ <label class="fld" style="margin-top:12px">Mode de paiement<select name="mode"><option>Orange Money</option><option>M-Pesa</option><option>Illico Cash</option><option>Espèces</option><option>Virement bancaire</option></select></label>
+ <label class="fld" style="margin-top:12px">Date du paiement<input type="date" name="date" value="${isoToday()}" required></label>
+ <div class="note">Le paiement complet est enregistré, le stock sort et la facture peut être générée.</div>
+ <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Valider le paiement</button></div></form>`)}
 function openManage(id,tab){
- const o=order(id),tabs=o.status==='payee'?['annuler']:['confirmer','ajuster','annuler'];
+ const o=order(id),tabs=o.status==='payee'?['annuler']:o.status==='confirmee'?['valider','ajuster','annuler']:['valider','ajuster','annuler'];
  tab=tabs.includes(tab)?tab:tabs[0];
- const T={confirmer:'Confirmer',ajuster:'Ajuster',annuler:'Annuler'};
+ const T={valider:'Valider',ajuster:'Ajuster',annuler:'Annuler'};
  let body='';
- if(tab==='confirmer'){
-  const rows=o.items.map(i=>{const v=vari(i),ok=v&&v.stock>=i.qty;return {i,v,ok}}),all=rows.every(r=>r.ok);
-  body=`<form data-form="confirm" data-id="${id}"><table><thead><tr><th>Article</th><th class="r">Demandé</th><th class="r">En stock</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(iname(r.i))}</td><td class="r">${r.i.qty}</td><td class="r ${r.ok?'ok':'no'}">${r.v?r.v.stock:0}${r.ok?'':' · insuffisant'}</td></tr>`).join('')}</tbody></table>
-  <div class="grid2" style="margin-top:14px"><label class="fld">Paiement reçu (complet)<input value="${fmt(total(o))}" readonly></label><label class="fld">Date du paiement<input type="date" name="date" value="${isoToday()}" required></label></div>
-  <label class="fld" style="margin-top:12px">Mode de paiement<select name="mode"><option>Mobile money</option><option>Espèces</option><option>Virement bancaire</option></select></label>
-  <div class="note">${all?'Confirmer la commande enregistre le paiement complet, sort le stock et débloque la facture.':'Le stock est insuffisant pour au moins un article. Utilisez « Ajuster » pour réduire la quantité.'}</div>
-  <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri" ${all?'':'disabled'}>Confirmer la commande</button></div></form>`;
+ if(tab==='valider'){
+  const rows=o.items.map(i=>{const v=vari(i),ok=v&&v.stock>=i.qty;return {i,v,ok}}),all=rows.every(r=>r.ok),done=o.status==='confirmee';
+  body=`<table><thead><tr><th>Article</th><th class="r">Demandé</th><th class="r">En stock</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(iname(r.i))}</td><td class="r">${r.i.qty}</td><td class="r ${r.ok?'ok':'no'}">${r.v?r.v.stock:0}${r.ok?'':' · insuffisant'}</td></tr>`).join('')}</tbody></table>
+  <div class="tot"><span>Total de la commande</span><span>${fmt(total(o))}</span></div>
+  <div class="note">${done?'Cette commande est déjà validée. Il reste à valider le <b>paiement</b> dans l\'onglet Bang Pay.':all?'Valider la commande l\'accepte et garde le stock réservé. Le <b>paiement</b> se valide ensuite séparément dans l\'onglet Bang Pay.':'Le stock est insuffisant pour au moins un article. Utilisez « Ajuster » pour réduire la quantité.'}</div>
+  <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button>${done?`<button type="button" class="btn pri" data-act="gopay" data-id="${id}">Aller à Bang Pay</button>`:`<button type="button" class="btn pri" data-act="accept" data-id="${id}" ${all?'':'disabled'}>Valider la commande</button>`}</div>`;
  }else if(tab==='ajuster'){
   body=`<form data-form="adjust" data-id="${id}"><table><thead><tr><th>Article</th><th class="r">Quantité</th></tr></thead><tbody>${o.items.map((it,k)=>`<tr><td>${esc(iname(it))}<br><span class="mut">${fmt(it.price)} l'unité</span></td><td class="r"><div class="stk"><button type="button" data-act="step" data-d="-1" aria-label="Moins">−</button><input type="number" min="0" name="q${k}" value="${it.qty}" data-price="${it.price}" aria-label="Quantité de ${esc(iname(it))}"><button type="button" data-act="step" data-d="1" aria-label="Plus">+</button></div></td></tr>`).join('')}</tbody></table>
   <div class="tot"><span>Nouveau total</span><span id="adjtot">${fmt(total(o))}</span></div>
@@ -745,19 +750,33 @@ function openAdd(pid){
 /* ============ Factures ============ */
 const PM={orange:['Orange Money','#ff7900','OM'],mpesa:['M-Pesa','#e60012','MP'],illico:['Illico Cash','#1d4ed8','IC']};
 const PLOGO='<svg viewBox="0 0 64 64" width="38" height="38" aria-hidden="true"><defs><linearGradient id="plg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs><rect width="64" height="64" rx="19" fill="url(#plg)"/><path d="M23 15v34M23 15h11.5a8.5 8.5 0 0 1 0 17H23m0 0h13.5a8.5 8.5 0 0 1 0 17H23" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffd166"/></svg>';
-VIEWS.pay=()=>`<div class="top"><div style="display:flex;gap:12px;align-items:center">${PLOGO}<div><h1 style="margin:0">Bang Pay</h1><p>Vérifiez la transaction sur votre téléphone, puis validez : le stock sort et la commande passe à « payée ».</p></div></div></div><div class="kpis k3" id="pkpi"></div><div class="chips" id="pchips"></div><div id="plist"></div>`;
+VIEWS.pay=()=>`<div class="top"><div style="display:flex;gap:12px;align-items:center">${PLOGO}<div><h1 style="margin:0">Bang Pay</h1><p>Ici se valide le <b>paiement</b> : le stock sort et la facture se débloque. La validation de la commande se fait dans Commandes.</p></div></div></div><div class="kpis k3" id="pkpi"></div><div class="chips" id="pchips"></div><div id="plist"></div>`;
 AFTER.pay=paintPay;
 const _pu={};
 async function proofUrl(path){if(_pu[path])return _pu[path];const r=await sb.storage.from('payment-proofs').createSignedUrl(path,3600);if(r.error||!r.data)return null;return _pu[path]=r.data.signedUrl}
 function paintPay(){const P=S.pays,wait=P.filter(p=>p.status==='attente'),ok=P.filter(p=>p.status==='valide');
- $('#pkpi').innerHTML=`<div class="card kpi"><span>À vérifier</span><b ${wait.length?'style="color:#b8741a"':''}>${wait.length}</b></div><div class="card kpi"><span>Validés</span><b class="ok">${ok.length}</b></div><div class="card kpi"><span>Montant validé</span><b>$${fmt(ok.reduce((x,p)=>x+p.amount,0))}</b></div>`;
- const F=[['attente','À vérifier'],['valide','Validés'],['refuse','Refusés'],['tous','Tous']];
- $('#pchips').innerHTML=F.map(([k,l])=>`<button class="chip ${S.pf===k?'on':''}" data-act="pfil" data-k="${k}">${l}<em>${k==='tous'?P.length:P.filter(p=>p.status===k).length}</em></button>`).join('');
- const rows=P.filter(p=>S.pf==='tous'||p.status===S.pf);
- $('#plist').innerHTML=rows.length?rows.map(p=>{const o=order(p.orderId),m=PM[p.method]||['?','#888','?'],exp=o?total(o):null,diff=exp!==null&&Math.abs(exp-p.amount)>0.009;
-  return `<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:13px;background:${m[1]};color:#fff;display:grid;place-items:center;font-weight:800;flex:none">${m[2]}</span><div style="flex:1;min-width:0"><b>${esc(o?o.client:'Commande supprimée')}</b><div class="mut" style="font-size:13px">${o?o.id:''} · ${m[0]} · ${fdate(p.d)} ${p.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(p.amount)}</b><div>${p.status==='attente'?'<span class="pill s-n">À vérifier</span>':p.status==='valide'?'<span class="pill s-p">Validé</span>':'<span class="pill s-x">Refusé</span>'}</div></div></div>
-  <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px"><span>Code : <b style="font-family:ui-monospace,monospace;letter-spacing:.5px">${esc(p.code)}</b></span>${p.phone?`<span>Payé depuis : <b>${esc(p.phone)}</b></span>`:''}${diff?`<span style="color:#b8400c">⚠ Montant attendu : $${fmt(exp)}</span>`:''}${p.note?`<span class="mut">Motif : ${esc(p.note)}</span>`:''}${p.proof?`<button type="button" class="btn sm" data-act="proof" data-id="${p.id}" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><img data-sp="${esc(p.proof)}" alt="" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:#ddd">Voir la preuve</button>`:'<span class="mut">Sans capture</span>'}</div>
-  ${p.status==='attente'?`<div style="display:flex;gap:8px"><button class="btn pri" style="flex:1" data-act="payok" data-id="${p.id}">Valider le paiement</button><button class="btn dng" data-act="payno" data-id="${p.id}">Refuser</button></div>`:''}</div>`}).join(''):'<div class="card empty"><b>Aucun paiement ici</b>Les paiements déclarés par les clients apparaîtront ici.</div>';
+ const apayer=S.orders.filter(o=>['nouvelle','contacte','confirmee'].includes(o.status)&&!P.some(p=>p.orderId===o.id&&p.status==='attente'));
+ const manual=S.orders.filter(o=>(o.status==='payee'||o.status==='facturee')&&o.pay&&!P.some(p=>p.orderId===o.id&&p.status==='valide'));
+ $('#pkpi').innerHTML=`<div class="card kpi"><span>Paiements à vérifier</span><b ${wait.length?'style="color:#b8741a"':''}>${wait.length}</b></div><div class="card kpi"><span>Commandes à payer</span><b>${apayer.length}</b></div><div class="card kpi"><span>Montant encaissé</span><b>$${fmt(paid())}</b></div>`;
+ const F=[['attente','À vérifier',wait.length],['apayer','Commandes à payer',apayer.length],['valide','Validés',ok.length+manual.length],['refuse','Refusés',P.filter(p=>p.status==='refuse').length]];
+ $('#pchips').innerHTML=F.map(([k,l,n])=>`<button class="chip ${S.pf===k?'on':''}" data-act="pfil" data-k="${k}">${l}<em>${n}</em></button>`).join('');
+ const hint={attente:'Le client a envoyé son paiement : comparez avec le SMS de l\'opérateur, puis validez.',apayer:'Commandes pas encore payées. Validez la commande, relancez le client ou enregistrez un paiement reçu en direct.',valide:'Paiements encaissés.',refuse:'Paiements refusés.'}[S.pf]||'';
+ const head=`<p class="mut" style="margin:2px 4px 12px;font-size:13.5px">${hint}</p>`;
+ const mb=p=>{const m=PM[p.method]||['?','#888','?'];return `<span style="width:44px;height:44px;border-radius:13px;background:${m[1]};color:#fff;display:grid;place-items:center;font-weight:800;flex:none">${m[2]}</span>`};
+ const payCard=p=>{const o=order(p.orderId),m=PM[p.method]||['?','#888','?'],exp=o?total(o):null,diff=exp!==null&&Math.abs(exp-p.amount)>0.009;
+  return `<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center">${mb(p)}<div style="flex:1;min-width:0"><b>${esc(o?o.client:'Commande supprimée')}</b><div class="mut" style="font-size:13px">${o?o.id:''} · ${m[0]} · ${fdate(p.d)} ${p.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(p.amount)}</b><div>${p.status==='attente'?'<span class="pill s-n">À vérifier</span>':p.status==='valide'?'<span class="pill s-p">Validé</span>':'<span class="pill s-x">Refusé</span>'}</div></div></div>
+  <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;align-items:center"><span>Code : <b style="font-family:ui-monospace,monospace;letter-spacing:.5px">${esc(p.code)}</b></span>${p.phone?`<span>Payé depuis : <b>${esc(p.phone)}</b></span>`:''}${diff?`<span style="color:#b8400c">⚠ Montant attendu : $${fmt(exp)}</span>`:''}${p.note?`<span class="mut">Motif : ${esc(p.note)}</span>`:''}${p.proof?`<button type="button" class="btn sm" data-act="proof" data-id="${p.id}" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><img data-sp="${esc(p.proof)}" alt="" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:#ddd">Voir la preuve</button>`:'<span class="mut">Sans capture</span>'}</div>
+  ${p.status==='attente'?`<div style="display:flex;gap:8px"><button class="btn pri" style="flex:1" data-act="payok" data-id="${p.id}">Valider le paiement</button><button class="btn dng" data-act="payno" data-id="${p.id}">Refuser</button></div>`:''}</div>`};
+ const empty=(t,s)=>`<div class="card empty"><b>${t}</b>${s}</div>`;
+ let html='';
+ if(S.pf==='apayer'){
+  html=apayer.length?apayer.map(o=>`<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(o.client)}</b><div class="mut" style="font-size:13px">${o.id} · ${o.items.reduce((x,i)=>x+i.qty,0)} pièces · ${fdate(o.d)}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(total(o))}</b><div><span class="pill s-${(ST[o.status]||['','n'])[1]}">${(ST[o.status]||['?'])[0]}</span></div></div></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap">${o.status!=='confirmee'?`<button class="btn pri" data-act="accept" data-id="${o.id}">Valider la commande</button>`:''}<button class="btn ${o.status==='confirmee'?'pri':''}" data-act="payman" data-id="${o.id}">Enregistrer un paiement</button><button class="btn" data-act="relance" data-id="${o.id}">Relancer sur WhatsApp</button></div></div>`).join(''):empty('Aucune commande à payer','Toutes les commandes en cours sont payées.')}
+  else if(S.pf==='valide'){
+   const all=[...ok.map(p=>({d:p.d,h:payCard(p)})),...manual.map(o=>({d:o.pay.date,h:`<div class="card" style="margin-bottom:10px;display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:13px;background:#6b6b70;color:#fff;display:grid;place-items:center;font-weight:800;flex:none">✎</span><div style="flex:1;min-width:0"><b>${esc(o.client)}</b><div class="mut" style="font-size:13px">${o.id} · ${esc(o.pay.mode||'Manuel')} · ${fdate(o.pay.date)} · enregistré par l'administrateur</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(total(o))}</b><div><span class="pill s-p">Validé</span></div></div></div>`}))].sort((x,y)=>y.d-x.d);
+   html=all.length?all.map(x=>x.h).join(''):empty('Aucun paiement validé','Les paiements validés apparaîtront ici.')}
+  else{const rows=P.filter(p=>p.status===S.pf);html=rows.length?rows.map(payCard).join(''):empty('Aucun paiement ici','Les paiements déclarés par les clients apparaîtront ici.')}
+ $('#plist').innerHTML=head+html;
  document.querySelectorAll('#plist img[data-sp]').forEach(async im=>{const u=await proofUrl(im.dataset.sp);if(u)im.src=u})}
 VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérification n'est visible que par vous.</p></div></div>
  <label class="search">${ic('search')}<input id="iq" type="search" placeholder="Rechercher par numéro, code ou client" value="${esc(S.iq)}" aria-label="Rechercher une facture"></label><div class="card" style="padding:6px 12px" id="ilist"></div>`;
@@ -798,7 +817,7 @@ const A={
   if(!f&&o.status!=='payee'&&o.status!=='facturee'){
    const w=S.pays.some(p=>p.orderId===o.id&&p.status==='attente');
    if(w){toast('Validez d\'abord le paiement du client dans Bang Pay');closeModal();S.view='pay';S.pf='attente';render();return}
-   toast('Validez d\'abord le paiement avant de générer la facture');return A.manage(d)}
+   toast('Validez d\'abord le paiement dans l\'onglet Bang Pay');closeModal();S.view='pay';S.pf='apayer';render();return}
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
@@ -808,6 +827,10 @@ const A={
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
  pfil:d=>{S.pf=d.k;paintPay()},
+ accept:d=>{const o=order(d.id);run(async()=>must(await sb.rpc('accept_order',{p_order:o.dbId})),'Commande validée. Le client peut payer via Bang Pay.').then(ok=>{if(ok)closeModal()})},
+ gopay:()=>{closeModal();S.view='pay';S.pf='apayer';render()},
+ payman:d=>openPayManual(d.id),
+ relance:d=>{const o=order(d.id),base=location.href.replace(/[^/]*$/,''),m='Bonjour '+o.client.split(' ')[0]+' 👋\nVotre commande *'+o.id+'* chez Bang Market ('+fmt(total(o))+') est '+(o.status==='confirmee'?'validée':'bien reçue')+'. Il ne reste que le paiement :\n👉 '+base+'pay.html?c='+encodeURIComponent(o.id)+'\n\nMerci !';window.open('https://wa.me/'+String(o.wa).replace(/\D/g,'')+'?text='+encodeURIComponent(m),'_blank','noopener')},
  proof:async d=>{const p=S.pays.find(x=>x.id==d.id);if(!p||!p.proof)return;const u=await proofUrl(p.proof);if(!u)return toast('Capture introuvable');
   modal(head('Preuve de paiement')+`<div class="mut" style="margin-bottom:8px">${esc((PM[p.method]||[''])[0])} · code <b>${esc(p.code)}</b> · $${fmt(p.amount)}</div><img src="${u}" alt="Preuve" style="width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#eee"><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button></div>`)},
  payok:d=>{const p=S.pays.find(x=>x.id==d.id);if(!p)return;const o=order(p.orderId);if(!confirm('Valider '+(PM[p.method]||[''])[0]+' de $'+fmt(p.amount)+(o?' pour '+o.id+' ('+o.client+')':'')+' ?\n\nLe stock sortira et la commande passera à « payée ».'))return;run(async()=>{must(await sb.rpc('decide_payment',{p_id:p.id,p_ok:true}))},'Paiement validé')},
@@ -886,7 +909,7 @@ document.addEventListener('submit',async e=>{const f=e.target.closest('[data-for
   const ex=allCats().find(c=>c.toLowerCase()===n.toLowerCase());if(ex){toast('La catégorie « '+ex+' » existe déjà');return}
   closeModal();editProd(0,n);toast('Enregistrez le premier produit pour créer la catégorie « '+n+' »');return}
  if(k==='confirm'){const o=order(f.dataset.id);
-  if(await run(async()=>must(await sb.rpc('confirm_order',{p_order:o.dbId,p_mode:fd.get('mode'),p_date:fd.get('date')})),'Commande confirmée et payée. Vous pouvez générer la facture.'))closeModal()}
+  if(await run(async()=>must(await sb.rpc('confirm_order',{p_order:o.dbId,p_mode:fd.get('mode'),p_date:fd.get('date')})),'Paiement validé. Vous pouvez générer la facture.'))closeModal()}
  if(k==='adjust'){const o=order(f.dataset.id),q=o.items.map((_,i)=>Math.max(0,parseInt(fd.get('q'+i))||0)),empty=q.every(x=>x===0);
   if(await run(async()=>{must(await sb.rpc('adjust_order',{p_order:o.dbId,p_items:o.items.map((it,i)=>({id:it.dbId,qty:q[i]}))}));if(empty)must(await sb.rpc('cancel_order',{p_order:o.dbId}))},empty?'Commande vide : annulée':'Quantités mises à jour'))closeModal()}
  if(k==='prod'){buildVars();const name=String(fd.get('name')).trim(),vs=ED.variants;

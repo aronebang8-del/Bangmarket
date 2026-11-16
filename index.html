@@ -1021,8 +1021,8 @@ function waLink(o){const g=new Map();o.l.forEach(([n,c,z,q])=>{if(!g.has(n))g.se
  const body=[...g].map(([n,v])=>'▪️ *'+n+'*\n'+v.map(([c,z,q])=>'    ◦ '+[c,z].filter(Boolean).join(' / ')+' : '+q+' pcs').join('\n')).join('\n\n');
  const m='Bonjour Bang Market 👋\nJe m’appelle *'+o.nm+'*.\nJe viens de passer la commande *'+o.r+'* sur votre site et je souhaite la valider.\n\n━━━━━━━━━━━━━━\n🛒 *MA COMMANDE*\n━━━━━━━━━━━━━━\n'+body+'\n\n━━━━━━━━━━━━━━\n*TOTAL : '+fmt(o.v)+'* ('+o.q+' pcs)\n━━━━━━━━━━━━━━\n📍 Livraison : '+[o.pv,o.lx].filter(Boolean).join(' · ')+'\n\nMerci de valider ma commande ✅';
  return 'https://wa.me/'+WA_NUM+'?text='+encodeURIComponent(m)}
-const OST={nouvelle:['⏳ En attente de confirmation','w'],contacte:['⏳ En attente de confirmation','w'],confirmee:['⏳ En attente de confirmation','w'],payee:['✅ Confirmée','ok'],facturee:['✅ Confirmée','ok'],annulee:['❌ Annulée','x']};
-const ostHtml=o=>{const t=OST[o.s]||['⏳ En attente de confirmation','w'];return '<i class="oh-s '+t[1]+'" data-r="'+esc(o.r)+'">'+t[0]+'</i>'};
+const OST={nouvelle:['⏳ En attente de validation','w'],contacte:['⏳ En attente de validation','w'],confirmee:['✅ Commande validée · paiement attendu','w'],payee:['✅ Payée','ok'],facturee:['✅ Payée','ok'],annulee:['❌ Annulée','x']};const ostSt=o=>OST[o.s]||OST.nouvelle;
+const ostHtml=o=>{const t=ostSt(o);return '<i class="oh-s '+t[1]+'" data-r="'+esc(o.r)+'">'+t[0]+'</i>'};
 async function ostSync(){if(!sb)return;const h=histGet();if(!h.length)return;let r;try{r=await sb.rpc('order_status',{p_refs:h.map(o=>o.r)})}catch(e){return}
  if(r.error||!r.data)return;const m=new Map(r.data.map(x=>[x.number,x.status]));let ch=false;
  h.forEach(o=>{if(m.has(o.r)&&o.s!==m.get(o.r)){o.s=m.get(o.r);ch=true}});if(!ch)return;
