@@ -623,6 +623,23 @@ function openManage(id,tab){
  modal(head(`Commande ${o.id}`)+`<div class="seg" role="tablist">${tabs.map(t=>`<button type="button" role="tab" class="${t===tab?'on':''}" aria-selected="${t===tab}" data-act="mtab" data-id="${id}" data-t="${t}">${T[t]}</button>`).join('')}</div>`+body);
 }
 const code=()=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',r=crypto.getRandomValues(new Uint8Array(8));return [...r].map(x=>A[x%A.length]).join('').replace(/(.{4})(.{4})/,'$1-$2')};
+const LIBS={};
+function loadJS(u){return LIBS[u]||(LIBS[u]=new Promise((ok,ko)=>{const s=document.createElement('script');s.src=u;s.onload=ok;s.onerror=()=>{delete LIBS[u];ko(new Error('Chargement impossible : '+u))};document.head.appendChild(s)}))}
+const preloadPdf=()=>{loadJS('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js').catch(()=>{});loadJS('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').catch(()=>{})};
+async function invoicePdf(){
+ await Promise.all([loadJS('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),loadJS('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')]);
+ const src=document.getElementById('print');if(!src)throw new Error('Facture introuvable');
+ const fr=document.createElement('iframe');fr.setAttribute('aria-hidden','true');fr.style.cssText='position:fixed;left:-10000px;top:0;width:794px;height:1300px;border:0;visibility:hidden';document.body.appendChild(fr);
+ try{
+  const d=fr.contentDocument;d.open();d.write('<!doctype html><html data-theme="light"><head><meta charset="utf-8">'+[...document.querySelectorAll('link[rel=stylesheet],style')].map(x=>x.outerHTML).join('')+'</head><body style="margin:0;background:#fff">'+src.outerHTML+'</body></html>');d.close();
+  await new Promise(r=>setTimeout(r,350));try{await d.fonts.ready}catch(e){}
+  const el=d.querySelector('.iv');el.style.cssText+=';border:0;box-shadow:none;border-radius:0;max-width:none;width:794px';
+  const cv=await window.html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,windowWidth:794});
+  const {jsPDF}=window.jspdf,pdf=new jsPDF({unit:'mm',format:'a4',orientation:'p'});
+  const W=210,H=297,m=8;let w=W-2*m,h=cv.height*w/cv.width;if(h>H-2*m){h=H-2*m;w=cv.width*h/cv.height}
+  pdf.addImage(cv.toDataURL('image/jpeg',.92),'JPEG',(W-w)/2,m,w,h,undefined,'FAST');
+  return pdf.output('blob');
+ }finally{fr.remove()}}
 function fillQR(f){const b=$('#qrbox');if(!b)return;
  try{const url=new URL('verify.html?c='+encodeURIComponent(f.code),location.href).href;const q=qrcode(0,'M');q.addData(url);q.make();b.innerHTML=q.createSvgTag({cellSize:4,margin:0,scalable:true});b.classList.add('on')}catch(e){b.textContent='QR indisponible'}}
 /* Coordonnées de l'entreprise affichées sur la facture : complétez les lignes vides ci-dessous */
@@ -642,7 +659,7 @@ function showInvoice(f){
  <div class="iv-payb"><div class="pbt">Détails du paiement</div><div class="pbg"><div><small>Mode de paiement</small><b>${esc(mode)}</b></div><div><small>Date du paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div><div><small>Code de transaction</small><b class="mono">${pay?esc(pay.code):'—'}</b></div><div><small>N° de l'envoyeur</small><b>${pay&&pay.phone?esc(pay.phone):'—'}</b></div><div><small>Montant reçu</small><b>$${fmt(ann?0:sub)}</b></div><div><small>Statut</small><b class="${ann?'no':'ok'}">${ann?'Annulée':'Payée intégralement'}</b></div></div></div>
  <div class="iv-foot"><div class="qr" id="qrbox"></div><div><p>Vérifiez l'authenticité de cette facture en scannant le QR code ou sur :<br><span style="word-break:break-all">${esc(vurl(f))}</span></p><p style="margin-top:6px">Code de vérification : <span class="code">${f.code}</span></p></div></div>
  <div class="iv-legal">Facture acquittée · Merci pour votre confiance · ${esc(C.name)}</div></div></div>
- <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn" data-act="sendinv" data-n="${f.no}">Envoyer au client</button><button class="btn dng" data-act="delinv" data-n="${f.no}">Supprimer</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f)}
+ <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn pri" data-act="sendpdf" data-n="${f.no}">Envoyer le PDF au client</button><button class="btn" data-act="sendinv" data-n="${f.no}">Message texte</button><button class="btn dng" data-act="delinv" data-n="${f.no}">Supprimer</button><button class="btn" data-act="print">Imprimer</button></div>`,'wide');fillQR(f);preloadPdf()}
 /* ============ Produits ============ */
 VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>
  <div class="chips">${['Toutes',...allCats()].map(c=>`<button class="chip ${S.pcat===c?'on':''}" data-act="pcat" data-c="${esc(c)}">${esc(c)}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')}<button class="chip" data-act="addcat">+ Catégorie</button></div>
@@ -862,6 +879,14 @@ const A={
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
+ sendpdf:async d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);toast('Création du PDF…');
+  let blob;try{blob=await invoicePdf()}catch(e){console.error(e);return toast('PDF impossible : '+(e.message||e))}
+  const name=`Facture-${f.no}.pdf`,file=new File([blob],name,{type:'application/pdf'});
+  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture ${f.no} (commande ${o.id}) — ${COMPANY.name}.\nVérification : ${vurl(f)}\nMerci pour votre confiance ! 🙏`;
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name,text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);
+  toast('PDF téléchargé : joignez-le dans la conversation WhatsApp');
+  setTimeout(()=>window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt),'_blank','noopener'),700)},
  sendinv:d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);
   const msg=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture *${f.no}* — *${COMPANY.name}*\nCommande ${o.id}\n\n━━━━━━━━━━━━━━\n🧾 *DÉTAIL*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL PAYÉ : ${fmt(total(o))}*\n━━━━━━━━━━━━━━\n🔒 Vérifier l'authenticité :\n${vurl(f)}\n\nMerci pour votre confiance ! 🙏`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
