@@ -321,7 +321,6 @@ button.lrow:hover b{color:var(--or-ink)}
 .iv-foot p{margin:0;color:#4b4b50;font-size:12.5px}.iv-foot .code{font-size:17px;color:#1c1c1e}
 .iv-legal{margin-top:16px;text-align:center;color:#8a8a8e;font-size:11.5px}
 .iv-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font:800 110px/1 Inter,system-ui,sans-serif;color:rgba(198,40,40,.12);transform:rotate(-24deg);letter-spacing:8px}
-@media (max-width:640px){.iv-in{padding:22px 16px}.iv-meta{grid-template-columns:1fr 1fr}.iv-meta div:nth-child(2){border-right:0}.iv-meta div:nth-child(-n+2){border-bottom:1px solid #e3e3e6}.iv-parties{grid-template-columns:1fr}.iv-tot table{width:100%}.iv-wm{font-size:60px}}
 @media print{@page{size:A4;margin:10mm}.iv{border:0;border-radius:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -372,6 +371,30 @@ body{background:var(--bg)}
 .pthumb.no{height:104px;align-content:center;font-size:12.5px;color:var(--mut);border:1px dashed var(--line);border-radius:12px;cursor:default}
 @media (max-width:560px){.pdet{grid-template-columns:1fr}.pthumb{width:100%;grid-auto-flow:column;justify-content:start;align-items:center;gap:10px}.pthumb img{width:72px;height:72px}}
 .pbk{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:14px;background:var(--surface)}.pbh{display:flex;justify-content:space-between;align-items:center;gap:10px}.pbs{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut);margin-bottom:6px}
+
+.iv-title{text-align:right;display:grid;justify-items:end;gap:4px}.iv-title .iv-stamp{transform:rotate(-6deg);margin-top:8px;font-size:15px;padding:4px 14px}
+.iv-payb{margin-top:18px;border:1px solid #e3e3e6;border-radius:10px;overflow:hidden;background:#fbfbfc}
+.iv-payb .pbt{background:#f1f1f4;padding:8px 14px;font-size:11.5px;letter-spacing:.7px;text-transform:uppercase;font-weight:700;color:#3c3c40}
+.iv-payb .pbg{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 16px;padding:12px 14px}
+.iv-payb small{display:block;color:#6b6b70;font-size:10.5px;letter-spacing:.6px;text-transform:uppercase;margin-bottom:1px}.iv-payb b{font-size:13px;overflow-wrap:anywhere}.iv-payb .mono{font-family:ui-monospace,monospace}.iv-payb .ok{color:#14663a}.iv-payb .no{color:#c62828}
+.iv-items .ph{display:none}
+@media (max-width:640px){
+ .iv{font-size:12.5px}.iv-in{padding:18px 14px 16px}.iv-top{gap:12px}.iv-brand b{font-size:24px}.iv-title h2{font-size:20px;letter-spacing:2px}.iv-title div{font-size:13px}
+ .iv-meta{grid-template-columns:1fr 1fr;margin:16px 0}.iv-meta div{padding:8px 10px}.iv-meta div:nth-child(2){border-right:0}.iv-meta div:nth-child(-n+2){border-bottom:1px solid #e3e3e6}
+ .iv-parties{grid-template-columns:1fr;gap:12px;margin-bottom:16px}
+ .iv-items .c-n,.iv-items .c-u{display:none}.iv-items .ph{display:block}.iv td,.iv th{padding:8px 8px}.iv-items td b.pn{font-size:13px}
+ .iv-tot table{width:100%}.iv-payb .pbg{grid-template-columns:1fr 1fr}
+ .iv-foot{gap:12px;margin-top:18px}.iv-foot .qr{width:82px;height:82px}.iv-foot p{font-size:11.5px}.iv-stamp{font-size:13px}
+}
+@media print{@page{size:A4;margin:8mm}.iv{font-size:11.5px}.iv-in{padding:18px 22px 14px}.iv-meta{margin:14px 0}.iv-parties{margin-bottom:14px;gap:18px}.iv td,.iv th{padding:6px 10px}.iv tr,.iv-payb,.iv-foot,.iv-tot{break-inside:avoid}.iv-foot{margin-top:14px;padding-top:12px}.iv-payb{margin-top:12px}.iv-legal{margin-top:10px}.iv-wm{font-size:90px}}
+.lbx{position:fixed;inset:0;z-index:9999;background:rgba(6,8,16,.94);display:flex;flex-direction:column;animation:lbin .2s both}
+@keyframes lbin{from{opacity:0}to{opacity:1}}
+.lbh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;color:#fff}.lbh small{display:block;color:#aab2d5;font-size:13px}
+.lbh button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;flex:none}
+.lbs{flex:1;overflow:auto;display:grid;place-items:center;padding:0 8px;-webkit-overflow-scrolling:touch}
+.lbs img{max-width:100%;max-height:calc(100vh - 150px);object-fit:contain;border-radius:8px;cursor:zoom-in;background:#222}
+.lbs.z{place-items:start center}.lbs.z img{max-width:none;max-height:none;width:210%;cursor:zoom-out}
+.lbf{display:flex;gap:10px;justify-content:center;padding:12px 16px calc(14px + env(safe-area-inset-bottom))}.lbf button,.lbf a{min-height:46px;padding:0 20px;border-radius:99px;background:rgba(255,255,255,.14);color:#fff;font-weight:600;text-decoration:none;display:inline-flex;align-items:center}
 </style>
 </head>
 <body>
@@ -607,17 +630,18 @@ const COMPANY={name:'Bang Market',tagline:'Vente en gros',address:'',phone:'',em
 const vurl=f=>new URL('verify.html?c='+encodeURIComponent(f.code),location.href).href;
 function showInvoice(f){
  const o=order(f.orderId),ann=f.status==='annulee',sub=total(o),n=count(o),C=COMPANY;
+ const pay=S.pays.find(p=>p.orderId===o.id&&p.status==='valide'),pm=pay?(PM[pay.method]||[''])[0]:'',mode=o.pay?(o.pay.mode||pm||'—'):(pm||'—');
  const co=[C.address,[C.phone,C.email].filter(Boolean).join(' · '),[C.rccm&&'RCCM '+C.rccm,C.idnat&&'ID Nat. '+C.idnat,C.nif&&'NIF '+C.nif].filter(Boolean).join(' · ')].filter(Boolean);
- const rows=o.items.map((it,k)=>`<tr><td>${k+1}</td><td>${esc(prod(it.pid)?prod(it.pid).name:'Produit supprimé')} <span class="v" style="display:inline">· Réf. ${pref(it.pid)}</span>${(it.color||it.size)?`<span class="v">${esc(vlabel(it))}</span>`:''}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r"><b>${fmt(it.qty*it.price)}</b></td></tr>`).join('');
+ const rows=o.items.map((it,k)=>`<tr><td class="c-n">${k+1}</td><td><b class="pn">${esc(prod(it.pid)?prod(it.pid).name:'Produit supprimé')}</b><span class="v">Réf. ${pref(it.pid)}${(it.color||it.size)?' · '+esc(vlabel(it)):''}</span><span class="v ph">${it.qty} × ${fmt(it.price)}</span></td><td class="r">${it.qty}</td><td class="r c-u">${fmt(it.price)}</td><td class="r"><b>${fmt(it.qty*it.price)}</b></td></tr>`).join('');
  modal(head(`Facture ${f.no}`)+`<div class="iv" id="print"><div class="iv-bar"></div>${ann?'<div class="iv-wm">ANNULÉE</div>':''}<div class="iv-in">
- <div class="iv-top"><div class="iv-brand"><b>${esc(C.name)}</b><span>${esc(C.tagline)}</span>${co.map(x=>`<span>${esc(x)}</span>`).join('')}</div><div class="iv-title"><h2>FACTURE</h2><div>N° ${f.no}</div></div></div>
- <div class="iv-meta"><div><small>Date d'émission</small><b>${fdatel(f.d)}</b></div><div><small>Commande</small><b>${o.id}</b></div><div><small>Mode de paiement</small><b>${o.pay?esc(o.pay.mode||'—'):'—'}</b></div><div><small>Date de paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div></div>
+ <div class="iv-top"><div class="iv-brand"><b>${esc(C.name)}</b><span>${esc(C.tagline)}</span>${co.map(x=>`<span>${esc(x)}</span>`).join('')}</div><div class="iv-title"><h2>FACTURE</h2><div>N° ${f.no}</div><span class="iv-stamp ${ann?'x':''}">${ann?'ANNULÉE':'PAYÉE'}</span></div></div>
+ <div class="iv-meta"><div><small>Date d'émission</small><b>${fdatel(f.d)}</b></div><div><small>Commande</small><b>${o.id}</b></div><div><small>Date de paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div><div><small>Devise</small><b>USD ($)</b></div></div>
  <div class="iv-parties"><div><small>Émetteur</small><b>${esc(C.name)}</b>${co.map(x=>`<span>${esc(x)}</span>`).join('')||`<span>${esc(C.tagline)}</span>`}</div><div><small>Facturé à</small><b>${esc(o.client)}</b><span>WhatsApp : ${esc(o.wa)}</span>${(o.prov||o.lieu)?`<span>${esc([o.prov,o.lieu].filter(Boolean).join(' · '))}</span>`:''}</div></div>
- <table><thead><tr><th style="width:34px">#</th><th>Désignation</th><th class="r" style="width:70px">Qté</th><th class="r" style="width:100px">Prix unit.</th><th class="r" style="width:110px">Montant</th></tr></thead><tbody>${rows}</tbody></table>
- <div class="iv-tot"><table><tr><td>Nombre d'articles</td><td class="r">${n.toLocaleString('fr-FR')}</td></tr><tr><td>Sous-total</td><td class="r">${fmt(sub)}</td></tr><tr class="g"><td>TOTAL ${ann?'':'PAYÉ'}</td><td class="r">${fmt(sub)}</td></tr></table></div>
- <div class="iv-pay"><span class="mut" style="color:#6b6b70">Montants exprimés en dollars américains (USD).</span><span class="iv-stamp ${ann?'x':''}">${ann?'ANNULÉE':'PAYÉE'}</span></div>
+ <table class="iv-items"><thead><tr><th class="c-n" style="width:30px">#</th><th>Désignation</th><th class="r" style="width:54px">Qté</th><th class="r c-u" style="width:92px">Prix unit.</th><th class="r" style="width:96px">Montant</th></tr></thead><tbody>${rows}</tbody></table>
+ <div class="iv-tot"><table><tr><td>Articles</td><td class="r">${n.toLocaleString('fr-FR')}</td></tr><tr><td>Sous-total</td><td class="r">${fmt(sub)}</td></tr><tr class="g"><td>TOTAL</td><td class="r">${fmt(sub)}</td></tr><tr><td>Montant payé</td><td class="r">${ann?fmt(0):fmt(sub)}</td></tr><tr><td>Solde dû</td><td class="r"><b>${ann?fmt(sub):fmt(0)}</b></td></tr></table></div>
+ <div class="iv-payb"><div class="pbt">Détails du paiement</div><div class="pbg"><div><small>Mode de paiement</small><b>${esc(mode)}</b></div><div><small>Date du paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div><div><small>Code de transaction</small><b class="mono">${pay?esc(pay.code):'—'}</b></div><div><small>N° de l'envoyeur</small><b>${pay&&pay.phone?esc(pay.phone):'—'}</b></div><div><small>Montant reçu</small><b>$${fmt(ann?0:sub)}</b></div><div><small>Statut</small><b class="${ann?'no':'ok'}">${ann?'Annulée':'Payée intégralement'}</b></div></div></div>
  <div class="iv-foot"><div class="qr" id="qrbox"></div><div><p>Vérifiez l'authenticité de cette facture en scannant le QR code ou sur :<br><span style="word-break:break-all">${esc(vurl(f))}</span></p><p style="margin-top:6px">Code de vérification : <span class="code">${f.code}</span></p></div></div>
- <div class="iv-legal">Merci pour votre confiance. · ${esc(C.name)}</div></div></div>
+ <div class="iv-legal">Facture acquittée · Merci pour votre confiance · ${esc(C.name)}</div></div></div>
  <div class="ft"><button class="btn" data-act="close">Fermer</button><button class="btn" data-act="sendinv" data-n="${f.no}">Envoyer au client</button><button class="btn dng" data-act="delinv" data-n="${f.no}">Supprimer</button><button class="btn pri" data-act="print">Imprimer ou enregistrer en PDF</button></div>`,'wide');fillQR(f)}
 /* ============ Produits ============ */
 VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>
@@ -849,8 +873,11 @@ const A={
  gopay:()=>{closeModal();S.view='pay';S.pf='apayer';render()},
  payman:d=>openPayManual(d.id),
  relance:d=>{const o=order(d.id),base=location.href.replace(/[^/]*$/,''),m='Bonjour '+o.client.split(' ')[0]+' 👋\nVotre commande *'+o.id+'* chez Bang Market ('+fmt(total(o))+') est '+(o.status==='confirmee'?'validée':'bien reçue')+'. Il ne reste que le paiement :\n👉 '+base+'pay.html?c='+encodeURIComponent(o.id)+'\n\nMerci !';window.open('https://wa.me/'+String(o.wa).replace(/\D/g,'')+'?text='+encodeURIComponent(m),'_blank','noopener')},
- proof:async d=>{const p=S.pays.find(x=>x.id==d.id);if(!p||!p.proof)return;const u=await proofUrl(p.proof);if(!u)return toast('Capture introuvable');
-  modal(head('Preuve de paiement')+`<div class="mut" style="margin-bottom:8px">${esc((PM[p.method]||[''])[0])} · code <b>${esc(p.code)}</b> · $${fmt(p.amount)}</div><img src="${u}" alt="Preuve" style="width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#eee"><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button></div>`)},
+ proof:async d=>{const p=S.pays.find(x=>x.id==d.id);if(!p||!p.proof)return;const u=await proofUrl(p.proof);if(!u)return toast('Capture introuvable');const o=order(p.orderId),m=(PM[p.method]||['Opérateur'])[0];
+  document.getElementById('lbx')&&document.getElementById('lbx').remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="lbx" id="lbx" role="dialog" aria-label="Preuve de paiement"><div class="lbh"><div><b>${esc(m)} · $${fmt(p.amount)}${o?' · '+esc(o.client):''}</b><small>Code ${esc(p.code)}${p.phone?' · '+esc(p.phone):''}</small></div><button type="button" data-act="lbclose" aria-label="Fermer">✕</button></div><div class="lbs" id="lbs"><img src="${u}" alt="Preuve de paiement" data-act="lbzoom"></div><div class="lbf"><button type="button" data-act="lbzoom">Zoom</button><a href="${u}" target="_blank" rel="noopener">Ouvrir en plein écran</a></div></div>`)},
+ lbclose:()=>{const l=document.getElementById('lbx');l&&l.remove()},
+ lbzoom:()=>{const s=document.getElementById('lbs');s&&s.classList.toggle('z')},
  payok:d=>{const p=S.pays.find(x=>x.id==d.id);if(!p)return;const o=order(p.orderId);if(!confirm('Valider '+(PM[p.method]||[''])[0]+' de $'+fmt(p.amount)+(o?' pour '+o.id+' ('+o.client+')':'')+' ?\n\nLe stock sortira et la commande passera à « payée ».'))return;run(async()=>{must(await sb.rpc('decide_payment',{p_id:p.id,p_ok:true}))},'Paiement validé')},
  payno:d=>{const p=S.pays.find(x=>x.id==d.id);if(!p)return;const n=prompt('Motif du refus (visible par le client) :','Paiement non retrouvé');if(n===null)return;run(async()=>{must(await sb.rpc('decide_payment',{p_id:p.id,p_ok:false,p_note:n}))},'Paiement refusé')},
  delinv:d=>{const f=S.invoices.find(x=>x.no===d.n);if(!f)return;if(!confirm('Supprimer définitivement la facture '+d.n+' ?\n\nElle disparaît de la liste et son QR code ne sera plus valide. La commande revient à « payée » et vous pourrez générer une nouvelle facture.'))return;
