@@ -390,7 +390,7 @@ const fmt=n=>(Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigi
 const day=o=>{const d=new Date();d.setDate(d.getDate()-o);return d};
 const fdate=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
 const fdatel=d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-const ICON={dash:'M5 20V10M12 20V4M19 20v-7',inbox:'M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5',box:'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',wallet:'M3 7h16a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 7l2-3h12M16 14h2',wa:'M4 20l1.4-4.2A8 8 0 1112 20a8 8 0 01-3.6-.9zM9 9c0 3 3 6 6 6l1-2-2-1-1 1c-1-.4-2-1.4-2.4-2.4l1-1-1-2z',sliders:'M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6',doc:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',plus:'M12 5v14M5 12h14',search:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-5-5',back:'M15 5l-7 7 7 7',x:'M6 6l12 12M18 6L6 18',stock:'M7 4v16M7 4L4 7M7 4l3 3M17 20V4M17 20l-3-3M17 20l3-3',in:'M12 4v12M12 16l-4-4M12 16l4-4M5 20h14',out:'M12 16V4M12 4L8 8M12 4l4 4M5 20h14'};
+const ICON={pay:'M3 6h18v12H3zM3 10h18M7 15h4',dash:'M5 20V10M12 20V4M19 20v-7',inbox:'M3 13l3-8h12l3 8v6H3zM3 13h5l1 3h6l1-3h5',box:'M21 8l-9-5-9 5v8l9 5 9-5zM3 8l9 5 9-5M12 13v8',receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',wallet:'M3 7h16a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2zM3 7l2-3h12M16 14h2',wa:'M4 20l1.4-4.2A8 8 0 1112 20a8 8 0 01-3.6-.9zM9 9c0 3 3 6 6 6l1-2-2-1-1 1c-1-.4-2-1.4-2.4-2.4l1-1-1-2z',sliders:'M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6',doc:'M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6',plus:'M12 5v14M5 12h14',search:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-5-5',back:'M15 5l-7 7 7 7',x:'M6 6l12 12M18 6L6 18',stock:'M7 4v16M7 4L4 7M7 4l3 3M17 20V4M17 20l-3-3M17 20l3-3',in:'M12 4v12M12 16l-4-4M12 16l4-4M5 20h14',out:'M12 16V4M12 4L8 8M12 4l4 4M5 20h14'};
 const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 let tt;const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2600)};
 const vlabel=v=>[v.color,v.size].filter(Boolean).join(' · ')||'Modèle unique';
@@ -416,7 +416,7 @@ CATDEF.forEach(([id,n,c,sb2])=>{CATS[n]=c;CAT_ID[n]=id;CAT_LBL[id]=n;SUBS[id]=sb
 const MOQ0={sacs:3,montres:5,cheveux:12,hauts:6,tshirts:6,robes:10,foot:6,gourdes:6,accessoires:6,chaussures:6,beaute:12};
 const subOpts=(label,cur)=>{const l=SUBS[CAT_ID[label]]||[];return l.length?'<option value="">Aucun</option>'+l.map(([k,t])=>`<option value="${k}" ${k===cur?'selected':''}>${t}</option>`).join(''):''};
 const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',mq:'',sv:'list',sc:'Toutes',lf:'tous',reveal:new Set(),
- products:[],orders:[],invoices:[],sales:[],moves:[],achats:[],depenses:[]};
+ products:[],orders:[],invoices:[],pays:[],pf:'attente',sales:[],moves:[],achats:[],depenses:[]};
 const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Confirmée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
 const pill=s=>`<span class="pill s-${ST[s][1]}">${ST[s][0]}</span>`;
@@ -457,6 +457,7 @@ async function loadAll(){
  const byO=new Map();
  S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
  oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price})});
+ try{const pr=await sb.from('payments').select('*').order('id',{ascending:false}).limit(500);S.pays=pr.error?[]:pr.data.map(p=>({id:p.id,orderId:byO.get(p.order_id)?byO.get(p.order_id).id:null,method:p.method,code:p.tx_code,phone:p.payer_phone||'',amount:+p.amount,status:p.status,note:p.note||'',proof:p.proof_path||'',d:new Date(p.created_at)}))}catch(e){S.pays=[]}
  S.invoices=iv.map(f=>({dbId:f.id,no:f.no,code:f.code,orderId:byO.get(f.order_id)?byO.get(f.order_id).id:null,d:new Date(f.created_at),status:f.status,checks:f.checks}));
  S.moves=mv.map(m=>({d:new Date(m.created_at),type:m.type,pid:m.product_id,color:m.color,size:m.size,qty:m.qty,reason:m.reason||'',ref:m.ref||''}));
  S.achats=pu.map(x=>({d:new Date(x.d+'T12:00'),sup:x.supplier||'',label:x.label,amt:+x.amount})).reverse();
@@ -470,7 +471,7 @@ function refresh(){const y=window.scrollY;chrome();$('#main').innerHTML=VIEWS[S.
 
 /* Connexion */
 let LOGGED=false,LIVE_CH=null,_lt=null;
-function listen(){if(LIVE_CH)return;try{LIVE_CH=sb.channel('bm-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)}).subscribe()}catch(e){}}
+function listen(){if(LIVE_CH)return;try{LIVE_CH=sb.channel('bm-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)}).on('postgres_changes',{event:'*',schema:'public',table:'payments'},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)}).subscribe()}catch(e){}}
 function showLogin(msg){LOGGED=false;$('#login').hidden=false;$('#lload').hidden=true;$('[data-form=login]').hidden=false;$('#lerr').textContent=msg||'';document.body.classList.add('lock')}
 async function boot(){
  try{
@@ -486,8 +487,8 @@ async function boot(){
 const low0=0;
 
 /* ============ Navigation ============ */
-const NAV=[['dash','Tableau de bord','dash'],['orders','Commandes','inbox'],['products','Produits','box'],['stock','Stock','stock'],['invoices','Factures','receipt'],['money','Achats et dépenses','wallet']];
-const SHORT={dash:'Accueil',orders:'Commandes',products:'Produits',stock:'Stock',invoices:'Factures',money:'Argent'};
+const NAV=[['dash','Tableau de bord','dash'],['orders','Commandes','inbox'],['products','Produits','box'],['stock','Stock','stock'],['invoices','Factures','receipt'],['pay','Bang Pay','pay'],['money','Achats et dépenses','wallet']];
+const SHORT={dash:'Accueil',orders:'Commandes',products:'Produits',stock:'Stock',invoices:'Factures',pay:'Bang Pay',money:'Argent'};
 function chrome(){
  const n=todo().length;
  $('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="nv ${S.view===k?'on':''}" data-act="nav" data-v="${k}" ${S.view===k?'aria-current="page"':''}>${ic(i)}${l}${k==='orders'&&n?`<span class="bd">${n}</span>`:''}</button>`).join('');
@@ -550,7 +551,7 @@ function detail(o){
  <div class="acts">
   <button class="act" data-act="wa" data-id="${o.id}" ${canWa?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>Écrire au client</b><br><small>Ouvre WhatsApp avec le message prêt</small></span></button>
   <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
-  <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${(o.status==='payee'||o.status==='facturee')?'':'disabled'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':'Générer la facture'}</b><br><small>${f?f.no:'Disponible après le paiement'}</small></span></button>
+  <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${o.status==='annulee'?'disabled':''} ${(o.status==='payee'||o.status==='facturee')?'':'style="opacity:.75"'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':(o.status==='payee'?'Générer la facture':'🔒 Facture verrouillée')}</b><br><small>${f?f.no:(o.status==='payee'?'Paiement validé':'Validez d\'abord le paiement')}</small></span></button>
  </div></div>`}
 
 /* ============ Fenêtres ============ */
@@ -742,6 +743,22 @@ function openAdd(pid){
 }
 
 /* ============ Factures ============ */
+const PM={orange:['Orange Money','#ff7900','OM'],mpesa:['M-Pesa','#e60012','MP'],illico:['Illico Cash','#1d4ed8','IC']};
+const PLOGO='<svg viewBox="0 0 64 64" width="38" height="38" aria-hidden="true"><defs><linearGradient id="plg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs><rect width="64" height="64" rx="19" fill="url(#plg)"/><path d="M23 15v34M23 15h11.5a8.5 8.5 0 0 1 0 17H23m0 0h13.5a8.5 8.5 0 0 1 0 17H23" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffd166"/></svg>';
+VIEWS.pay=()=>`<div class="top"><div style="display:flex;gap:12px;align-items:center">${PLOGO}<div><h1 style="margin:0">Bang Pay</h1><p>Vérifiez la transaction sur votre téléphone, puis validez : le stock sort et la commande passe à « payée ».</p></div></div></div><div class="kpis k3" id="pkpi"></div><div class="chips" id="pchips"></div><div id="plist"></div>`;
+AFTER.pay=paintPay;
+const _pu={};
+async function proofUrl(path){if(_pu[path])return _pu[path];const r=await sb.storage.from('payment-proofs').createSignedUrl(path,3600);if(r.error||!r.data)return null;return _pu[path]=r.data.signedUrl}
+function paintPay(){const P=S.pays,wait=P.filter(p=>p.status==='attente'),ok=P.filter(p=>p.status==='valide');
+ $('#pkpi').innerHTML=`<div class="card kpi"><span>À vérifier</span><b ${wait.length?'style="color:#b8741a"':''}>${wait.length}</b></div><div class="card kpi"><span>Validés</span><b class="ok">${ok.length}</b></div><div class="card kpi"><span>Montant validé</span><b>$${fmt(ok.reduce((x,p)=>x+p.amount,0))}</b></div>`;
+ const F=[['attente','À vérifier'],['valide','Validés'],['refuse','Refusés'],['tous','Tous']];
+ $('#pchips').innerHTML=F.map(([k,l])=>`<button class="chip ${S.pf===k?'on':''}" data-act="pfil" data-k="${k}">${l}<em>${k==='tous'?P.length:P.filter(p=>p.status===k).length}</em></button>`).join('');
+ const rows=P.filter(p=>S.pf==='tous'||p.status===S.pf);
+ $('#plist').innerHTML=rows.length?rows.map(p=>{const o=order(p.orderId),m=PM[p.method]||['?','#888','?'],exp=o?total(o):null,diff=exp!==null&&Math.abs(exp-p.amount)>0.009;
+  return `<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:13px;background:${m[1]};color:#fff;display:grid;place-items:center;font-weight:800;flex:none">${m[2]}</span><div style="flex:1;min-width:0"><b>${esc(o?o.client:'Commande supprimée')}</b><div class="mut" style="font-size:13px">${o?o.id:''} · ${m[0]} · ${fdate(p.d)} ${p.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(p.amount)}</b><div>${p.status==='attente'?'<span class="pill s-n">À vérifier</span>':p.status==='valide'?'<span class="pill s-p">Validé</span>':'<span class="pill s-x">Refusé</span>'}</div></div></div>
+  <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px"><span>Code : <b style="font-family:ui-monospace,monospace;letter-spacing:.5px">${esc(p.code)}</b></span>${p.phone?`<span>Payé depuis : <b>${esc(p.phone)}</b></span>`:''}${diff?`<span style="color:#b8400c">⚠ Montant attendu : $${fmt(exp)}</span>`:''}${p.note?`<span class="mut">Motif : ${esc(p.note)}</span>`:''}${p.proof?`<button type="button" class="btn sm" data-act="proof" data-id="${p.id}" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><img data-sp="${esc(p.proof)}" alt="" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:#ddd">Voir la preuve</button>`:'<span class="mut">Sans capture</span>'}</div>
+  ${p.status==='attente'?`<div style="display:flex;gap:8px"><button class="btn pri" style="flex:1" data-act="payok" data-id="${p.id}">Valider le paiement</button><button class="btn dng" data-act="payno" data-id="${p.id}">Refuser</button></div>`:''}</div>`}).join(''):'<div class="card empty"><b>Aucun paiement ici</b>Les paiements déclarés par les clients apparaîtront ici.</div>';
+ document.querySelectorAll('#plist img[data-sp]').forEach(async im=>{const u=await proofUrl(im.dataset.sp);if(u)im.src=u})}
 VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérification n'est visible que par vous.</p></div></div>
  <label class="search">${ic('search')}<input id="iq" type="search" placeholder="Rechercher par numéro, code ou client" value="${esc(S.iq)}" aria-label="Rechercher une facture"></label><div class="card" style="padding:6px 12px" id="ilist"></div>`;
 AFTER.invoices=paintInvoices;
@@ -778,6 +795,10 @@ const A={
  step:(d,el)=>{const i=el.parentElement.querySelector('input');i.value=Math.max(0,(+i.value||0)+ +d.d);i.dispatchEvent(new Event('input',{bubbles:true}))},
  'do-cancel':async d=>{const o=order(d.id);if(await run(async()=>must(await sb.rpc('cancel_order',{p_order:o.dbId})),'Commande annulée'))closeModal()},
  invoice:async d=>{const o=order(d.id);let f=inv(o);
+  if(!f&&o.status!=='payee'&&o.status!=='facturee'){
+   const w=S.pays.some(p=>p.orderId===o.id&&p.status==='attente');
+   if(w){toast('Validez d\'abord le paiement du client dans Bang Pay');closeModal();S.view='pay';S.pf='attente';render();return}
+   toast('Validez d\'abord le paiement avant de générer la facture');return A.manage(d)}
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
@@ -786,6 +807,11 @@ const A={
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
+ pfil:d=>{S.pf=d.k;paintPay()},
+ proof:async d=>{const p=S.pays.find(x=>x.id==d.id);if(!p||!p.proof)return;const u=await proofUrl(p.proof);if(!u)return toast('Capture introuvable');
+  modal(head('Preuve de paiement')+`<div class="mut" style="margin-bottom:8px">${esc((PM[p.method]||[''])[0])} · code <b>${esc(p.code)}</b> · $${fmt(p.amount)}</div><img src="${u}" alt="Preuve" style="width:100%;max-height:70vh;object-fit:contain;border-radius:14px;background:#eee"><div class="ft"><button type="button" class="btn" data-act="close">Fermer</button></div>`)},
+ payok:d=>{const p=S.pays.find(x=>x.id==d.id);if(!p)return;const o=order(p.orderId);if(!confirm('Valider '+(PM[p.method]||[''])[0]+' de $'+fmt(p.amount)+(o?' pour '+o.id+' ('+o.client+')':'')+' ?\n\nLe stock sortira et la commande passera à « payée ».'))return;run(async()=>{must(await sb.rpc('decide_payment',{p_id:p.id,p_ok:true}))},'Paiement validé')},
+ payno:d=>{const p=S.pays.find(x=>x.id==d.id);if(!p)return;const n=prompt('Motif du refus (visible par le client) :','Paiement non retrouvé');if(n===null)return;run(async()=>{must(await sb.rpc('decide_payment',{p_id:p.id,p_ok:false,p_note:n}))},'Paiement refusé')},
  delinv:d=>{const f=S.invoices.find(x=>x.no===d.n);if(!f)return;if(!confirm('Supprimer définitivement la facture '+d.n+' ?\n\nElle disparaît de la liste et son QR code ne sera plus valide. La commande revient à « payée » et vous pourrez générer une nouvelle facture.'))return;
   run(async()=>{must(await sb.from('invoices').delete().eq('no',d.n));const o=order(f.orderId);if(o)must(await sb.from('orders').update({status:'payee'}).eq('id',o.dbId).eq('status','facturee'))},'Facture supprimée').then(ok=>{if(ok)closeModal()})},
  cancelinv:d=>{if(confirm('Annuler la facture '+d.n+' ? Elle restera dans l\'historique, marquée annulée.'))run(async()=>must(await sb.from('invoices').update({status:'annulee'}).eq('no',d.n)),'Facture annulée')},
