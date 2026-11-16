@@ -363,6 +363,15 @@ body{background:var(--bg)}
 .mhb{display:grid;gap:2px;min-width:0}.mhb>b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mhb .mut{font-size:12.5px}
 .mhv{display:inline-flex;align-items:center;gap:6px;background:var(--card);border-radius:99px;padding:2px 10px;font-size:12.5px;font-weight:600;width:fit-content}.mhv .dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.15)}
 .mhq{display:flex;flex-direction:column;align-items:center;min-width:64px;padding:6px 10px;border-radius:12px;font-size:18px;font-weight:800;line-height:1.1}.mhq small{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.mhq.entree{background:#dff3e6;color:#14663a}.mhq.sortie{background:#fde5d9;color:#b8400c}
+
+.pdet{display:grid;grid-template-columns:1fr auto;gap:14px;background:var(--card);border-radius:12px;padding:12px;align-items:start}
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px;min-width:0}.pg>div{min-width:0}
+.pg small{display:block;font-size:11px;color:var(--mut);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}.pg b{display:block;font-size:14.5px;overflow-wrap:anywhere}.pg .mono{font-family:ui-monospace,monospace;letter-spacing:.5px}
+.pg .od{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}.pg em.wn{font-style:normal;font-size:12px;color:#b8400c;font-weight:600}
+.pthumb{width:104px;display:grid;gap:5px;justify-items:center;background:none;padding:0;cursor:pointer;font:inherit;color:inherit}.pthumb img{width:104px;height:104px;object-fit:cover;border-radius:12px;background:#ddd;border:1px solid var(--line)}.pthumb span{font-size:12px;font-weight:700;color:var(--or)}
+.pthumb.no{height:104px;align-content:center;font-size:12.5px;color:var(--mut);border:1px dashed var(--line);border-radius:12px;cursor:default}
+@media (max-width:560px){.pdet{grid-template-columns:1fr}.pthumb{width:100%;grid-auto-flow:column;justify-content:start;align-items:center;gap:10px}.pthumb img{width:72px;height:72px}}
+.pbk{border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:14px;background:var(--surface)}.pbh{display:flex;justify-content:space-between;align-items:center;gap:10px}.pbs{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--mut);margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -494,7 +503,8 @@ function chrome(){
  $('#nav').innerHTML=NAV.map(([k,l,i])=>`<button class="nv ${S.view===k?'on':''}" data-act="nav" data-v="${k}" ${S.view===k?'aria-current="page"':''}>${ic(i)}${l}${k==='orders'&&n?`<span class="bd">${n}</span>`:''}</button>`).join('');
  $('#bnav').innerHTML=NAV.map(([k,l,i])=>`<button class="${S.view===k?'on':''}" data-act="nav" data-v="${k}">${ic(i)}${SHORT[k]}${k==='orders'&&n?`<span class="bd">${n}</span>`:''}</button>`).join('');
 }
-function render(){chrome();$('#main').innerHTML=VIEWS[S.view]();AFTER[S.view]&&AFTER[S.view]();window.scrollTo(0,0)}
+function render(){chrome();$('#main').innerHTML=VIEWS[S.view]();AFTER[S.view]&&AFTER[S.view]();fillProofs();window.scrollTo(0,0)}
+function fillProofs(){document.querySelectorAll('img[data-sp]').forEach(async im=>{if(im.dataset.ok)return;const u=await proofUrl(im.dataset.sp);if(u){im.src=u;im.dataset.ok=1}})}
 
 /* ============ Tableau de bord ============ */
 const VIEWS={};const AFTER={};
@@ -548,6 +558,7 @@ function detail(o){
  <div class="who"><div><b>${esc(o.client)}</b><span class="mut">WhatsApp ${esc(o.wa)}</span>${o.prov?`<span class="mut">${esc(o.prov)}${o.lieu?' · '+esc(o.lieu):''}</span>`:''}</div>${o.pay?`<div><b>Paiement reçu</b><span class="mut">${esc(o.pay.mode)} · ${fdate(o.pay.date)}</span></div>`:''}</div>
  <table><thead><tr><th>Article</th><th class="r">Qté</th><th class="r">Prix</th><th class="r">Total</th></tr></thead><tbody>${o.items.map(it=>`<tr><td>${esc(iname(it))}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r">${fmt(it.qty*it.price)}</td></tr>`).join('')}</tbody></table>
  <div class="tot"><span>Total</span><span>${fmt(total(o))}</span></div>
+${payBlock(o)}
  <div class="acts">
   <button class="act" data-act="wa" data-id="${o.id}" ${canWa?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>Écrire au client</b><br><small>Ouvre WhatsApp avec le message prêt</small></span></button>
   <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
@@ -752,8 +763,14 @@ const PM={orange:['Orange Money','#ff7900','OM'],mpesa:['M-Pesa','#e60012','MP']
 const PLOGO='<svg viewBox="0 0 64 64" width="38" height="38" aria-hidden="true"><defs><linearGradient id="plg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs><rect width="64" height="64" rx="19" fill="url(#plg)"/><path d="M23 15v34M23 15h11.5a8.5 8.5 0 0 1 0 17H23m0 0h13.5a8.5 8.5 0 0 1 0 17H23" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="49" cy="15" r="4.5" fill="#ffd166"/></svg>';
 VIEWS.pay=()=>`<div class="top"><div style="display:flex;gap:12px;align-items:center">${PLOGO}<div><h1 style="margin:0">Bang Pay</h1><p>Ici se valide le <b>paiement</b> : le stock sort et la facture se débloque. La validation de la commande se fait dans Commandes.</p></div></div></div><div class="kpis k3" id="pkpi"></div><div class="chips" id="pchips"></div><div id="plist"></div>`;
 AFTER.pay=paintPay;
+const payDet=(p,o)=>{const m=PM[p.method]||['Inconnu','#888','?'],exp=o?total(o):null,diff=exp!==null&&Math.abs(exp-p.amount)>0.009;
+ return `<div class="pdet"><div class="pg"><div><small>Opérateur</small><b><i class="od" style="background:${m[1]}"></i>${esc(m[0])}</b></div><div><small>Numéro de l'envoyeur</small><b>${p.phone?esc(p.phone):'<span class="mut">Non renseigné</span>'}</b></div><div><small>Code de transaction</small><b class="mono">${esc(p.code)}</b></div><div><small>Montant envoyé</small><b>$${fmt(p.amount)}</b>${diff?`<em class="wn">⚠ attendu $${fmt(exp)}</em>`:''}</div>${p.note?`<div style="grid-column:1/-1"><small>Motif du refus</small><b>${esc(p.note)}</b></div>`:''}</div>
+ ${p.proof?`<button type="button" class="pthumb" data-act="proof" data-id="${p.id}"><img data-sp="${esc(p.proof)}" alt="Preuve de paiement"><span>Voir la preuve</span></button>`:'<div class="pthumb no">Sans capture</div>'}</div>`};
+function payBlock(o){const L=S.pays.filter(p=>p.orderId===o.id);
+ if(!L.length)return `<div class="pbk"><div class="pbh"><b>Paiement Bang Pay</b><span class="pill s-n">Aucun envoyé</span></div><p class="mut" style="margin:6px 0 0;font-size:13.5px">Le client n'a pas encore envoyé de paiement par Bang Pay (ni opérateur, ni code, ni preuve).</p></div>`;
+ return `<div class="pbk"><div class="pbh"><b>Paiement Bang Pay</b><button type="button" class="btn sm" data-act="gopay2" data-id="${o.id}">Ouvrir Bang Pay</button></div>${L.map(p=>`<div style="margin-top:10px"><div class="pbs"><span>${fdate(p.d)} ${p.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span>${p.status==='attente'?'<span class="pill s-n">À vérifier</span>':p.status==='valide'?'<span class="pill s-p">Validé</span>':'<span class="pill s-x">Refusé</span>'}</div>${payDet(p,o)}${p.status==='attente'?`<div style="display:flex;gap:8px;margin-top:8px"><button class="btn pri" style="flex:1" data-act="payok" data-id="${p.id}">Valider le paiement</button><button class="btn dng" data-act="payno" data-id="${p.id}">Refuser</button></div>`:''}</div>`).join('')}</div>`}
 const _pu={};
-async function proofUrl(path){if(_pu[path])return _pu[path];const r=await sb.storage.from('payment-proofs').createSignedUrl(path,3600);if(r.error||!r.data)return null;return _pu[path]=r.data.signedUrl}
+async function proofUrl(path){if(_pu[path])return _pu[path];try{const r=await sb.storage.from('payment-proofs').createSignedUrl(path,3600);if(r.error||!r.data)return null;return _pu[path]=r.data.signedUrl}catch(e){return null}}
 function paintPay(){const P=S.pays,wait=P.filter(p=>p.status==='attente'),ok=P.filter(p=>p.status==='valide');
  const apayer=S.orders.filter(o=>['nouvelle','contacte','confirmee'].includes(o.status)&&!P.some(p=>p.orderId===o.id&&p.status==='attente'));
  const manual=S.orders.filter(o=>(o.status==='payee'||o.status==='facturee')&&o.pay&&!P.some(p=>p.orderId===o.id&&p.status==='valide'));
@@ -765,19 +782,19 @@ function paintPay(){const P=S.pays,wait=P.filter(p=>p.status==='attente'),ok=P.f
  const mb=p=>{const m=PM[p.method]||['?','#888','?'];return `<span style="width:44px;height:44px;border-radius:13px;background:${m[1]};color:#fff;display:grid;place-items:center;font-weight:800;flex:none">${m[2]}</span>`};
  const payCard=p=>{const o=order(p.orderId),m=PM[p.method]||['?','#888','?'],exp=o?total(o):null,diff=exp!==null&&Math.abs(exp-p.amount)>0.009;
   return `<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center">${mb(p)}<div style="flex:1;min-width:0"><b>${esc(o?o.client:'Commande supprimée')}</b><div class="mut" style="font-size:13px">${o?o.id:''} · ${m[0]} · ${fdate(p.d)} ${p.d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(p.amount)}</b><div>${p.status==='attente'?'<span class="pill s-n">À vérifier</span>':p.status==='valide'?'<span class="pill s-p">Validé</span>':'<span class="pill s-x">Refusé</span>'}</div></div></div>
-  <div style="background:var(--card);border-radius:12px;padding:10px 12px;display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;align-items:center"><span>Code : <b style="font-family:ui-monospace,monospace;letter-spacing:.5px">${esc(p.code)}</b></span>${p.phone?`<span>Payé depuis : <b>${esc(p.phone)}</b></span>`:''}${diff?`<span style="color:#b8400c">⚠ Montant attendu : $${fmt(exp)}</span>`:''}${p.note?`<span class="mut">Motif : ${esc(p.note)}</span>`:''}${p.proof?`<button type="button" class="btn sm" data-act="proof" data-id="${p.id}" style="margin-left:auto;display:inline-flex;align-items:center;gap:8px"><img data-sp="${esc(p.proof)}" alt="" style="width:34px;height:34px;border-radius:8px;object-fit:cover;background:#ddd">Voir la preuve</button>`:'<span class="mut">Sans capture</span>'}</div>
+  ${payDet(p,o)}
   ${p.status==='attente'?`<div style="display:flex;gap:8px"><button class="btn pri" style="flex:1" data-act="payok" data-id="${p.id}">Valider le paiement</button><button class="btn dng" data-act="payno" data-id="${p.id}">Refuser</button></div>`:''}</div>`};
  const empty=(t,s)=>`<div class="card empty"><b>${t}</b>${s}</div>`;
  let html='';
  if(S.pf==='apayer'){
-  html=apayer.length?apayer.map(o=>`<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(o.client)}</b><div class="mut" style="font-size:13px">${o.id} · ${o.items.reduce((x,i)=>x+i.qty,0)} pièces · ${fdate(o.d)}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(total(o))}</b><div><span class="pill s-${(ST[o.status]||['','n'])[1]}">${(ST[o.status]||['?'])[0]}</span></div></div></div>
+  html=apayer.length?apayer.map(o=>`<div class="card" style="margin-bottom:10px;display:grid;gap:10px"><div style="display:flex;gap:12px;align-items:center"><div style="flex:1;min-width:0"><b>${esc(o.client)}</b><div class="mut" style="font-size:13px">${o.id} · ${o.items.reduce((x,i)=>x+i.qty,0)} pièces · ${fdate(o.d)}</div><div class="mut" style="font-size:12.5px;margin-top:2px">${P.some(p=>p.orderId===o.id&&p.status==='refuse')?'Un paiement a été refusé. Le client peut réessayer.':'Aucun paiement envoyé par le client via Bang Pay.'}</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(total(o))}</b><div><span class="pill s-${(ST[o.status]||['','n'])[1]}">${(ST[o.status]||['?'])[0]}</span></div></div></div>
    <div style="display:flex;gap:8px;flex-wrap:wrap">${o.status!=='confirmee'?`<button class="btn pri" data-act="accept" data-id="${o.id}">Valider la commande</button>`:''}<button class="btn ${o.status==='confirmee'?'pri':''}" data-act="payman" data-id="${o.id}">Enregistrer un paiement</button><button class="btn" data-act="relance" data-id="${o.id}">Relancer sur WhatsApp</button></div></div>`).join(''):empty('Aucune commande à payer','Toutes les commandes en cours sont payées.')}
   else if(S.pf==='valide'){
    const all=[...ok.map(p=>({d:p.d,h:payCard(p)})),...manual.map(o=>({d:o.pay.date,h:`<div class="card" style="margin-bottom:10px;display:flex;gap:12px;align-items:center"><span style="width:44px;height:44px;border-radius:13px;background:#6b6b70;color:#fff;display:grid;place-items:center;font-weight:800;flex:none">✎</span><div style="flex:1;min-width:0"><b>${esc(o.client)}</b><div class="mut" style="font-size:13px">${o.id} · ${esc(o.pay.mode||'Manuel')} · ${fdate(o.pay.date)} · enregistré par l'administrateur</div></div><div style="text-align:right"><b style="font-size:18px">$${fmt(total(o))}</b><div><span class="pill s-p">Validé</span></div></div></div>`}))].sort((x,y)=>y.d-x.d);
    html=all.length?all.map(x=>x.h).join(''):empty('Aucun paiement validé','Les paiements validés apparaîtront ici.')}
   else{const rows=P.filter(p=>p.status===S.pf);html=rows.length?rows.map(payCard).join(''):empty('Aucun paiement ici','Les paiements déclarés par les clients apparaîtront ici.')}
  $('#plist').innerHTML=head+html;
- document.querySelectorAll('#plist img[data-sp]').forEach(async im=>{const u=await proofUrl(im.dataset.sp);if(u)im.src=u})}
+ fillProofs()}
 VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérification n'est visible que par vous.</p></div></div>
  <label class="search">${ic('search')}<input id="iq" type="search" placeholder="Rechercher par numéro, code ou client" value="${esc(S.iq)}" aria-label="Rechercher une facture"></label><div class="card" style="padding:6px 12px" id="ilist"></div>`;
 AFTER.invoices=paintInvoices;
@@ -828,6 +845,7 @@ const A={
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
  pfil:d=>{S.pf=d.k;paintPay()},
  accept:d=>{const o=order(d.id);run(async()=>must(await sb.rpc('accept_order',{p_order:o.dbId})),'Commande validée. Le client peut payer via Bang Pay.').then(ok=>{if(ok)closeModal()})},
+ gopay2:()=>{S.view='pay';S.pf='attente';render()},
  gopay:()=>{closeModal();S.view='pay';S.pf='apayer';render()},
  payman:d=>openPayManual(d.id),
  relance:d=>{const o=order(d.id),base=location.href.replace(/[^/]*$/,''),m='Bonjour '+o.client.split(' ')[0]+' 👋\nVotre commande *'+o.id+'* chez Bang Market ('+fmt(total(o))+') est '+(o.status==='confirmee'?'validée':'bien reçue')+'. Il ne reste que le paiement :\n👉 '+base+'pay.html?c='+encodeURIComponent(o.id)+'\n\nMerci !';window.open('https://wa.me/'+String(o.wa).replace(/\D/g,'')+'?text='+encodeURIComponent(m),'_blank','noopener')},
