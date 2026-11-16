@@ -1012,7 +1012,7 @@ if(res.error||!res.data){if(btn){btn.disabled=false;btn.textContent='Confirmer l
 st.cart.forEach(x=>{const pp=P.find(p=>p.id===x.id);if(pp){const k=vk(pp,x.color,x.size);if(AV[k]!==undefined)AV[k]=Math.max(0,AV[k]-x.q);RS[k]=(RS[k]||0)+x.q}});
 st.cart.forEach(x=>{ST[x.id]=Math.max(0,ST[x.id]-x.q)});
 st.done={ref:res.data,nom:FM.nom.trim(),prenom:FM.prenom.trim(),prov:FM.prov,kin,lieu:kin?FM.rp.trim():FM.ville,wa:waFmt(wa),total,qty,lines};
-histAdd(st.done);st.cart=[];st.coupon='';st.chk=false;sfx('success');renderTabs();renderCart();$('#scroll').scrollTop=0}
+histAdd(st.done);st.cart=[];st.coupon='';st.chk=false;try{cartsAfterOrder()}catch(e){}sfx('success');renderTabs();renderCart();$('#scroll').scrollTop=0}
 const WA_NUM='243826203196';
 const HK='bm_orders';
 function histGet(){try{const h=JSON.parse(localStorage.getItem(HK)||'[]');return Array.isArray(h)?h:[]}catch(e){return[]}}
@@ -1024,9 +1024,10 @@ function waLink(o){const g=new Map();o.l.forEach(([n,c,z,q])=>{if(!g.has(n))g.se
 const OST={nouvelle:['⏳ En attente de validation','w'],contacte:['⏳ En attente de validation','w'],confirmee:['✅ Commande validée · paiement attendu','w'],payee:['✅ Payée','ok'],facturee:['✅ Payée','ok'],annulee:['❌ Annulée','x']};const ostSt=o=>OST[o.s]||OST.nouvelle;
 const ostHtml=o=>{const t=ostSt(o);return '<i class="oh-s '+t[1]+'" data-r="'+esc(o.r)+'">'+t[0]+'</i>'};
 async function ostSync(){if(!sb)return;const h=histGet();if(!h.length)return;let r;try{r=await sb.rpc('order_status',{p_refs:h.map(o=>o.r)})}catch(e){return}
- if(r.error||!r.data)return;const m=new Map(r.data.map(x=>[x.number,x.status]));let ch=false;
- h.forEach(o=>{if(m.has(o.r)&&o.s!==m.get(o.r)){o.s=m.get(o.r);ch=true}});if(!ch)return;
+ if(r.error||!r.data)return;const m=new Map(r.data.map(x=>[x.number,x.status]));let ch=false;const pn=[],pd=v=>v==='payee'||v==='facturee';
+ h.forEach(o=>{if(m.has(o.r)&&o.s!==m.get(o.r)){const nv=m.get(o.r);if(pd(nv)&&!pd(o.s))pn.push(o.r);o.s=nv;ch=true}});if(!ch)return;
  try{localStorage.setItem(HK,JSON.stringify(h))}catch(e){}
+ if(pn.length)toast('✅ Paiement confirmé : '+pn.join(', ')+'. Retrouve-le dans Profil › Mes commandes.');
  if(st.view==='orders'){h.forEach(o=>{const e=document.querySelector('.oh-s[data-r="'+o.r+'"]');if(e)e.outerHTML=ostHtml(o)})}}
 function renderOrders(){const h=histGet(),dt=t=>new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short',year:'numeric'});
 $('#scroll').innerHTML=`<div class="logo" style="font-size:24px;margin-bottom:6px">Mes commandes</div><div class="oh-n">Gardées sur cet appareil. Pour valider une commande, écris-nous sur WhatsApp : le message est déjà prêt.</div>`+
@@ -1087,7 +1088,7 @@ async function syncCatalog(){
   keep.sort((x,y)=>x.id-y.id);
   P.splice(0,P.length,...keep);
   window.LIVE=true;
-  if(first){st.cur=P.find(p=>p.id===st.cur.id)||P[0];render();drawDetail();return}
+  if(first){try{cvRehydrate()}catch(e){}st.cur=P.find(p=>p.id===st.cur.id)||P[0];render();drawDetail();return}
   /* Mise à jour en direct, sans recharger la page ni perdre ce que le client est en train de faire */
   const ids=new Set(keep.map(p=>p.id)),n0=st.cart.length;
   st.cart=st.cart.filter(x=>ids.has(x.id));
@@ -1109,11 +1110,62 @@ async function syncCatalog(){
 /* Temps réel : dès que l'admin enregistre, la boutique se met à jour. Relecture de secours toutes les 45 s. */
 let _lt=null;const later=()=>{clearTimeout(_lt);_lt=setTimeout(syncCatalog,800)};
 try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).on('postgres_changes',{event:'*',schema:'public',table:'product_images'},later).subscribe()}catch(e){}
-setInterval(()=>{if(!document.hidden){syncCatalog();if(st.view==='orders')ostSync()}},45000);
-document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncCatalog()});
+setInterval(()=>{if(!document.hidden){syncCatalog();ostSync()}},45000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncCatalog();ostSync()}});setTimeout(ostSync,2500);
+/* ===== Paniers multiples + panier et favoris conservés après actualisation ===== */
+const CK='bm_carts2',FK='bm_favs';let CARTS=null,LOST=[],FLOST=[],_cs='';
+const cvKey=(p,c,z)=>p.id+(c||'')+(z||'');
+function cvResolve(items){const cart=[],lost=[];(items||[]).forEach(i=>{const p=P.find(p=>p.n===i.n);if(!p){lost.push(i);return}const k=cvKey(p,i.c,i.z),f=cart.find(x=>x.k===k);f?f.q+=i.q:cart.push({k,id:p.id,color:i.c||'',size:i.z||'',q:i.q})});return{cart,lost}}
+const itemsOut=()=>st.cart.map(x=>{const p=P.find(p=>p.id===x.id);return p?{n:p.n,c:x.color,z:x.size,q:x.q}:null}).filter(Boolean);
+const favNames=()=>[...st.fav].map(id=>{const p=P.find(p=>p.id===id);return p&&p.n}).filter(Boolean).concat(FLOST);
+const cvName=()=>{let n=CARTS.l.length+1;while(CARTS.l.some(c=>c.nm==='Panier '+n))n++;return 'Panier '+n};
+(function(){let d=null;try{d=JSON.parse(localStorage.getItem(CK)||'null')}catch(e){}
+ CARTS=d&&Array.isArray(d.l)&&d.l.length?d:{a:'c1',l:[{id:'c1',nm:'Panier 1',it:[],cp:''}]};
+ const c=CARTS.l.find(x=>x.id===CARTS.a)||CARTS.l[0];CARTS.a=c.id;const r=cvResolve(c.it);st.cart=r.cart;LOST=r.lost;st.coupon=c.cp||'';
+ try{const f=JSON.parse(localStorage.getItem(FK)||'[]');(Array.isArray(f)?f:[]).forEach(n=>{const p=P.find(p=>p.n===n);p?st.fav.add(p.id):FLOST.push(n)})}catch(e){}})();
+function cvRehydrate(){/* après la 1re synchro : retrouve les produits de la base, retire ceux qui n'existent plus */
+ const r=cvResolve(LOST);r.cart.forEach(n=>{const f=st.cart.find(x=>x.k===n.k);f?f.q+=n.q:st.cart.push(n)});LOST=[];
+ const ids=new Set(P.map(p=>p.id));st.cart=st.cart.filter(x=>ids.has(x.id));
+ FLOST.forEach(n=>{const p=P.find(p=>p.n===n);p&&st.fav.add(p.id)});FLOST=[];[...st.fav].forEach(i=>{if(!ids.has(i))st.fav.delete(i)});
+ renderTabs();cvSave()}
+function cvSave(){if(!CARTS)return;const c=CARTS.l.find(x=>x.id===CARTS.a);if(!c)return;c.it=itemsOut().concat(LOST);c.cp=st.coupon||'';
+ const fv=favNames(),s=JSON.stringify(CARTS)+'|'+JSON.stringify(fv);if(s===_cs)return;_cs=s;
+ try{localStorage.setItem(CK,JSON.stringify(CARTS));localStorage.setItem(FK,JSON.stringify(fv))}catch(e){}}
+function cvSwitch(id,skip){if(!skip)cvSave();const c=CARTS.l.find(x=>x.id===id);if(!c)return;CARTS.a=id;const r=cvResolve(c.it);st.cart=r.cart;LOST=r.lost;st.coupon=c.cp||'';st.chk=false;cvSave()}
+function cartsAfterOrder(){if(!CARTS)return;LOST=[];
+ if(CARTS.l.length>1){const i=CARTS.l.findIndex(x=>x.id===CARTS.a);CARTS.l.splice(i,1);cvSwitch(CARTS.l[Math.min(i,CARTS.l.length-1)].id,true)}
+ else{CARTS.l[0].it=[];CARTS.l[0].cp=''}cvSave()}
+setInterval(cvSave,700);addEventListener('pagehide',cvSave);document.addEventListener('visibilitychange',()=>{if(document.hidden)cvSave()});
+function cvDialog(o){const d=document.createElement('div');d.className='cvd';
+ d.innerHTML=`<div class="cvb" role="dialog"><b>${o.title}</b>${o.text?`<p>${o.text}</p>`:''}${o.input!=null?`<input id="cvi" maxlength="24" value="${esc(o.input)}" autocomplete="off">`:''}<div class="cva"><button data-x>Annuler</button><button class="pri ${o.danger?'dg':''}" data-ok>${o.ok}</button></div></div>`;
+ document.body.appendChild(d);const i=d.querySelector('#cvi'),close=()=>d.remove(),go=()=>{const v=i?i.value.trim():'';if(i&&!v){i.focus();return}close();o.onOk(v)};
+ d.querySelector('[data-x]').onclick=close;d.querySelector('[data-ok]').onclick=go;d.addEventListener('click',e=>{if(e.target===d)close()});
+ if(i){i.focus();i.select();i.onkeydown=e=>{if(e.key==='Enter')go();if(e.key==='Escape')close()}}}
+function cartBar(){const sc=$('#scroll'),lg=sc&&sc.querySelector('.logo');if(!lg||!CARTS)return;
+ const q=c=>c.id===CARTS.a?cartQty():c.it.reduce((a,x)=>a+x.q,0),act=CARTS.l.find(c=>c.id===CARTS.a);
+ lg.insertAdjacentHTML('afterend',`<div class="cbar"><div class="cch">${CARTS.l.map(c=>`<button type="button" data-cs="${c.id}" class="${c.id===CARTS.a?'on':''}">${esc(c.nm)}<i>${q(c)}</i></button>`).join('')}${CARTS.l.length<6?'<button type="button" data-cadd class="cnew">＋ Nouveau</button>':''}</div><div class="cac"><button type="button" data-cren>✎ Renommer</button>${CARTS.l.length>1?'<button type="button" data-cdel>🗑 Supprimer ce panier</button>':''}</div></div>`);
+ const redo=()=>{renderTabs();renderCart();sc.scrollTop=0};
+ sc.querySelectorAll('[data-cs]').forEach(b=>b.onclick=()=>{if(b.dataset.cs===CARTS.a)return;cvSwitch(b.dataset.cs);sfx('tick');redo()});
+ const add=sc.querySelector('[data-cadd]');if(add)add.onclick=()=>cvDialog({title:'Nouveau panier',text:'Donnez-lui un nom, par exemple le nom d’un client.',input:cvName(),ok:'Créer',onOk:v=>{cvSave();const c={id:'c'+Date.now().toString(36),nm:v,it:[],cp:''};CARTS.l.push(c);cvSwitch(c.id,true);sfx('pop');toast('« '+v+' » créé');redo()}});
+ sc.querySelector('[data-cren]').onclick=()=>cvDialog({title:'Renommer le panier',input:act.nm,ok:'Enregistrer',onOk:v=>{act.nm=v;cvSave();redo();toast('Panier renommé')}});
+ const del=sc.querySelector('[data-cdel]');if(del)del.onclick=()=>cvDialog({title:'Supprimer « '+esc(act.nm)+' » ?',text:'Les articles de ce panier seront retirés.',ok:'Supprimer',danger:1,onOk:()=>{const i=CARTS.l.findIndex(x=>x.id===act.id);CARTS.l.splice(i,1);LOST=[];cvSwitch(CARTS.l[Math.min(i,CARTS.l.length-1)].id,true);sfx('remove');redo()}})}
+function cvPick(run){
+ if(!CARTS||CARTS.l.length<2)return run();
+ const d=document.createElement('div');d.className='cvd';
+ const q=c=>c.id===CARTS.a?cartQty():c.it.reduce((s,i)=>s+i.q,0);
+ d.innerHTML=`<div class="cvb" role="dialog"><b>Ajouter à quel panier ?</b><div class="cpk">${CARTS.l.map(c=>`<button type="button" data-p="${c.id}" class="${c.id===CARTS.a?'on':''}"><span>${esc(c.nm)}</span><i>${q(c)} pcs</i></button>`).join('')}${CARTS.l.length<6?'<button type="button" data-new class="cnew2"><span>＋ Nouveau panier</span></button>':''}</div><div class="cva"><button data-x>Annuler</button></div></div>`;
+ document.body.appendChild(d);const close=()=>d.remove();
+ const go=id=>{close();if(id!==CARTS.a)cvSwitch(id);const b=cartQty();run();const n=cartQty()-b,c=CARTS.l.find(x=>x.id===CARTS.a);if(n>0&&c)setTimeout(()=>toast(n+' pcs ajoutées à « '+c.nm+' »'),50)};
+ d.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>go(b.dataset.p));
+ d.querySelector('[data-x]').onclick=close;d.addEventListener('click',e=>{if(e.target===d)close()});
+ const nw=d.querySelector('[data-new]');if(nw)nw.onclick=()=>{close();cvDialog({title:'Nouveau panier',text:'Donnez-lui un nom, par exemple le nom d’un client.',input:cvName(),ok:'Créer et ajouter',onOk:v=>{cvSave();const c={id:'c'+Date.now().toString(36),nm:v,it:[],cp:''};CARTS.l.push(c);go(c.id)}})}}
+const _am=addMulti;addMulti=function(p){cvPick(()=>_am(p))};
+const _ac=addCart;addCart=function(p,c,z,q){cvPick(()=>_ac(p,c,z,q))};
+const _rc2=renderCart;renderCart=function(){_rc2();if(st.view==='cart'&&!st.done&&!st.chk)cartBar()};
 syncCatalog();
 render();drawDetail();
 </script>
+<style>.cbar{margin:0 0 14px}.cch{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}.cch::-webkit-scrollbar{display:none}.cch button{flex:none;display:flex;align-items:center;gap:7px;min-height:40px;padding:0 14px;border-radius:99px;background:#fff;color:var(--ink);font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);white-space:nowrap}.cch button i{font-style:normal;font-size:12px;min-width:20px;height:20px;line-height:20px;text-align:center;border-radius:99px;background:#ececee;color:#555}.cch button.on{background:var(--ink);color:#fff}.cch button.on i{background:var(--or);color:#fff}.cch button.cnew{background:transparent;border:1.5px dashed #b9a89c;color:#6b5a4e;box-shadow:none}.cac{display:flex;gap:14px;flex-wrap:wrap;padding:0 4px}.cac button{font-size:13px;color:#6b6b70;font-weight:600;padding:6px 0;min-height:32px}.cac [data-cdel]{color:#c62828}.cpk{display:grid;gap:8px}.cpk button{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:52px;padding:0 16px;border-radius:16px;background:#f4f4f6;font-weight:600;font-size:15px;text-align:left;border:2px solid transparent}.cpk button i{font-style:normal;font-size:12.5px;color:#6b6b70;font-weight:600}.cpk button.on{border-color:var(--or);background:#fff4ec}.cpk .cnew2{background:transparent;border:1.5px dashed #b9a89c;color:#6b5a4e;justify-content:center}.cvd{position:fixed;inset:0;z-index:9990;background:rgba(10,10,20,.45);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px}.cvb{width:min(360px,100%);background:#fff;border-radius:22px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.3);display:grid;gap:12px}.cvb b{font-size:18px}.cvb p{margin:0;color:#6b6b70;font-size:14px;line-height:1.4}.cvb input{width:100%;min-height:48px;border:1.5px solid #e2e2e6;border-radius:14px;padding:0 14px;font-size:16px;outline:none}.cvb input:focus{border-color:var(--or)}.cva{display:flex;gap:10px;justify-content:flex-end}.cva button{min-height:46px;padding:0 20px;border-radius:99px;background:#f1f1f3;font-weight:600;font-size:15px}.cva .pri{background:var(--or);color:#fff}.cva .pri.dg{background:#c62828}</style>
 <style>.oh-n{font-size:13px;color:#6b6b70;margin:0 2px 12px;line-height:1.4}.oh{background:#fff;border-radius:16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden}.oh summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;cursor:pointer}.oh summary::-webkit-details-marker{display:none}.oh summary span{display:grid;gap:2px}.oh summary small{color:#6b6b70;font-size:12px}.oh-s{font-style:normal;font-size:12px;font-weight:700;border-radius:99px;padding:2px 10px;width:fit-content}.oh-s.w{background:#fff1cf;color:#7a5200}.oh-s.ok{background:#dff3e6;color:#14663a}.oh-s.x{background:#fde0dd;color:#a3231a}.oh-v{color:var(--or,#ff6a1a)}.oh-b{padding:0 14px 14px;display:grid;gap:6px;font-size:13px}.oh-b>div{display:flex;justify-content:space-between;gap:8px}.oh-wa{display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff!important;text-decoration:none;font-weight:700;border-radius:99px;min-height:46px;padding:0 18px;text-align:center;box-shadow:0 6px 16px rgba(37,211,102,.35)}.oh-pay{background:linear-gradient(135deg,#ff8a3d,#ff3d2e)!important;box-shadow:0 6px 16px rgba(255,90,30,.35)!important}.oh-clr{display:block;margin:6px auto;background:none;color:#e5383b;font-weight:600;font-size:13px}#glass{position:fixed;top:max(12px,env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);width:min(92vw,420px);z-index:99999;display:flex;gap:10px;align-items:flex-start;padding:13px 16px;border-radius:18px;background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.85);color:#1c1c1e;font-size:14px;font-weight:600;line-height:1.35;opacity:0;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.3,1),opacity .25s}#glass.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}.mxg .na{display:block;text-align:center;color:#aaa;padding:10px 0}.mxg .av{font-style:normal;font-size:10px;color:#2a9d4a;text-align:center;font-weight:600;line-height:1.2}.mxg .av.r{color:#b8741a}.mxg .av.z{color:#e5383b}.mxg select:disabled{opacity:.45}</style>
 <style id="cat3d-css">
 .cats{position:relative;padding:30px 4px 14px;margin:-24px 0 -8px}

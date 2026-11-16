@@ -167,6 +167,8 @@ function statusPage(){const i=INFO,paid=i.status==='payee'||i.status==='facturee
  if(i.pay_status==='attente'){dock('');POLL=setInterval(()=>load(true),12000);
   $('#app').innerHTML=`<div class="stt"><div class="ring w">${IC.w}</div><h2>Vérification en cours</h2><p class="sub">Cette page se met à jour toute seule. Vous pouvez la fermer et la rouvrir avec votre référence.</p></div>
   <div class="pn"><div class="hd">Suivi du paiement</div><div class="tl"><div class="d"><i>✓</i><b>Preuve envoyée</b><small>Nous l’avons bien reçue</small></div><div class="n"><i>2</i><b>Vérification</b><small>Notre équipe contrôle la transaction</small></div><div><i>3</i><b>Paiement confirmé</b><small>Commande préparée</small></div></div></div>${rows}
+  <div class="nt">${IC.info}<span><b>Où verrez-vous la confirmation ?</b> Ici même : cette page passe automatiquement à « Paiement confirmé ». Dans la boutique, ouvrez <b>Profil › Mes commandes</b> : le statut devient « ✅ Payée » et une alerte s’affiche dès que vous y revenez.</span></div>
+  <a class="btn or" href="${SITE}">🛍️ Continuer mes achats pendant la vérification</a>
   <a class="btn wa" href="https://wa.me/${WA}?text=${encodeURIComponent('Bonjour, j’ai payé la commande '+i.number+' ('+money(i.total)+'). Pouvez-vous vérifier mon paiement ?')}">Accélérer sur WhatsApp</a>`;return true}
  return false}
 
