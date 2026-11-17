@@ -501,7 +501,7 @@ async function loadAll(){
   if(!ca.error&&ca.data)ca.data.forEach(c=>{CATS[c.name]=hexOf(c.name);CAT_ID[c.name]=c.id;CAT_LBL[c.id]=c.name;SUBS[c.id]=(sa.data||[]).filter(s=>s.category===c.id).map(s=>[s.slug,s.name])})}catch(e){}
  try{const r=await sb.from('promos').select('*').order('created_at');S.promos=r.error?null:r.data}catch(e){S.promos=null}
  try{const r=await sb.from('shop_settings').select('*').eq('id',1).maybeSingle();S.sets=r.error?null:(r.data||{...SETD})}catch(e){S.sets=null}
- try{const [a,b,c]=await Promise.all([sb.from('shop_tags').select('*').order('position').order('id'),sb.from('shop_banners').select('*').order('position').order('id'),sb.from('notifications').select('*').order('id',{ascending:false}).limit(50)]);S.tags=a.error?null:a.data;S.bans=b.error?null:b.data;S.nots=c.error?null:c.data}catch(e){S.tags=S.bans=S.nots=null}
+ try{const [a,b,c]=await Promise.all([sb.from('shop_tags').select('*').order('position').order('id'),sb.from('shop_banners').select('*').order('position').order('id'),sb.from('notifications').select('*').order('id',{ascending:false}).limit(50)]);S.tags=a.error?null:a.data;S.bans=b.error?null:b.data;S.nots=c.error?null:c.data;S.vErr=[a,b,c].map((x,i)=>x.error?['shop_tags','shop_banners','notifications'][i]+' : '+x.error.message:'').filter(Boolean).join(' | ')}catch(e){S.tags=S.bans=S.nots=null;S.vErr=String(e&&e.message||e)}
  S.pricingOk=pr.length?('discount_pct' in pr[0]):S.sets!==null;
  S.products=pr.map(p=>({id:p.id,pct:+p.discount_pct||0,tmin:p.tier_min==null?null:+p.tier_min,toff:p.tier_off==null?null:+p.tier_off,name:p.name,catId:p.category,cat:CAT_LBL[p.category]||p.category,sub:p.subcategory||'',price:+p.price,bulk:p.bulk_price==null?0:+p.bulk_price,moq:p.moq,visible:p.visible,variants:[],images:[]}));
  const byP=new Map(S.products.map(p=>[p.id,p]));
@@ -1176,7 +1176,7 @@ async function soft(){if(!LOGGED||BUSY||document.querySelector('.ov'))return;con
 setInterval(soft,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)soft()});
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&LOGGED)showLogin()});
 /* ============ Vitrine : étiquettes, bannière photos, notifications ============ */
-const noSqlV=()=>`<div class="card" style="border:1px solid #c62828;color:#c62828"><b>Une mise à jour de la base est nécessaire</b><div style="font-size:13px;margin-top:4px">Exécutez <b>bangmarket_vitrine.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</div></div>`;
+const noSqlV=()=>`<div class="card" style="border:1px solid #c62828;color:#c62828"><b>Une mise à jour de la base est nécessaire</b><div style="font-size:13px;margin-top:4px">Exécutez <b>bangmarket_vitrine.sql</b> dans Supabase (SQL Editor), puis rechargez cette page.</div>${S.vErr?`<div style="font-size:12.5px;margin-top:8px;word-break:break-word"><b>Erreur Supabase :</b> ${esc(S.vErr)}</div>`:''}</div>`;
 const VT=[['tags','Étiquettes','Le badge flottant de l\'accueil'],['ban','Bannière','Les photos sous la recherche'],['notif','Notifications','Message à vos clients']];
 const TC={orange:'#ff6a1a,#e84a0a',vert:'#34c27c,#14804b',rouge:'#ff5a6e,#b50f2f',violet:'#a77bf0,#5a2aa8',noir:'#4a4a52,#1c1c1e',or:'#ffd35a,#c98400'};
 const ANL={slide:'Glisse',fade:'Fondu',zoom:'Zoom',flip:'Retourné',blur:'Flou'};
