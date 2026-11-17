@@ -438,7 +438,7 @@ button,[role=button],.cat,.pc,.tab,.plus,.sp,.lg,.add,.cta{-webkit-user-select:n
   <div class="scroll" id="scroll"></div>
   <div class="scrim" id="scrim"></div>
   <nav class="tabs" id="tabs"></nav>
-  <div class="lfw off" id="lfw"><div class="sw3"><div class="lft" id="lft" role="button" tabindex="0" aria-label="Code promo LEFE10"><span class="mc"><img alt=""></span><span class="tx"><b>LEFE10</b><small id="lfs">−2% · dès 500 pcs</small></span><em class="p10">−2%</em><span class="x" id="lfx" role="button" aria-label="Fermer">×</span></div></div></div>
+  <div class="lfw off" id="lfw"><div class="sw3"><div class="lft" id="lft" role="button" tabindex="0" aria-label="Code promo LEFE10"><span class="mc"><img alt=""></span><span class="tx"><b id="lfk">LEFE10</b><small id="lfs">−2% · dès 500 pcs</small></span><em class="p10" id="lfp">−2%</em><span class="x" id="lfx" role="button" aria-label="Fermer">×</span></div></div></div>
   <div class="ballw" id="ballw" aria-hidden="true"><div class="ball" id="ball"><div class="bi" id="bi"></div></div></div>
   <div class="hbar"></div>
  </div>
@@ -618,19 +618,20 @@ user:'<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-widt
 const svg=n=>`<svg viewBox="0 0 24 24">${ic[n]}</svg>`;
 const st={view:'home',cat:null,q:'',sortBy:'default',cart:[],fav:new Set(),cur:P[0],color:null,size:null,need:null,sub:null,thumb:0,mx:{},qty:0,mxT:0,notif:true,coupon:'',menu:false,favOnly:false};
 const D={};P.forEach(p=>{if(p.id%3===1&&!p.nodisc)D[p.id]=[.2,.15,.25,.3,.1][p.id%5]});
-const COUPONS={LEFE10:{rate:.02,minQty:500}};
+const COUPONS={LEFE10:{rate:.02,minQty:500}};const pctS=r=>String(+(r*100).toFixed(1));
 const cartQty=()=>st.cart.reduce((a,x)=>a+x.q,0);
 const cpOk=c=>!!c&&cartQty()>=c.minQty;
 const pr=p=>p.net!=null?p.net:Math.round(p.p*(1-(D[p.id]||0))*100)/100;
 /* ===== Tarif dégressif : −0,10 $/pièce dès 100 pièces du MÊME produit (couleurs/tailles cumulées, panier inclus) ===== */
-const BULK={min:100,off:0.1};
+const BULK={min:100,off:0.1,on:true};const FLASH={on:true,end:null,title:'',fake:true};
+const tb=p=>p&&(p.tmin!=null||p.toff!=null)?{on:(+p.toff||0)>0,min:p.tmin!=null?p.tmin:BULK.min,off:+p.toff||0,own:true}:{on:BULK.on&&BULK.off>0,min:BULK.min,off:BULK.off};
 const r2=v=>Math.round(v*100)/100;
 const inCart=id=>st.cart.reduce((a,x)=>a+(x.id===id?x.q:0),0);
-const unitAt=(p,q)=>q>=BULK.min?Math.max(.1,r2(pr(p)-BULK.off)):pr(p);
+const unitAt=(p,q)=>{const T=tb(p);return T.on&&q>=T.min?Math.max(.1,r2(pr(p)-T.off)):pr(p)};
 const unitCart=p=>unitAt(p,inCart(p.id));
 const bulkSaved=()=>r2(st.cart.reduce((a,x)=>{const p=P.find(p=>p.id===x.id);return a+x.q*(pr(p)-unitCart(p))},0));
-function tierHtml(p,tq){const on=tq>=BULK.min,b=pr(p),d=unitAt(p,BULK.min),need=BULK.min-tq,pc=Math.min(100,Math.round(tq/BULK.min*100));
-return `<div class="tier ${on?'ok':''}"><div class="hd"><b>Tarif dégressif</b><span>${on?'✓ Remise appliquée':'−'+fmt(BULK.off)+'/pc dès '+BULK.min+' pcs'}</span></div><div class="rw"><div class="${on?'':'cur'}"><span>De ${p.moq} à ${BULK.min-1} pcs</span><b>${fmt(b)}/pc</b></div><div class="${on?'cur':''}"><span>${BULK.min} pcs et +</span><b>${fmt(d)}/pc</b></div></div><div class="bar2"><i style="width:${pc}%"></i></div><small>${on?`Bravo ! Tu économises ${fmt(r2(BULK.off*tq))} sur ce produit (${tq} pcs).`:`${tq} / ${BULK.min} pcs. Encore ${need} pièces du même produit pour payer ${fmt(d)}/pc au lieu de ${fmt(b)}.<br><button data-q100>Passer à ${BULK.min} pcs</button>`}</small><em class="note">Les pièces d’un même produit s’additionnent, toutes couleurs et tailles confondues, panier inclus.</em></div>`}
+function tierHtml(p,tq){const T=tb(p);if(!T.on)return '';const on=tq>=T.min,b=pr(p),d=unitAt(p,T.min),need=T.min-tq,pc=Math.min(100,Math.round(tq/T.min*100));
+return `<div class="tier ${on?'ok':''}"><div class="hd"><b>Tarif dégressif</b><span>${on?'✓ Remise appliquée':'−'+fmt(T.off)+'/pc dès '+T.min+' pcs'}</span></div><div class="rw"><div class="${on?'':'cur'}"><span>De ${p.moq} à ${T.min-1} pcs</span><b>${fmt(b)}/pc</b></div><div class="${on?'cur':''}"><span>${T.min} pcs et +</span><b>${fmt(d)}/pc</b></div></div><div class="bar2"><i style="width:${pc}%"></i></div><small>${on?`Bravo ! Tu économises ${fmt(r2(T.off*tq))} sur ce produit (${tq} pcs).`:`${tq} / ${T.min} pcs. Encore ${need} pièces du même produit pour payer ${fmt(d)}/pc au lieu de ${fmt(b)}.<br><button data-q100>Passer à ${T.min} pcs</button>`}</small><em class="note">Les pièces d’un même produit s’additionnent, toutes couleurs et tailles confondues, panier inclus.</em></div>`}
 const fmt=v=>'$'+(Number.isInteger(v)?v:v.toFixed(2));
 const cartSub=()=>r2(st.cart.reduce((a,x)=>a+x.q*unitCart(P.find(p=>p.id===x.id)),0));
 const hex=c=>COLORS[c];
@@ -709,31 +710,31 @@ document.addEventListener('click',e=>{if(Date.now()-SFX.last<90)return;const b=e
 function addCart(p,color,size,qty){qty=qty||p.moq;if(qty>avl(p,color,size))return toastS(stockMsg(p,color,size,qty));const k=p.id+color+size;const f=st.cart.find(x=>x.k===k);f?f.q+=qty:st.cart.push({k,id:p.id,color,size,q:qty});renderTabs();sfx('add');addFx();toast(qty+' pcs added to cart')}
 function addMulti(p){const lines=mxCells(p).map(([c,z])=>[c,z,mxGet(c,z)]).filter(l=>l[2]>0);for(const [c,z,q] of lines){if(q>avl(p,c,z)){toastS(stockMsg(p,c,z,q));mxClamp(p);drawDetail();return}}let n=0;lines.forEach(([c,z,q])=>{const k=p.id+c+z,f=st.cart.find(x=>x.k===k);f?f.q+=q:st.cart.push({k,id:p.id,color:c,size:z,q});n+=q});mxReset(p);renderTabs();sfx('add');addFx();toast(n+' pcs ajoutées au panier ('+lines.length+' ligne'+(lines.length>1?'s':'')+')');drawDetail()}
 function list(){let l=P.filter(p=>(!st.cat||(st.cat==='nouveautes'?p.nw:p.c===st.cat))&&(!st.cat||!st.sub||p.sc===st.sub)&&(!st.favOnly||st.fav.has(p.id))&&p.n.toLowerCase().includes(st.q.toLowerCase().trim()));if(st.sortBy==='asc')l=[...l].sort((a,b)=>pr(a)-pr(b));else if(st.sortBy==='desc')l=[...l].sort((a,b)=>pr(b)-pr(a));else if(st.sortBy==='az')l=[...l].sort((a,b)=>a.n.localeCompare(b.n));return l}
-function cards(l){l=l||list();return l.length?l.map((p,i)=>`<div class="pc ${isOut(p)?'out':''} ${ANIM?'in':''}" style="--i:${Math.min(i,11)}"><button style="display:block;width:100%;text-align:left" data-open="${p.id}"><div class="im">${isOut(p)?'<span class="sold">ÉPUISÉ</span>':''}${D[p.id]?`<em class="off">-${Math.round(D[p.id]*100)}%</em>`:''}${g(p.t,p.col)}</div><div class="n">${p.n}</div><div class="stk" data-stk="${p.id}">${stkInner(p)}</div></button><button class="h" data-fav="${p.id}">${st.fav.has(p.id)?'♥':'♡'}</button><div class="r"><span><b>${fmt(pr(p))}<small>/pc</small></b>${D[p.id]?`<s>${fmt(p.p)}</s>`:''}<em class="moq">MOQ ${p.moq} · ${fmt(moqTot(p))}</em><em class="moq bulk">${BULK.min}+ pcs · ${fmt(unitAt(p,BULK.min))}/pc</em></span><button class="plus" data-add="${p.id}" aria-label="Choose options">+</button></div></div>`).join(''):'<div class="empty">No products found. Try another search or category.</div>'}
+function cards(l){l=l||list();return l.length?l.map((p,i)=>`<div class="pc ${isOut(p)?'out':''} ${ANIM?'in':''}" style="--i:${Math.min(i,11)}"><button style="display:block;width:100%;text-align:left" data-open="${p.id}"><div class="im">${isOut(p)?'<span class="sold">ÉPUISÉ</span>':''}${D[p.id]?`<em class="off">-${pctS(D[p.id])}%</em>`:''}${g(p.t,p.col)}</div><div class="n">${p.n}</div><div class="stk" data-stk="${p.id}">${stkInner(p)}</div></button><button class="h" data-fav="${p.id}">${st.fav.has(p.id)?'♥':'♡'}</button><div class="r"><span><b>${fmt(pr(p))}<small>/pc</small></b>${D[p.id]?`<s>${fmt(p.p)}</s>`:''}<em class="moq">MOQ ${p.moq} · ${fmt(moqTot(p))}</em>${tb(p).on?`<em class="moq bulk">${tb(p).min}+ pcs · ${fmt(unitAt(p,tb(p).min))}/pc</em>`:''}</span><button class="plus" data-add="${p.id}" aria-label="Choose options">+</button></div></div>`).join(''):'<div class="empty">No products found. Try another search or category.</div>'}
 function renderHome(){ANIM=true;
 $('#scroll').innerHTML=`<div class="hdr"><div class="l3w" id="l3w" role="img" aria-label="Bang Market"><div class="l3" id="l3"><div class="l3i" id="l3i">${Array.from({length:9},(_,k)=>`<i style="--z:${-k*1.4}px"></i>`).join('')}<i class="f"></i><u></u></div></div></div><div style="display:flex;gap:8px"><button class="bell" id="snd" aria-label="Son">${sndIcon()}</button><button class="bell" id="bell" aria-label="Notifications"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="2" stroke-linecap="round"><path d="M6 17V11a6 6 0 0112 0v6l2 2H4zM10 21h4"/></svg>${st.notif?'<i class="dot"></i>':''}</button></div></div>
 <div class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1e" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M16 16l5 5"/></svg><input id="q" placeholder="Search for outfits, brands, styles..." value="${st.q.replace(/"/g,'&quot;')}"><button id="sort" aria-label="Sort" style="${st.sortBy!=='default'?'color:var(--or)':''}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button><div class="srt" id="srt"><p>Sort by</p>${[['default','Featured'],['asc','Price: low to high'],['desc','Price: high to low'],['az','Name: A to Z']].map(o=>`<button data-sb="${o[0]}" class="${st.sortBy===o[0]?'on':''}">${o[1]}</button>`).join('')}</div></div>
 <div class="bn" id="bn" role="img" aria-label="Bang Market"><div class="dc"><i class="b" style="left:4%;top:12%;--s:18px;--d:0s"></i><i class="k" style="left:9%;top:36%;--s:11px;--d:-.8s"></i><i class="b" style="left:2%;top:56%;--s:14px;--d:-1.6s"></i><i class="k" style="left:8%;top:80%;--s:9px;--d:-1.2s"></i><i class="k" style="right:9%;top:10%;--s:11px;--d:-.4s"></i><i class="b" style="right:3%;top:32%;--s:16px;--d:-2.2s"></i><i class="k" style="right:6%;top:58%;--s:9px;--d:-1.8s"></i><i class="b" style="right:4%;top:74%;--s:18px;--d:-.6s"></i></div><div class="sl s1"></div><div class="sl s2"></div><div class="sh"></div><div class="pg"><i></i><i></i></div></div>
-<button class="strip" id="bulkInfo"><span>💡</span><b>Dès ${BULK.min} pcs du même produit : −${fmt(BULK.off)} / pièce</b><i>›</i></button>
+${BULK.on&&BULK.off>0?`<button class="strip" id="bulkInfo"><span>💡</span><b>Dès ${BULK.min} pcs du même produit : −${fmt(BULK.off)} / pièce</b><i>›</i></button>`:''}
 <div class="sec"><b>Categories</b><button id="seeCat">See All ›</button></div>
 <div class="cats">${CATS.map(c=>`<button class="cat ${st.cat===c.id?'on':''}" data-cat="${c.id}">${c.img?`<img class="cim" alt="" src="${c.img}" loading="lazy">`:g(c.t,c.c)}${c.s||c.n}</button>`).join('')}</div>
 <div class="subs ${subsHtml()?'open':''}" id="subs">${subsHtml()}</div>
 <div class="sec" id="feat"><b id="ft">${ftitle()}</b><button id="seeAll">See All ›</button></div>
 <div class="grid" id="grid">${cards()}</div>`;ANIM=false;bindHome();const bi=$('#bulkInfo');if(bi)bi.onclick=()=>{st.guide='bulk';go('profile')}}
 function renderCart(){const sub=cartSub(),sv=bulkSaved(),c=COUPONS[st.coupon],d=cpOk(c)?Math.round(sub*c.rate*100)/100:0;
-$('#scroll').innerHTML=`<div class="logo" style="font-size:24px;margin-bottom:14px">Your Cart</div>`+(st.cart.length?st.cart.map((x,i)=>{const p=P.find(p=>p.id===x.id),u=unitCart(p),tq=inCart(p.id),bk=tq>=BULK.min;return `<div class="ci"><div class="im">${g(p.t,COLORS[x.color]||p.col)}</div><div class="t"><b>${p.n}</b><small>${x.color}${x.size?' · '+x.size:''}</small><small class="u">${fmt(u)}/pc${bk?`<span class="bk">−${fmt(BULK.off)} gros</span>`:''} · MOQ ${p.moq}</small><div class="q"><button data-m="${x.k}">${x.q>1?'−':'×'}</button>${x.q} pcs<button data-p="${x.k}">+</button></div>${st.cart.findIndex(y=>y.id===x.id)===i?(tq<p.moq?`<small class="u mqw">⚠ Minimum ${p.moq} pcs par produit : encore ${p.moq-tq} pcs</small>`:bk?`<small class="u bkh">✓ Tarif gros appliqué (${tq} pcs)</small>`:`<small class="u bkh">Encore ${BULK.min-tq} pcs pour −${fmt(BULK.off)}/pc <button class="bkb" data-b100="${x.k}">Passer à ${BULK.min}</button></small>`):''}</div><b>${fmt(r2(u*x.q))}</b></div>`}).join('')+`<div class="cpn"><input id="cpi" placeholder="Promo code" value="${st.coupon||''}"><button id="cpa">Apply</button></div><div class="sm"><span>Subtotal</span><span>${fmt(sub)}</span></div>${sv?`<div class="sm" style="color:#2faa6b"><span>Dont remise quantité (−${fmt(BULK.off)}/pc)</span><span>−${fmt(sv)}</span></div>`:''}${d?`<div class="sm" style="color:var(--or)"><span>${st.coupon} (−${Math.round(c.rate*100)}%)</span><span>−${fmt(d)}</span></div>`:''}${c&&!d?`<div class="sm" style="color:var(--mut);font-size:11px"><span>${st.coupon} : encore ${c.minQty-cartQty()} pcs (toutes catégories) pour −${Math.round(c.rate*100)}%</span><span></span></div>`:''}<div class="tot"><span>Total</span><span>${fmt(Math.round((sub-d)*100)/100)}</span></div><button class="cta" id="co">Checkout</button>`:'<div class="empty">Your cart is empty.<br>Browse the collection to add your first piece.</div>');
+$('#scroll').innerHTML=`<div class="logo" style="font-size:24px;margin-bottom:14px">Your Cart</div>`+(st.cart.length?st.cart.map((x,i)=>{const p=P.find(p=>p.id===x.id),T=tb(p),u=unitCart(p),tq=inCart(p.id),bk=T.on&&tq>=T.min;return `<div class="ci"><div class="im">${g(p.t,COLORS[x.color]||p.col)}</div><div class="t"><b>${p.n}</b><small>${x.color}${x.size?' · '+x.size:''}</small><small class="u">${fmt(u)}/pc${bk?`<span class="bk">−${fmt(T.off)} gros</span>`:''} · MOQ ${p.moq}</small><div class="q"><button data-m="${x.k}">${x.q>1?'−':'×'}</button>${x.q} pcs<button data-p="${x.k}">+</button></div>${st.cart.findIndex(y=>y.id===x.id)===i?(tq<p.moq?`<small class="u mqw">⚠ Minimum ${p.moq} pcs par produit : encore ${p.moq-tq} pcs</small>`:bk?`<small class="u bkh">✓ Tarif gros appliqué (${tq} pcs)</small>`:!T.on?'':`<small class="u bkh">Encore ${T.min-tq} pcs pour −${fmt(T.off)}/pc <button class="bkb" data-b100="${x.k}">Passer à ${T.min}</button></small>`):''}</div><b>${fmt(r2(u*x.q))}</b></div>`}).join('')+`<div class="cpn"><input id="cpi" placeholder="Promo code" value="${st.coupon||''}"><button id="cpa">Apply</button></div><div class="sm"><span>Subtotal</span><span>${fmt(sub)}</span></div>${sv?`<div class="sm" style="color:#2faa6b"><span>Dont remise quantité</span><span>−${fmt(sv)}</span></div>`:''}${d?`<div class="sm" style="color:var(--or)"><span>${st.coupon} (−${pctS(c.rate)}%)</span><span>−${fmt(d)}</span></div>`:''}${c&&!d?`<div class="sm" style="color:var(--mut);font-size:11px"><span>${st.coupon} : encore ${c.minQty-cartQty()} pcs (toutes catégories) pour −${pctS(c.rate)}%</span><span></span></div>`:''}<div class="tot"><span>Total</span><span>${fmt(Math.round((sub-d)*100)/100)}</span></div><button class="cta" id="co">Checkout</button>`:'<div class="empty">Your cart is empty.<br>Browse the collection to add your first piece.</div>');
 $('#scroll').querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{const f=st.cart.find(x=>x.k===b.dataset.m),pp=P.find(p=>p.id===f.id);if(f.q>1){f.q--;sfx('tick')}else{st.cart=st.cart.filter(x=>x!==f);sfx('remove')}renderTabs();renderCart()});
 $('#scroll').querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>{{const f=st.cart.find(x=>x.k===b.dataset.p),pp=P.find(p=>p.id===f.id);if(avl(pp,f.color,f.size)<1)return toastS(stockMsg(pp,f.color,f.size,f.q+1));f.q++;sfx('tick')}renderTabs();renderCart()});
-$('#scroll').querySelectorAll('[data-b100]').forEach(b=>b.onclick=()=>{const f=st.cart.find(x=>x.k===b.dataset.b100),pp=P.find(p=>p.id===f.id),need=BULK.min-inCart(pp.id);if(need<=0)return;if(inCart(pp.id)+need>ST[pp.id])return toastE('Stock insuffisant pour atteindre '+BULK.min+' pcs');f.q+=need;sfx('pop');toast('Tarif gros débloqué : −'+fmt(BULK.off)+'/pc');renderTabs();renderCart()});
+$('#scroll').querySelectorAll('[data-b100]').forEach(b=>b.onclick=()=>{const f=st.cart.find(x=>x.k===b.dataset.b100),pp=P.find(p=>p.id===f.id),T=tb(pp),need=T.min-inCart(pp.id);if(need<=0)return;if(inCart(pp.id)+need>ST[pp.id])return toastE('Stock insuffisant pour atteindre '+T.min+' pcs');f.q+=need;sfx('pop');toast('Tarif gros débloqué : −'+fmt(T.off)+'/pc');renderTabs();renderCart()});
 const cpa=$('#cpa');if(cpa)cpa.onclick=()=>{const k=$('#cpi').value.replace(/\s+/g,'').toUpperCase();if(!k){st.coupon='';return renderCart()}if(!COUPONS[k])return toastE('Invalid promo code');st.coupon=k;sfx('pop');toast(!cpOk(COUPONS[k])?`${k} : ${COUPONS[k].minQty} pcs minimum (${cartQty()} dans le panier)`:k+' applied');renderCart()};
 const co=$('#co');if(co)co.onclick=()=>{for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq)return toastE('Minimum '+pp.moq+' pcs pour : '+pp.n+' (encore '+(pp.moq-inCart(pp.id))+')');if(inCart(pp.id)>ST[pp.id])return toastE('Stock insuffisant : '+pp.n)}st.chk=true;sfx('open');renderCart();$('#scroll').scrollTop=0}}
-function renderOffers(){const l=P.filter(p=>D[p.id]).sort((a,b)=>D[b.id]-D[a.id]);if(!st.end)st.end=Date.now()+(3*3600+14*60)*1000;
-$('#scroll').innerHTML=`<div class="logo" style="font-size:24px">Offres</div><div class="flash"><div><small>FLASH SALE</small><b>Up to ${Math.round(Math.max(...Object.values(D))*100)}% off</b></div><div class="cd" id="cd">--:--:--</div></div><div class="sec"><b>Promo codes</b></div>${Object.entries(COUPONS).map(([k,c])=>`<div class="cp lf"><div class="lw"><img class="lefe" alt="${k}" src="${LEFE_IMG}"><div><b>${k}</b><small>${Math.round(c.rate*100)}% off · dès ${c.minQty} pcs, toutes catégories</small><small>Panier : ${Math.min(cartQty(),c.minQty)} / ${c.minQty} pcs</small></div></div><button data-cp="${k}">${st.coupon===k?'Applied':'Apply'}</button></div>`).join('')}<div class="sec"><b>Deals of the day</b></div><div class="grid" id="grid">${cards(l)}</div>`;
+function renderOffers(){const l=P.filter(p=>D[p.id]).sort((a,b)=>D[b.id]-D[a.id]);const dm=Object.values(D).length?Math.max(...Object.values(D)):0,fOn=FLASH.on&&(FLASH.fake||!FLASH.end||FLASH.end>Date.now())&&(dm>0||FLASH.title);if(FLASH.fake){if(!st.end)st.end=Date.now()+(3*3600+14*60)*1000}else st.end=FLASH.end;
+$('#scroll').innerHTML=`<div class="logo" style="font-size:24px">Offres</div>${fOn?`<div class="flash"><div><small>FLASH SALE</small><b>${FLASH.title?esc(FLASH.title):'Up to '+pctS(dm)+'% off'}</b></div>${st.end?'<div class="cd" id="cd">--:--:--</div>':''}</div>`:''}<div class="sec"><b>Promo codes</b></div>${Object.entries(COUPONS).map(([k,c])=>`<div class="cp lf"><div class="lw"><img class="lefe" alt="${k}" src="${c.img||LEFE_IMG}"><div><b>${k}</b><small>${pctS(c.rate)}% off · dès ${c.minQty} pcs, toutes catégories</small><small>Panier : ${Math.min(cartQty(),c.minQty)} / ${c.minQty} pcs</small></div></div><button data-cp="${k}">${st.coupon===k?'Applied':'Apply'}</button></div>`).join('')||'<div class="oh-n">Aucun code promo actif pour le moment.</div>'}<div class="sec"><b>Deals of the day</b></div><div class="grid" id="grid">${cards(l)}</div>`;
 bindGrid();$('#scroll').querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>{st.coupon=b.dataset.cp;toast(cpOk(COUPONS[st.coupon])?st.coupon+' applied to your cart':`${st.coupon} : ${COUPONS[st.coupon].minQty} pcs minimum (${cartQty()} dans le panier)`);renderOffers()});
 clearInterval(st.ti);tick();st.ti=setInterval(tick,1000)}
-function tick(){const e=$('#cd');if(!e){clearInterval(st.ti);return}const s=Math.max(0,Math.floor((st.end-Date.now())/1000));e.textContent=[s/3600|0,(s/60)%60|0,s%60].map(n=>String(n).padStart(2,'0')).join(':')}
+function tick(){const e=$('#cd');if(!e||!st.end){clearInterval(st.ti);return}const s=Math.max(0,Math.floor((st.end-Date.now())/1000));e.textContent=[s/3600|0,(s/60)%60|0,s%60].map(n=>String(n).padStart(2,'0')).join(':')}
 function renderProfile(){const sub=cartSub(),sv=bulkSaved(),g0=st.guide;st.guide=null;
-const ex=P.find(p=>!D[p.id]&&pr(p)>=4)||P[0],u100=unitAt(ex,BULK.min);
+const ex=P.find(p=>!D[p.id]&&pr(p)>=4)||P[0],u100=Math.max(.1,r2(pr(ex)-BULK.off));
 const row=(ic,t,sm,a)=>`<button class="pf-row" data-a="${a}"><span class="pi">${ic}</span><span class="pt"><b>${t}</b><small>${sm}</small></span><i>›</i></button>`;
 const acc=(id,ic,t,body,open)=>`<details id="g-${id}" ${open?'open':''}><summary><span class="pi">${ic}</span>${t}</summary><div class="bd">${body}</div></details>`;
 $('#scroll').innerHTML=`<div class="pf">
@@ -745,9 +746,9 @@ ${sv?`<div class="pf-save">🎉 Tarif gros : tu économises <b>${fmt(sv)}</b> su
 <div class="pf-sec">Comment ça marche ?</div>
 <div class="pf-card">
 ${acc('moq','📦','Le MOQ (quantité minimum)',`<p>Le <b>MOQ</b> est le nombre minimum de pièces à commander pour un même produit. Tu peux ensuite en ajouter autant que tu veux, dans la limite du stock.</p><div class="ex">Sacs : ${MOQ.sacs} pcs · Montres : ${MOQ.montres} pcs · Tops Chic, Foot, Gourdes : ${MOQ.hauts} pcs · Cheveux & Beauté : ${MOQ.cheveux} pcs</div>`)}
-${acc('bulk','💰','Tarif dégressif dès '+BULK.min+' pièces',`<p>Si tu commandes <b>${BULK.min} pièces ou plus du même produit</b>, le prix unitaire baisse de <b>${fmt(BULK.off)} par pièce</b>.</p><p>Les pièces d’un même produit s’additionnent, toutes couleurs et tailles confondues, y compris celles déjà au panier. Le prix baisse sur <b>toutes</b> les pièces, pas seulement à partir de la 100<sup>e</sup>.</p><div class="ex"><b>${ex.n}</b><br>1 à ${BULK.min-1} pcs : ${fmt(pr(ex))}/pc<br>${BULK.min} pcs et + : ${fmt(u100)}/pc<br>→ ${BULK.min} pcs = <b>${fmt(r2(u100*BULK.min))}</b> au lieu de ${fmt(r2(pr(ex)*BULK.min))} (−${fmt(r2(BULK.off*BULK.min))})</div>`,g0==='bulk'||!g0)}
+${!(BULK.on&&BULK.off>0)?'':acc('bulk','💰','Tarif dégressif dès '+BULK.min+' pièces',`<p>Si tu commandes <b>${BULK.min} pièces ou plus du même produit</b>, le prix unitaire baisse de <b>${fmt(BULK.off)} par pièce</b>.</p><p>Les pièces d’un même produit s’additionnent, toutes couleurs et tailles confondues, y compris celles déjà au panier. Le prix baisse sur <b>toutes</b> les pièces, pas seulement à partir de la 100<sup>e</sup>.</p><div class="ex"><b>${ex.n}</b><br>1 à ${BULK.min-1} pcs : ${fmt(pr(ex))}/pc<br>${BULK.min} pcs et + : ${fmt(u100)}/pc<br>→ ${BULK.min} pcs = <b>${fmt(r2(u100*BULK.min))}</b> au lieu de ${fmt(r2(pr(ex)*BULK.min))} (−${fmt(r2(BULK.off*BULK.min))})</div>`,g0==='bulk'||!g0)}
 ${acc('flash','🔥','Les réductions en %',`<p>Les badges rouges (ex. <b>-20%</b>) sont des ventes flash déjà incluses dans le prix affiché. Elles se cumulent avec le tarif dégressif : la remise de ${fmt(BULK.off)}/pc s’applique sur le prix déjà réduit.</p>`)}
-${acc('promo','🎟️','Les codes promo',`<p>Saisis un code dans ton panier :</p><div class="ex">${Object.entries(COUPONS).map(([k,c])=>`<b>${k}</b> : −${Math.round(c.rate*100)}% dès ${c.minQty} pièces au total dans le panier, toutes catégories`).join('<br>')}</div>`)}
+${acc('promo','🎟️','Les codes promo',`<p>Saisis un code dans ton panier :</p><div class="ex">${Object.entries(COUPONS).map(([k,c])=>`<b>${k}</b> : −${pctS(c.rate)}% dès ${c.minQty} pièces au total dans le panier, toutes catégories`).join('<br>')}</div>`)}
 ${acc('stock','📊','La barre de stock',`<p>Elle indique la part de stock restante : <b style="color:#2faa6b">vert</b> = disponible, <b style="color:#ff9a1a">orange</b> = ça part vite, <b style="color:#e5383b">rouge</b> = dernières pièces. Un produit est <b>épuisé</b> quand le stock passe sous son MOQ.</p>`)}
 </div>
 <div class="pf-sec">Préférences</div>
@@ -855,10 +856,10 @@ return `<div class="lbl"><span>Répartis ta commande</span>${p.guide?'<button id
 +`<div class="mxw">`+p.cols.map(c=>{const n=mxCol(p,c);return `<div class="mxc ${n?'has':''}"><div class="mxh"><i style="background:${COLORS[c]}"></i><b>${c}</b><span data-cs="${c}">${n} pcs</span></div>`
 +`<div class="mxg">${(sz||['']).map(z=>`<label>${sz?`<small>${z}</small>`:''}${window.LIVE&&AV[vk(p,c,z)]===undefined?'<span class="na">—</span>':mxSel(p,c,z)}</label>`).join('')}</div></div>`}).join('')+`</div>`
 +`<div class="mxt"><span>Total commande</span><b id="mxTot"></b><button id="mxC" type="button">Tout effacer</button></div>`}
-function drawSum(){const p=st.cur,tq=inCart(p.id)+st.mxT,u=unitAt(p,tq),bkOn=tq>=BULK.min,miss=mxMiss(p);
-$('#dPrice').innerHTML=fmt(u)+' <span style="font-size:12px;color:var(--mut);font-weight:500">/ pièce</span>'+(bkOn?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(pr(p))}</s><span class="bk">−${fmt(BULK.off)} gros</span>`:D[p.id]?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(p.p)}</s>`:'');
+function drawSum(){const p=st.cur,T=tb(p),tq=inCart(p.id)+st.mxT,u=unitAt(p,tq),bkOn=T.on&&tq>=T.min,miss=mxMiss(p);
+$('#dPrice').innerHTML=fmt(u)+' <span style="font-size:12px;color:var(--mut);font-weight:500">/ pièce</span>'+(bkOn?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(pr(p))}</s><span class="bk">−${fmt(T.off)} gros</span>`:D[p.id]?` <s style="font-size:13px;color:var(--mut);font-weight:400">${fmt(p.p)}</s>`:'');
 $('#dWs').innerHTML=`<div><small>MOQ<br>(minimum)</small><b>${p.moq} pièces</b></div><div><small>Prix total du MOQ</small><b>${fmt(moqTot(p))}</b></div><div><small>Prix unitaire<br>(actuel)</small><b>${fmt(u)}</b></div>`;
-$('#dTier').innerHTML=tierHtml(p,tq);const q1=$('#dTier [data-q100]');if(q1)q1.onclick=()=>{const need=BULK.min-inCart(p.id);if(need>ST[p.id])toastE('Stock insuffisant pour atteindre '+BULK.min+' pcs');else{st.mxT=Math.max(st.mxT,need);mxSpread(p,st.mxT);sfx('pop');toast('Tarif gros débloqué : '+fmt(unitAt(p,BULK.min))+'/pc')}drawDetail()};
+$('#dTier').innerHTML=tierHtml(p,tq);const q1=$('#dTier [data-q100]');if(q1)q1.onclick=()=>{const need=T.min-inCart(p.id);if(need>ST[p.id])toastE('Stock insuffisant pour atteindre '+T.min+' pcs');else{st.mxT=Math.max(st.mxT,need);mxSpread(p,st.mxT);sfx('pop');toast('Tarif gros débloqué : '+fmt(unitAt(p,T.min))+'/pc')}drawDetail()};
 $('#addT').textContent=isOut(p)?'Épuisé':miss||('Add to Cart · '+fmt(r2(u*st.mxT)));$('#add').classList.toggle('inc',!!miss||isOut(p));
 const h=$('#mxHint');if(h){h.textContent=mxRem()?'':'✓ complet';h.className='hint ok'}
 const od=$('#od');if(od){od.classList.toggle('done',st.mxT>0&&mxRem()===0);$('#odBar').style.width=(st.mxT?Math.round(st.qty/st.mxT*100):0)+'%';$('#odA').textContent=st.qty+' / '+st.mxT+' pcs réparties';$('#odR').textContent=mxRem()?'Reste '+mxRem():'✓ Tout réparti';
@@ -931,20 +932,19 @@ e.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`tra
 /* ===== Étiquette flottante LEFE10 (accueil) ===== */
 (function(){
 const w=$('#lfw'),t=$('#lft'),sc=$('#scroll');if(!w||!t||!sc)return;
-const K='LEFE10';let gone=false,timer=0,lastY=0;
+let K='',gone=false,timer=0,lastY=0;
 try{gone=sessionStorage.getItem('bm_lfx')==='1'}catch(e){}
-w.querySelector('img').src=LEFE_IMG;
-function label(){const on=st.coupon===K,c=COUPONS[K];
+function label(){K=Object.keys(COUPONS)[0]||'';const c=COUPONS[K];if(!c)return false;const on=st.coupon===K;w.querySelector('img').src=c.img||LEFE_IMG;$('#lfk').textContent=K;$('#lfp').textContent='−'+pctS(c.rate)+'%';
 w.classList.toggle('ok',on);
-$('#lfs').textContent=on?(cpOk(c)?'Appliqué ✓':'Appliqué · '+Math.min(cartQty(),c.minQty)+'/'+c.minQty+' pcs'):'−'+Math.round(c.rate*100)+'% · dès '+c.minQty+' pcs'}
+$('#lfs').textContent=on?(cpOk(c)?'Appliqué ✓':'Appliqué · '+Math.min(cartQty(),c.minQty)+'/'+c.minQty+' pcs'):'−'+pctS(c.rate)+'% · dès '+c.minQty+' pcs';return true}
 window.lefeSync=function(){
  clearTimeout(timer);const on=st.view==='home'&&!gone;
  if(!on){w.classList.remove('show');w.classList.add('off');return}
- label();w.classList.remove('mini');
+ if(!label()){w.classList.remove('show');w.classList.add('off');return}w.classList.remove('mini');
  if(w.classList.contains('off')){w.classList.remove('off');void w.offsetWidth}
  timer=setTimeout(()=>{w.classList.add('show');timer=setTimeout(()=>w.classList.add('mini'),7000)},w.classList.contains('show')?0:1400)};
 function act(){
- if(st.coupon===K){sfx('tap');go('offers');return}
+ if(!COUPONS[K])return;if(st.coupon===K){sfx('tap');go('offers');return}
  st.coupon=K;sfx('pop');label();
  toast(cpOk(COUPONS[K])?K+' appliqué à votre panier':K+' ajouté : '+COUPONS[K].minQty+' pcs minimum ('+cartQty()+' dans le panier)')}
 t.addEventListener('click',e=>{if(e.target.closest('#lfx'))return;act()});
@@ -1048,6 +1048,11 @@ window.LIVE=false;
 const GEN_T={sacs:'tote',montres:'watch',chaussures:'sandal',beaute:'gloss',cheveux:'scrunch',hauts:'crop',tshirts:'tee',robes:'dress',foot:'jersey',gourdes:'bottle',accessoires:'glasses'};
 const REG=new Map(P.map(p=>[p.n,p]));let NEXTID=Math.max(0,...P.map(p=>p.id))+1;
 const knownCat=id=>CATS.some(c=>c.id===id);
+function applySets(s){if(!s)return false;const n=JSON.stringify([s.tier_on,s.tier_min,s.tier_off,s.flash_on,s.flash_end,s.flash_title]);if(n===window._setSig)return false;window._setSig=n;
+ BULK.on=!!s.tier_on;BULK.min=+s.tier_min||100;BULK.off=+s.tier_off||0;FLASH.on=!!s.flash_on;FLASH.end=s.flash_end?Date.parse(s.flash_end):null;FLASH.title=s.flash_title||'';FLASH.fake=false;return true}
+function applyPromos(list){if(!list)return false;const today=new Date().toISOString().slice(0,10),n={};
+ list.forEach(p=>{if(p.ends_at&&p.ends_at<today)return;n[String(p.code).toUpperCase()]={rate:+p.rate,minQty:p.min_qty,img:p.image?SB_URL+'/storage/v1/object/public/product-images/'+p.image:''}});
+ const sg=JSON.stringify(n);if(sg===JSON.stringify(COUPONS))return false;Object.keys(COUPONS).forEach(k=>delete COUPONS[k]);Object.assign(COUPONS,n);return true}
 const SBP=p=>p?SB_URL+'/storage/v1/object/public/product-images/'+p:'';
 const CPAL=['#8e5bd0','#16a5a5','#e5383b','#1f6feb','#d4af37','#e91e8c','#c0562f','#2e9e5b'];
 function applyCats(cats,subs){for(let i=CATS.length-1;i>=0;i--)if(CATS[i].dyn)CATS.splice(i,1);
@@ -1064,28 +1069,31 @@ async function syncCatalog(){
  if(syncing){again=true;return}
  syncing=true;
  try{
-  let {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock,reserved),product_images(color,path,is_main)').order('id');
+  let {data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,discount_pct,tier_min,tier_off,variants(color,size,stock,reserved),product_images(color,path,is_main)').order('id');
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock,reserved)').order('id'));
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock),product_images(color,path,is_main)').order('id'));
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id'));
   if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
   let cats=[],subs=[];try{const a1=await sb.from('categories').select('id,name,photo,position').order('position').order('created_at'),b1=await sb.from('subcategories').select('category,slug,name,photo').order('id');if(!a1.error&&a1.data)cats=a1.data;if(!b1.error&&b1.data)subs=b1.data}catch(e){}
-  const first=!window.LIVE,sig=JSON.stringify([data,cats,subs]);
+  let sets=null;try{const s1=await sb.from('shop_settings').select('*').eq('id',1).maybeSingle();if(!s1.error&&s1.data)sets=s1.data}catch(e){}
+  let promos=null;try{const p1=await sb.from('promos').select('code,rate,min_qty,image,ends_at').eq('active',true).order('created_at');if(!p1.error&&p1.data)promos=p1.data}catch(e){}
+  const first=!window.LIVE,sig=JSON.stringify([data,cats,subs,promos,sets]);
   if(!first&&sig===lastSig)return;
   lastSig=sig;
-  const catSig=JSON.stringify([cats,subs]),catChanged=catSig!==window._catSig;window._catSig=catSig;applyCats(cats,subs);
+  const catSig=JSON.stringify([cats,subs]),catChanged=catSig!==window._catSig;window._catSig=catSig;applyCats(cats,subs);const pch=applyPromos(promos);const sch=applySets(sets);
   const curBefore=sigOf(st.cur),totBefore=st.cart.length?ckTotal():0,keep=[];
   for(const r of data){
    let p=REG.get(r.name);
    const vs=r.variants||[],cat=knownCat(r.category)?r.category:'accessoires';
    if(!p){p={id:NEXTID++,dyn:true,t:GEN_T[cat]||'glasses',n:r.name,rate:'4.8',rev:0};REG.set(r.name,p)}
-   p.dbId=r.id;p.net=+r.price;p.moq=r.moq;p.c=cat;p.sc=r.subcategory||'';
+   const real=('discount_pct' in r),dp=real?(+r.discount_pct||0):0;p.dbId=r.id;p.net=real?r2(+r.price*(1-dp/100)):+r.price;p.moq=r.moq;p.tmin=real&&r.tier_min!=null?+r.tier_min:null;p.toff=real&&r.tier_off!=null?+r.tier_off:null;if(real){if(dp>0)D[p.id]=dp/100;else delete D[p.id]}
+   p.c=cat;p.sc=r.subcategory||'';
    if(p.dyn){
     const cols=[...new Set(vs.map(v=>v.color).filter(Boolean))],zs=[...new Set(vs.map(v=>v.size).filter(Boolean))];
     if(!cols.length)cols.push('Standard');
     cols.forEach(hexFor);
-    p.cols=cols;p.sizes=zs.length?zs:undefined;p.sl=zs.length?'Size':undefined;p.d=DESC[cat]||DESC.accessoires;p.t=GEN_T[cat]||'glasses';p.p=p.net;
-   }else p.p=D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
+    p.cols=cols;p.sizes=zs.length?zs:undefined;p.sl=zs.length?'Size':undefined;p.d=DESC[cat]||DESC.accessoires;p.t=GEN_T[cat]||'glasses';p.p=real?+r.price:p.net;
+   }else p.p=real?+r.price:D[p.id]?Math.round(p.net/(1-D[p.id])*100)/100:p.net;
    if(p.t0===undefined)p.t0=p.t;
    p.imgs=(r.product_images||[]).map(i=>({color:i.color||'',main:!!i.is_main,url:SB_URL+'/storage/v1/object/public/product-images/'+i.path})).sort((a,b)=>b.main-a.main);
    const mc=p.imgs[0]&&p.imgs[0].main&&p.imgs[0].color&&p.cols.includes(p.imgs[0].color)?p.imgs[0].color:p.cols[0];
@@ -1097,6 +1105,8 @@ async function syncCatalog(){
   keep.sort((x,y)=>x.id-y.id);
   P.splice(0,P.length,...keep);
   window.LIVE=true;
+  if(sch&&!first)setTimeout(()=>{try{render();drawDetail()}catch(e){}},0);
+  if(pch){if(st.coupon&&!COUPONS[st.coupon])st.coupon='';try{window.lefeSync&&window.lefeSync()}catch(e){}if(!first&&st.view==='offers')setTimeout(()=>{try{renderOffers()}catch(e){}},0)}
   if(!first&&catChanged&&st.view==='home')setTimeout(()=>{try{render()}catch(e){}},0);
   if(first){try{cvRehydrate()}catch(e){}st.cur=P.find(p=>p.id===st.cur.id)||P[0];render();drawDetail();return}
   /* Mise à jour en direct, sans recharger la page ni perdre ce que le client est en train de faire */
@@ -1119,7 +1129,7 @@ async function syncCatalog(){
 }
 /* Temps réel : dès que l'admin enregistre, la boutique se met à jour. Relecture de secours toutes les 45 s. */
 let _lt=null;const later=()=>{clearTimeout(_lt);_lt=setTimeout(syncCatalog,800)};
-try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).on('postgres_changes',{event:'*',schema:'public',table:'product_images'},later).on('postgres_changes',{event:'*',schema:'public',table:'categories'},later).on('postgres_changes',{event:'*',schema:'public',table:'subcategories'},later).subscribe()}catch(e){}
+try{sb.channel('bm-catalog').on('postgres_changes',{event:'*',schema:'public',table:'products'},later).on('postgres_changes',{event:'*',schema:'public',table:'variants'},later).on('postgres_changes',{event:'*',schema:'public',table:'product_images'},later).on('postgres_changes',{event:'*',schema:'public',table:'promos'},later).on('postgres_changes',{event:'*',schema:'public',table:'shop_settings'},later).on('postgres_changes',{event:'*',schema:'public',table:'categories'},later).on('postgres_changes',{event:'*',schema:'public',table:'subcategories'},later).subscribe()}catch(e){}
 setInterval(()=>{if(!document.hidden){syncCatalog();ostSync()}},45000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){syncCatalog();ostSync()}});setTimeout(ostSync,2500);
 /* ===== Paniers multiples + panier et favoris conservés après actualisation ===== */
