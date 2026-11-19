@@ -509,7 +509,7 @@ async function loadAll(){
  let pim=[];try{pim=await fetchAll('product_images')}catch(e){pim=[]}
  pim.forEach(i=>{const p=byP.get(i.product_id);if(p)p.images.push({id:i.id,key:'i'+i.id,color:i.color||'',path:i.path,main:i.is_main,url:imgUrl(i.path)})});
  const byO=new Map();
- S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
+ S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
  oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price})});
  try{const pr=await sb.from('payments').select('*').order('id',{ascending:false}).limit(500);S.payErr=pr.error?pr.error.message:'';S.pays=pr.error?[]:pr.data.map(p=>({id:p.id,orderId:byO.get(p.order_id)?byO.get(p.order_id).id:null,method:p.method,code:p.tx_code,phone:p.payer_phone||'',amount:+p.amount,status:p.status,note:p.note||'',proof:p.proof_path||'',d:new Date(p.created_at)}))}catch(e){S.pays=[]}
  S.invoices=iv.map(f=>({dbId:f.id,no:f.no,code:f.code,orderId:byO.get(f.order_id)?byO.get(f.order_id).id:null,d:new Date(f.created_at),status:f.status,checks:f.checks}));
@@ -604,9 +604,11 @@ function detail(o){
  <table><thead><tr><th>Article</th><th class="r">Qté</th><th class="r">Prix</th><th class="r">Total</th></tr></thead><tbody>${o.items.map(it=>`<tr><td>${esc(iname(it))}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r">${fmt(it.qty*it.price)}</td></tr>`).join('')}</tbody></table>
  <div class="tot"><span>Total</span><span>${fmt(total(o))}</span></div>
 ${payBlock(o)}
+ ${o.deliv?`<div class="banner" style="background:#e2f6ea;color:#0f8a4f">✅ <b>Livrée le ${fdatel(o.deliv)}</b> · commande clôturée, anti-fraude : toute nouvelle réclamation est à vérifier.</div>`:''}
  <div class="acts">
   <button class="act ${o.pcode&&!o.claim?'':'go'}" data-act="paycode" data-id="${o.id}" ${canWa&&o.status!=='payee'&&o.status!=='facturee'?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>${o.pcode?'Renvoyer le code paiement':'Envoyer un code paiement'}</b><br><small>${o.pcode?'Code '+esc(o.pcode)+' · renvoi sur '+esc(o.wa):'Part sur WhatsApp vers '+esc(o.wa)}</small></span></button>
-  <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
+  <button class="act ${o.status==='facturee'&&!o.deliv?'go':''}" data-act="deliver" data-id="${o.id}" ${o.deliv||o.status!=='facturee'?'disabled':''}><span class="ico">${ic('box')}</span><span><b>${o.deliv?'Commande livrée ✓':'Marquer comme livrée'}</b><br><small>${o.deliv?fdatel(o.deliv):o.status==='facturee'?'À confirmer après remise au client':'Disponible une fois la facture émise'}</small></span></button>
+  <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)||o.deliv?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
   <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${o.status==='annulee'?'disabled':''} ${(o.status==='payee'||o.status==='facturee')?'':'style="opacity:.75"'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':(o.status==='payee'?'Générer la facture':'🔒 Facture verrouillée')}</b><br><small>${f?f.no:(o.status==='payee'?'Paiement validé':'Paiement à valider dans Bang Pay')}</small></span></button>
  </div></div>`}
 
@@ -976,6 +978,9 @@ const A={
   msg=`Bonjour ${pr} 👋\nVoici votre *code paiement* pour la commande *${o.id}* (${fmt(total(o))}) :\n\n🔑 *${c}*\n\nRendez-vous sur Bang Pay, entrez ce code puis réglez : ${base}pay.html?c=${encodeURIComponent(o.id)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance !`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
   if(o.status==='nouvelle')run(async()=>must(await sb.from('orders').update({status:'contacte'}).eq('id',o.dbId)),'Code envoyé · client contacté');else{render()}},
+ deliver:d=>{const o=order(d.id);if(o.deliv)return;
+  if(!confirm('Confirmer que la commande '+o.id+' a bien été livrée au client ?\nCette action est définitive : elle sert de preuve contre les réclamations frauduleuses.'))return;
+  run(async()=>must(await sb.from('orders').update({delivered_at:new Date().toISOString()}).eq('id',o.dbId)),'Commande marquée comme livrée')},
  manage:d=>openManage(d.id),
  mtab:d=>openManage(d.id,d.t),
  step:(d,el)=>{const i=el.parentElement.querySelector('input');i.value=Math.max(0,(+i.value||0)+ +d.d);i.dispatchEvent(new Event('input',{bubbles:true}))},
@@ -988,16 +993,15 @@ const A={
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
- sendpdf:async d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);toast('Création du PDF…');
+ sendpdf:async d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);if(o.deliv&&!confirm('Cette commande a déjà été livrée le '+fdatel(o.deliv)+'. Renvoyer quand même la facture ?'))return;toast('Création du PDF…');
   let blob;try{blob=await invoicePdf()}catch(e){console.error(e);return toast('PDF impossible : '+(e.message||e))}
   const name=`Facture-${f.no}.pdf`,file=new File([blob],name,{type:'application/pdf'});
-  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture ${f.no} (commande ${o.id}) — ${COMPANY.name}.\nVérification : ${vurl(f)}\nMerci pour votre confiance ! 🙏`;
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name,text:txt});return}}catch(e){if(e&&e.name==='AbortError')return}
+  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture ${f.no} (commande ${o.id}) — ${COMPANY.name}.\nVérification : ${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n🧾 Votre facture est bien là, ci-jointe.\n\nMerci pour votre confiance ! 🙏`;
   const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);
-  toast('PDF téléchargé : joignez-le dans la conversation WhatsApp');
-  setTimeout(()=>window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt),'_blank','noopener'),700)},
- sendinv:d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);
-  const msg=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture *${f.no}* — *${COMPANY.name}*\nCommande ${o.id}\n\n━━━━━━━━━━━━━━\n🧾 *DÉTAIL*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL PAYÉ : ${fmt(total(o))}*\n━━━━━━━━━━━━━━\n🔒 Vérifier l'authenticité :\n${vurl(f)}\n\nMerci pour votre confiance ! 🙏`;
+  toast('PDF téléchargé · conversation WhatsApp ouverte : touchez 📎 puis joignez « '+name+' »');
+  setTimeout(()=>window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt),'_blank','noopener'),500)},
+ sendinv:d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);if(o.deliv&&!confirm('Cette commande a déjà été livrée le '+fdatel(o.deliv)+'. Renvoyer quand même la facture ?'))return;
+  const msg=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture *${f.no}* — *${COMPANY.name}*\nCommande ${o.id}\n\n━━━━━━━━━━━━━━\n🧾 *DÉTAIL*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL PAYÉ : ${fmt(total(o))}*\n━━━━━━━━━━━━━━\n🔒 Vérifier l'authenticité :\n${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n🧾 Votre facture est bien là, ci-jointe.\n\nMerci pour votre confiance ! 🙏`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
