@@ -139,7 +139,7 @@ main:has(.sheet){padding:0 16px;gap:0}
 @keyframes bpUp{0%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
 @keyframes bpShine{0%{background-position:100% 0}100%{background-position:-100% 0}}
 @media (prefers-reduced-motion:reduce){.bpl *{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}}
-.bpl{color:var(--ink)}.gate{display:grid;gap:14px;padding:4px 0 18px}.gate h1{font:700 21px/1.25 Sora,Inter,system-ui;text-align:center}.gate .sub{text-align:center}.gate .amt{text-align:center;font:600 13px Inter;color:var(--mut)}.gate .amt b{color:var(--ink)}.gate input{border-radius:14px;border:1px solid var(--line);padding:13px;background:var(--sf);color:var(--ink);width:100%}.gate .codein{letter-spacing:3px;text-transform:uppercase;text-align:center;font-size:20px}.gate .or2{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:12px}.gate .or2:before,.gate .or2:after{content:"";flex:1;height:1px;background:var(--line)}.gate .bx{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px;font-size:13.5px;color:var(--mut)}.gate .bx b{color:var(--ink)}</style>
+.bpl{color:var(--ink)}.gate{display:grid;gap:14px;padding:4px 0 18px}.gate h1{font:700 21px/1.25 Sora,Inter,system-ui;text-align:center}.gate .sub{text-align:center}.gate .amt{text-align:center;font:600 13px Inter;color:var(--mut)}.gate .amt b{color:var(--ink)}.gate input{border-radius:14px;border:1px solid var(--line);padding:13px;background:var(--sf);color:var(--ink);width:100%}.gate .codein{letter-spacing:3px;text-transform:uppercase;text-align:center;font-size:20px}.gate .or2{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:12px}.gate .or2:before,.gate .or2:after{content:"";flex:1;height:1px;background:var(--line)}.gate .bx{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px;font-size:13.5px;color:var(--mut)}.gate .wt{background:var(--wnbg);color:var(--wn);border-color:transparent}.gate .wt b{color:inherit}.gate .bx b{color:var(--ink)}</style>
 </head>
 <body>
 <div class="app">
@@ -197,7 +197,7 @@ async function load(quiet){
  const r=await sb.rpc('order_pay_info',{p_order:REF});
  if(r.error)return askRef('Connexion impossible. Vérifiez internet et réessayez.');
  if(!r.data||!r.data.length)return askRef('Commande introuvable. Vérifiez la référence.');
- if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];try{CODE=localStorage.getItem('bpc_'+INFO.number)||''}catch(e){}PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
+ if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];JUST=false;try{CODE=localStorage.getItem('bpc_'+INFO.number)||''}catch(e){}PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
 
 function card(i){const n=i.number.replace(/^([A-Za-z]+)-?(\d+)$/,'$1 $2');
  return `<div class="bc"><div class="t"><span>BANG PAY</span>${IC.ctl}</div><div class="chip"></div><div class="n">${esc(n)}</div><div class="b"><div><small>Titulaire</small><b>${esc((i.prenom||'Client').toUpperCase())}</b></div><div class="am"><small>À payer</small><b>${money(i.total)}</b></div></div></div>`}
@@ -217,12 +217,14 @@ function statusPage(){const i=INFO,paid=i.status==='payee'||i.status==='facturee
 
 let CODE='';try{CODE=localStorage.getItem('bpc_'+REF)||''}catch(e){}
 const claimMsg=i=>'Salut Bang Market 👋\nJe suis la commande *'+i.number+'*'+(i.prenom?' ('+i.prenom+')':'')+' ('+money(i.total)+').\nJe souhaite avoir mon code paiement pour valider ma commande.';
-function gate(err){const i=INFO;back(false);dock('');
+let JUST=false;const wt=s=>Math.floor(s/3600)+' h '+String(Math.ceil((s%3600)/60)).padStart(2,'0')+' min';
+function gate(err){const i=INFO,W=i.claimed?(i.wait_secs||0):0;back(false);dock('');
  $('#app').innerHTML=`<div class="gate"><div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bpgp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#bpgp)"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div><h1>Entrez votre code paiement</h1><p class="sub">Ce code personnel est indispensable pour payer la commande <b>${esc(i.number)}</b>. Sans lui, aucun paiement n’est possible.</p><div class="amt">Montant : <b>${money(i.total)}</b></div>
  <form id="gf" class="col"><label class="fld"><span>Code paiement</span><input id="gc" class="code codein" autocomplete="off" autocapitalize="characters" placeholder="BP-XXXX-XXXX" required minlength="4" maxlength="20"></label>${err?`<div class="err">${esc(err)}</div>`:''}<button class="btn or" id="gb">${IC.lock}Valider mon code</button></form>
  <div class="or2">pas encore de code ?</div>
- <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${WA}?text=${encodeURIComponent(claimMsg(i))}">💬 Réclamer mon code paiement</a>
- <div class="bx"><span>${i.has_code?'<b>Votre code a été envoyé</b> sur le numéro WhatsApp indiqué lors de la commande. Vérifiez vos messages.':'Touchez le bouton ci-dessus : un message est prêt, il suffit de l’envoyer. Nous vous répondrons avec votre code sur WhatsApp.'}</span></div></div>`;
+ ${W>0?`<div class="bx wt"><span>${JUST?'<b>✅ Demande envoyée.</b> Vous serez relancé dans <b>4 heures minimum</b> pour recevoir votre code paiement sur WhatsApp.':'<b>⏳ Votre commande est en cours d’étude.</b> Patientez au minimum 4 h avant de réclamer à nouveau.'}<br><small>Prochaine demande possible dans ${wt(W)}.</small></span></div><a class="btn or" href="${SITE}">🛍️ Continuer mes achats</a>`:`<a class="btn wa" id="clm" target="_blank" rel="noopener" href="https://wa.me/${WA}?text=${encodeURIComponent(claimMsg(i))}">💬 Réclamer mon code paiement</a>
+ <div class="bx"><span>${i.has_code?'<b>Votre code a été envoyé</b> sur le numéro WhatsApp indiqué lors de la commande. Vérifiez vos messages.':'Touchez le bouton ci-dessus : un message est prêt, il suffit de l’envoyer. Vous serez relancé dans 4 heures minimum.'}</span></div>`}</div>`;
+ const cl=$('#clm');if(cl)cl.onclick=()=>{sb.rpc('claim_pay_code',{p_order:i.number}).then(()=>{});setTimeout(()=>{INFO.claimed=true;INFO.wait_secs=14400;JUST=true;gate()},600)};
  $('#gf').onsubmit=async e=>{e.preventDefault();const c=$('#gc').value,bt=$('#gb');bt.disabled=true;bt.textContent='Vérification…';
   const r=await sb.rpc('pay_unlock',{p_order:i.number,p_code:c});
   if(r.error)return gate('Connexion impossible, réessayez.');
