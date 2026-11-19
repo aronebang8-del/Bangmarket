@@ -501,7 +501,7 @@ async function loadAll(){
   if(!ca.error&&ca.data)ca.data.forEach(c=>{CATS[c.name]=hexOf(c.name);CAT_ID[c.name]=c.id;CAT_LBL[c.id]=c.name;SUBS[c.id]=(sa.data||[]).filter(s=>s.category===c.id).map(s=>[s.slug,s.name])})}catch(e){}
  try{const r=await sb.from('promos').select('*').order('created_at');S.promos=r.error?null:r.data}catch(e){S.promos=null}
  try{const r=await sb.from('shop_settings').select('*').eq('id',1).maybeSingle();S.sets=r.error?null:(r.data||{...SETD})}catch(e){S.sets=null}
- try{const [a,b,c]=await Promise.all([sb.from('shop_tags').select('*').order('position').order('id'),sb.from('shop_banners').select('*').order('position').order('id'),sb.from('notifications').select('*').order('id',{ascending:false}).limit(50)]);S.tags=a.error?null:a.data;S.bans=b.error?null:b.data;S.nots=c.error?null:c.data;S.vErr=[a,b,c].map((x,i)=>x.error?['shop_tags','shop_banners','notifications'][i]+' : '+x.error.message:'').filter(Boolean).join(' | ')}catch(e){S.tags=S.bans=S.nots=null;S.vErr=String(e&&e.message||e)}
+ try{const [a,b,c,d]=await Promise.all([sb.from('shop_tags').select('*').order('position').order('id'),sb.from('shop_banners').select('*').order('position').order('id'),sb.from('notifications').select('*').order('id',{ascending:false}).limit(50),sb.from('flash_sales').select('*').order('position').order('id')]);S.flashes=d.error?null:d.data;S.tags=a.error?null:a.data;S.bans=b.error?null:b.data;S.nots=c.error?null:c.data;S.vErr=[a,b,c,d].map((x,i)=>x.error?['shop_tags','shop_banners','notifications','flash_sales'][i]+' : '+x.error.message:'').filter(Boolean).join(' | ')}catch(e){S.tags=S.bans=S.nots=S.flashes=null;S.vErr=String(e&&e.message||e)}
  S.pricingOk=pr.length?('discount_pct' in pr[0]):S.sets!==null;
  S.products=pr.map(p=>({id:p.id,pct:+p.discount_pct||0,tmin:p.tier_min==null?null:+p.tier_min,toff:p.tier_off==null?null:+p.tier_off,name:p.name,catId:p.category,cat:CAT_LBL[p.category]||p.category,sub:p.subcategory||'',price:+p.price,bulk:p.bulk_price==null?0:+p.bulk_price,moq:p.moq,visible:p.visible,variants:[],images:[]}));
  const byP=new Map(S.products.map(p=>[p.id,p]));
@@ -705,10 +705,11 @@ function paintDisc(l){
  if(!S.pricingOk){l.innerHTML=noSql();return}
  S.pc=S.pc||'Toutes';const cats=['Toutes',...allCats()],list=S.products.filter(p=>S.pc==='Toutes'||p.cat===S.pc),on=S.products.filter(p=>p.pct>0).length;
  l.innerHTML=`<div class="hlp"><b>Comment ça marche :</b> tapez un pourcentage à côté d'un produit. Le client voit l'ancien prix barré, un badge rouge « −X% » et paie le nouveau prix. Mettez <b>0</b> pour retirer la réduction. <b>${on}</b> produit${on>1?'s':''} en promotion actuellement.</div>
+ <div class="card pbulk"><b>Nouvelle réduction</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Choisissez les produits, le pourcentage, et créez au besoin une étiquette pour l'annoncer.</span><button class="btn pri sm" data-act="discnew">Ajouter une réduction</button></div></div>
  <div class="card pbulk"><b>Étiquette d'accueil</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Annoncez vos réductions avec une étiquette sur l'accueil.</span><button class="btn sm" data-act="tagfrom" data-k="disc">Créer l'étiquette</button></div></div>
  <div class="card pbulk"><b>Appliquer à toute une catégorie</b><div class="prow"><select id="pbc">${allCats().map(c=>`<option>${esc(c)}</option>`).join('')}</select><label class="pin"><input id="pbp" type="number" min="0" max="90" step="0.5" placeholder="0"><span>%</span></label><button class="btn pri sm" data-act="pbapply">Appliquer</button></div></div>
  <div class="chips" id="pdc">${cats.map(c=>`<button class="chip ${S.pc===c?'on':''}" data-act="pdcat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
- <div class="pdl">${list.length?list.map(p=>`<div class="pdr" data-r="${p.id}"><div class="pdth">${photo(p)}</div><div class="pdi"><b>${esc(p.name)}</b><small>${esc(p.cat)} · Prix normal <b>${fmt(p.price)}</b> · ${tierTxt(p)}</small></div><div class="pdv"><label class="pin"><input type="number" min="0" max="90" step="0.5" value="${p.pct||0}" data-pdisc="${p.id}" aria-label="Réduction en pourcentage"><span>%</span></label><div class="pdn ${p.pct>0?'on':''}" id="pn${p.id}">${p.pct>0?'Client paie '+fmt(netP(p.price,p.pct)):'Pas de réduction'}</div></div></div>`).join(''):'<div class="card empty"><b>Aucun produit</b></div>'}</div>`}
+ <div class="pdl">${list.length?list.map(p=>`<div class="pdr" data-r="${p.id}"><div class="pdth">${photo(p)}</div><div class="pdi"><b>${esc(p.name)}</b><small>${esc(p.cat)} · Prix normal <b>${fmt(p.price)}</b> · ${tierTxt(p)}</small></div><div class="pdv"><label class="pin"><input type="number" min="0" max="90" step="0.5" value="${p.pct||0}" data-pdisc="${p.id}" aria-label="Réduction en pourcentage"><span>%</span></label><button type="button" class="btn sm" data-act="tagfrom" data-k="prod" data-id="${p.id}">Étiquette</button><div class="pdn ${p.pct>0?'on':''}" id="pn${p.id}">${p.pct>0?'Client paie '+fmt(netP(p.price,p.pct)):'Pas de réduction'}</div></div></div>`).join(''):'<div class="card empty"><b>Aucun produit</b></div>'}</div>`}
 function paintTier(l){
  if(S.sets===null){l.innerHTML=noSql();return}
  const s={...SETD,...S.sets},ex=S.products[0],pr0=ex?netP(ex.price,ex.pct):5,mo=ex?ex.moq:10,ov=S.products.filter(p=>p.tmin!=null||p.toff!=null);
@@ -721,7 +722,7 @@ function paintTier(l){
  window._tp={pr0,mo};tierPrev()}
 function tierPrev(){const e=$('#tprev');if(!e)return;const mn=Math.max(1,parseInt($('#tmn').value)||1),of=Math.max(0,+$('#tmo').value||0),{pr0,mo}=window._tp,d=Math.max(.1,Math.round((pr0-of)*100)/100);
  e.innerHTML=`<div class="tr"><span>De ${mo} à ${Math.max(mo,mn-1)} pcs</span><b>${fmt(pr0)}/pc</b></div><div class="tr hi"><span>${mn} pcs et plus</span><b>${fmt(d)}/pc</b></div><small>${mn} pcs = ${fmt(Math.round(d*mn*100)/100)} au lieu de ${fmt(Math.round(pr0*mn*100)/100)} (−${fmt(Math.round(of*mn*100)/100)})</small>`}
-function paintFlash(l){
+function paintFlashOld(l){
  if(S.sets===null){l.innerHTML=noSql();return}
  const s={...SETD,...S.sets},mx=Math.max(0,...S.products.map(p=>p.pct||0)),end=s.flash_end?new Date(s.flash_end):null,loc=end?new Date(end.getTime()-end.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
  l.innerHTML=`<div class="hlp">La <b>vente flash</b> est le bandeau orange en haut de l'onglet « Offres » avec le compte à rebours. Il affiche automatiquement « Jusqu'à ${mx||'X'}% de réduction » d'après les réductions produits. Si aucun produit n'est en promotion et que vous n'écrivez pas de titre, le bandeau est masqué.</div>
@@ -847,7 +848,7 @@ function editProd(id,newCat){
  <div class="ft">${id?'<button type="button" class="btn dng dl" data-act="delprod">Supprimer</button>':''}<button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`,'wide');
  paintImgs();paintSizes();pnetUp()}
 /* ============ Stock : liste, entrées, historique ============ */
-VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="addcat">${ic('plus')}Catégorie</button><button class="btn" data-act="catmgr">Gérer les catégories</button><button class="btn pri" data-act="addlist" data-pid="0">${ic('plus')}Ajouter un produit</button></div></div>
+VIEWS.stock=()=>`<div class="top"><div><h1>Stock</h1><p>Les sorties se font toutes seules quand vous confirmez une commande. Vous ajoutez ici les entrées.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="addcat">${ic('plus')}Catégorie</button><button class="btn" data-act="catmgr">Gérer les catégories</button><button class="btn" data-act="addlist" data-pid="-1">Entrée de stock</button><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div></div>
  <div class="kpis k3" id="skpi"></div>
  <div class="seg pg" id="sseg"></div>
  <div class="chips" id="cchips"></div>
@@ -866,7 +867,7 @@ function paintStock(){
   $('#mchips').innerHTML=F.map(([k,l,f])=>`<button class="chip ${S.lf===k?'on':''}" data-act="schip" data-k="${k}">${l}<em>${all.filter(f).length}</em></button>`).join('');
   const groups=S.products.map(p=>({p,vs:p.variants.map((v,i)=>({v,i})).filter(({v})=>fn(v)&&(!q||(p.name+' '+vlabel(v)).toLowerCase().includes(q)))})).filter(g=>g.vs.length&&inSc(g.p));
   const card=({p,vs})=>{const c=CATS[p.cat]||'#6b6b70',t=p.variants.reduce((a,v)=>a+v.stock,0);
-   return `<section class="card sg"><div class="sgh"><span class="sw2">${photo(p)}</span><div><b>${esc(p.name)}</b><br><span class="mut">${esc(p.cat)} · ${t.toLocaleString('fr-FR')} pièces</span></div><button class="btn sm" data-act="addlist" data-pid="${p.id}">${ic('plus')}Taille ou couleur</button></div>
+   return `<section class="card sg"><div class="sgh"><span class="sw2">${photo(p)}</span><div><b>${esc(p.name)}</b><br><span class="mut">${esc(p.cat)} · ${t.toLocaleString('fr-FR')} pièces</span></div><button class="btn sm" data-act="editprod" data-id="${p.id}">Modifier</button><button class="btn sm" data-act="addlist" data-pid="${p.id}">${ic('plus')}Taille ou couleur</button></div>
    ${vs.map(({v,i})=>`<div class="vr"><div class="vl"><b>${esc(vlabel(v))}</b>${v.stock===0?'<span class="tag e">Épuisé</span>':v.stock<=3?'<span class="tag w">Stock bas</span>':''}</div><span class="qn ${v.stock===0?'z':v.stock<=3?'l':''}" aria-label="${v.stock} en stock">${v.stock.toLocaleString('fr-FR')}${v.reserved?`<small style="display:block;font-size:11px;font-weight:600;color:#b8741a">dispo ${Math.max(0,v.stock-v.reserved)} · rés. ${v.reserved}</small>`:''}</span><div class="va"><input type="number" min="1" step="1" inputmode="numeric" placeholder="Qté à ajouter" aria-label="Quantité à ajouter pour ${esc(p.name)} ${esc(vlabel(v))}"><button class="plus" data-act="qadd" data-pid="${p.id}" data-vi="${i}" aria-label="Ajouter au stock">+</button></div></div>`).join('')}</section>`};
   $('#mlist').innerHTML=groups.length?allCats().map(c=>{const gs=groups.filter(g=>g.p.cat===c);if(!gs.length)return '';const pcs=gs.reduce((a,g)=>a+g.p.variants.reduce((b,v)=>b+v.stock,0),0);
    return `<section class="pcat"><h2><i style="background:${catCol(c)}"></i>${esc(c)}<em>${gs.length} produit${gs.length>1?'s':''} · ${pcs.toLocaleString('fr-FR')} pièces</em></h2>${gs.map(card).join('')}</section>`}).join(''):'<div class="card empty"><b>Aucune ligne de stock</b>Changez le filtre, ou ajoutez un produit avec « Ajouter un produit ».</div>';
@@ -1197,7 +1198,7 @@ function tagForm(g){const x={anim:'slide',secs:7,color:'orange',icon:'🏷️',l
  <label class="fld">Sous-titre (facultatif)<input name="sub" maxlength="40" value="${esc(x.sub||'')}" placeholder="Ex. dès 100 pièces"></label>
  <div class="grid2"><label class="fld">Icône<select name="icon">${['🏷️','🔥','🎁','⭐','💥','🎉','🚚','💰','🆕','❤️','mascotte'].map(i=>`<option value="${i}" ${i===x.icon?'selected':''}>${i==='mascotte'?'Mascotte Bang Market':i}</option>`).join('')}</select></label><label class="fld">Couleur<select name="color">${opts({orange:'Orange',rouge:'Rouge',vert:'Vert',violet:'Violet',noir:'Noir',or:'Doré'},x.color)}</select></label></div>
  <div class="grid2"><label class="fld">Transition d'entrée<select name="anim">${opts(TANL,x.anim)}</select></label><label class="fld">Durée d'affichage (s)<input name="secs" type="number" min="3" max="60" value="${x.secs}"></label></div>
- <label class="fld">Au toucher, ouvrir<select name="link">${opts(LNK,x.link)}</select></label>
+ <label class="fld">Au toucher, ouvrir<select name="link">${opts(x.product_id?{...LNK,product:'La fiche du produit'}:LNK,x.link)}</select></label>
  <label class="fld">Appliquer un code promo au toucher (facultatif)<select name="code"><option value="">Aucun</option>${(S.promos||[]).map(p=>`<option ${p.code===x.code?'selected':''}>${esc(p.code)}</option>`).join('')}</select></label>
  <label class="fld">Dernier jour d'affichage (facultatif)<input name="ends" type="date" value="${x.ends_at||''}"></label>
  <label class="chk"><input type="checkbox" name="active" ${x.active?'checked':''}> Afficher cette étiquette sur la boutique</label>
@@ -1228,6 +1229,7 @@ Object.assign(A,{
  tagfrom:d=>{if(need(S.tags))return;let g;
   if(d.k==='promo'){const p=(S.promos||[]).find(x=>x.code===d.c);if(!p)return;g={kind:'promo',code:p.code,label:p.code,sub:'−'+pctS(+p.rate)+'% dès '+p.min_qty+' pcs',icon:'mascotte',color:'orange',link:'offers'}}
   else if(d.k==='tier'){const s={...SETD,...S.sets};g={kind:'tier',label:'−'+fmt(+s.tier_off)+'/pièce',sub:'dès '+s.tier_min+' pcs du même produit',icon:'💰',color:'vert',link:'shop'}}
+  else if(d.k==='prod'){const p=prod(+d.id);if(!p)return;if(!(p.pct>0))return toast('Mettez d\'abord une réduction sur ce produit');g={kind:'disc',label:'−'+pctS(p.pct)+'%',sub:p.name.slice(0,40),icon:'🔥',color:'rouge',link:'product',product_id:p.id}}
   else{const mx=Math.max(0,...S.products.map(p=>p.pct||0));if(!mx)return toast('Aucun produit en réduction pour le moment');g={kind:'disc',label:'Jusqu\'à −'+mx+'%',sub:'sur une sélection de produits',icon:'🔥',color:'rouge',link:'offers'}}
   tagForm(g)},
  bannew:()=>{if(!need(S.bans))banForm(null)},
@@ -1244,8 +1246,8 @@ Object.assign(A,{
 document.addEventListener('input',e=>{if(e.target.closest('[data-form="tag"]'))tagPv()});
 document.addEventListener('change',e=>{const t=e.target;if(t.closest&&t.closest('[data-form="tag"]'))tagPv();
  if(t.dataset&&t.dataset.bff!==undefined&&BF){const f=t.files[0];t.value='';if(f&&/^image\//.test(f.type))shrinkTo(f,1000,140,.8).then(blob=>{BF.photo={blob,url:URL.createObjectURL(blob)};banPv()}).catch(()=>toast('Image illisible'))}});
-document.addEventListener('submit',async e=>{const f=e.target.closest('[data-form]');if(!f)return;const k=f.dataset.form;if(!['tag','ban','bset','notif'].includes(k))return;e.preventDefault();const fd=new FormData(f);
- if(k==='tag'){const code=fd.get('code')||null,g={label:String(fd.get('label')).trim(),sub:String(fd.get('sub')||'').trim(),icon:fd.get('icon'),color:fd.get('color'),anim:fd.get('anim'),secs:Math.max(3,parseInt(fd.get('secs'))||7),link:fd.get('link'),code,kind:code?'promo':(TG.kind&&TG.kind!=='promo'?TG.kind:'custom'),ends_at:fd.get('ends')||null,active:!!fd.get('active')};
+document.addEventListener('submit',async e=>{const f=e.target.closest('[data-form]');if(!f)return;const k=f.dataset.form;if(!['tag','ban','bset','notif','disc','fl'].includes(k))return;e.preventDefault();const fd=new FormData(f);
+ if(k==='tag'){const code=fd.get('code')||null,g={label:String(fd.get('label')).trim(),sub:String(fd.get('sub')||'').trim(),icon:fd.get('icon'),color:fd.get('color'),anim:fd.get('anim'),secs:Math.max(3,parseInt(fd.get('secs'))||7),link:fd.get('link'),product_id:fd.get('link')==='product'?(TG.product_id||null):null,code,kind:code?'promo':(TG.kind&&TG.kind!=='promo'?TG.kind:'custom'),ends_at:fd.get('ends')||null,active:!!fd.get('active')};
   if(!g.label)return toast('Écrivez un titre');
   if(await run(async()=>{TG.id?must(await sb.from('shop_tags').update(g).eq('id',TG.id)):must(await sb.from('shop_tags').insert({...g,position:(S.tags||[]).length}))},'Étiquette enregistrée (Vitrine › Étiquettes)'))closeModal()}
  if(k==='ban'){if(!BF||!BF.photo)return toast('Choisissez une photo');
@@ -1256,6 +1258,68 @@ document.addEventListener('submit',async e=>{const f=e.target.closest('[data-for
  if(k==='bset'){const n=Math.min(30,Math.max(2,parseInt(fd.get('secs'))||5));await run(async()=>must(await sb.from('shop_settings').upsert({id:1,banner_secs:n,updated_at:new Date().toISOString()})),'Durée enregistrée : '+n+' s')}
  if(k==='notif'){const title=String(fd.get('title')).trim();if(!title||!confirm('Envoyer cette notification à tous les clients ?'))return;
   await run(async()=>must(await sb.from('notifications').insert({title,body:String(fd.get('body')||'').trim(),link:fd.get('link')})),'Notification envoyée aux clients')}});
+
+/* ============ Ventes flash (compte à rebours sur offres) + réductions avec étiquette ============ */
+const locIso=dt=>new Date(dt.getTime()-dt.getTimezoneOffset()*60000).toISOString().slice(0,16);
+const fdt=d=>d.toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const rowS='display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:12px;background:#fff;border:1px solid rgba(0,0,0,.07);cursor:pointer';
+function paintFlash(l){
+ if(S.flashes===null){l.innerHTML=noSqlV()+'<div class="lb2" style="margin-top:14px">Réglage actuel (provisoire)</div>';const d=document.createElement('div');l.appendChild(d);paintFlashOld(d);return}
+ const F=S.flashes,now=Date.now();
+ l.innerHTML=`<div class="hlp">Une <b>vente flash</b> est un bandeau avec compte à rebours dans l'onglet « Offres » de la boutique. Choisissez une offre qui existe déjà (un code promo ou des produits en réduction). <b>Elle doit avoir une date de fin</b> : sans délai, impossible de l'ajouter. À la fin du compte à rebours, le bandeau disparaît tout seul.</div>
+ <div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn pri" data-act="flnew">${ic('plus')}Nouvelle vente flash</button></div>`+(F.length?F.map((f,i)=>{const end=new Date(f.ends_at),over=end.getTime()<=now,c=f.kind==='code',ids=f.product_ids||[],on=f.active&&!over,
+  desc=c?'Code promo '+f.code:ids.map(id=>{const p=prod(id);return p?p.name+' (−'+pctS(p.pct||0)+'%)':''}).filter(Boolean).slice(0,3).join(', ')+(ids.length>3?' +'+(ids.length-3):'');
+  return `<div class="pwrap ${on?'':'off'}"><div class="card"><b>${esc(f.title||(c?f.code:'Réductions produits'))}</b><div class="mut" style="font-size:13px">${esc(desc||'Aucun produit')}</div><div class="mut" style="font-size:13px">Fin : ${fdt(end)}</div></div><div class="pact"><span class="pst ${on?'on':''}">${over?'Terminée':f.active?'En cours':'Masquée'} · n°${i+1}</span>${mvb(F,i,'fl',f.id)}<button class="btn sm" data-act="fltog" data-id="${f.id}">${f.active?'Masquer':'Afficher'}</button><button class="btn sm" data-act="fledit" data-id="${f.id}">Modifier</button><button class="btn sm dng" data-act="fldel" data-id="${f.id}">Supprimer</button></div></div>`}).join(''):'<div class="card empty"><b>Aucune vente flash</b>Créez-en une avec « Nouvelle vente flash ».</div>')}
+let FL=null;
+function flForm(f){if(need(S.flashes))return;const x={kind:'code',title:'',active:true,product_ids:[],...(f||{})};FL=x;
+ const codes=(S.promos||[]).filter(p=>p.active),disc=S.products.filter(p=>p.pct>0),end=x.ends_at?locIso(new Date(x.ends_at)):'';
+ modal(head(x.id?'Modifier la vente flash':'Nouvelle vente flash')+`<form data-form="fl"><div class="hlp" style="margin-bottom:10px">Choisissez l'offre à annoncer. <b>Une offre sans délai ne peut pas être ajoutée.</b></div>
+ <label class="fld">Titre (facultatif)<input name="title" maxlength="40" value="${esc(x.title||'')}" placeholder="Ex. Week-end flash"></label>
+ <div class="seg"><button type="button" class="${x.kind==='code'?'on':''}" data-act="flkind" data-k="code">Code promo</button><button type="button" class="${x.kind==='disc'?'on':''}" data-act="flkind" data-k="disc">Produits en réduction</button></div><input type="hidden" name="kind" value="${x.kind}">
+ <div id="flc" style="display:${x.kind==='code'?'grid':'none'};gap:8px;margin-bottom:12px">${codes.length?codes.map(p=>{const ok=!!p.ends_at;return `<label style="${rowS};${ok?'':'opacity:.55;cursor:not-allowed'}"><input type="radio" name="code" value="${esc(p.code)}" ${ok?'':'disabled'} ${x.code===p.code?'checked':''}><div><b>${esc(p.code)}</b> <small>−${pctS(+p.rate)}% dès ${p.min_qty} pcs</small><small style="display:block" class="mut">${ok?'Se termine le '+fdatel(new Date(p.ends_at+'T12:00:00'))+' (fin de journée)':'Pas de date de fin : ajoutez un délai dans Promotions › Codes promo pour l\'utiliser ici'}</small></div></label>`}).join(''):'<div class="mut">Aucun code promo actif. Créez-en un dans Promotions › Codes promo.</div>'}</div>
+ <div id="fld2" style="display:${x.kind==='disc'?'block':'none'};margin-bottom:12px"><div class="lb2">Produits en réduction</div><div style="display:grid;gap:8px;max-height:220px;overflow:auto">${disc.length?disc.map(p=>`<label style="${rowS}"><input type="checkbox" name="pid" value="${p.id}" ${(x.product_ids||[]).includes(p.id)?'checked':''}><span class="pdth" style="width:38px;height:38px">${photo(p)}</span><div><b>${esc(p.name)}</b><small style="display:block" class="mut">−${pctS(p.pct)}% · ${fmt(netP(p.price,p.pct))}</small></div></label>`).join(''):'<div class="mut">Aucun produit en réduction. Ajoutez-en dans Promotions › Réductions produits.</div>'}</div>
+ <label class="fld" style="margin-top:10px">Fin de l'offre (obligatoire)<input name="end" type="datetime-local" value="${end}"></label></div>
+ <label class="chk"><input type="checkbox" name="active" ${x.active?'checked':''}> Afficher cette vente flash sur la boutique</label>
+ <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Enregistrer</button></div></form>`)}
+let DF=null;
+function discForm(){if(!S.pricingOk)return toast('Mise à jour de la base nécessaire (bangmarket_prix.sql)');DF=1;
+ modal(head('Nouvelle réduction')+`<form data-form="disc"><label class="fld">Pourcentage de réduction<input name="pct" type="number" min="1" max="90" step="0.5" required placeholder="Ex. 20"></label>
+ <div class="lb2">Produits concernés <span id="dsn" class="mut"></span></div><input id="dsq" type="search" placeholder="Rechercher un produit" style="width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(0,0,0,.12);margin-bottom:8px">
+ <div class="chips">${allCats().map(c=>`<button type="button" class="chip" data-act="dsall" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+ <div id="dsl" style="display:grid;gap:6px;max-height:230px;overflow:auto;margin:8px 0 12px">${S.products.map(p=>`<label data-n="${esc(p.name.toLowerCase())}" style="${rowS}"><input type="checkbox" name="pid" value="${p.id}" data-c="${esc(p.cat)}"><span class="pdth" style="width:38px;height:38px">${photo(p)}</span><div><b>${esc(p.name)}</b><small style="display:block" class="mut">${esc(p.cat)} · ${fmt(p.price)}${p.pct?' · déjà −'+pctS(p.pct)+'%':''}</small></div></label>`).join('')}</div>
+ <label class="chk"><input type="checkbox" name="mk" id="dmk"> Créer aussi une étiquette pour annoncer cette réduction</label>
+ <div id="dtg" style="display:none;margin-top:10px"><div class="lb2">Aperçu de l'étiquette</div><div id="dtp" style="margin-bottom:10px"></div>
+ <label class="fld">Titre<input name="tlabel" maxlength="24" placeholder="Ex. −20% cette semaine"></label><label class="fld">Sous-titre<input name="tsub" maxlength="40" placeholder="Ex. sur une sélection de produits"></label>
+ <div class="grid2"><label class="fld">Icône<select name="ticon">${['🔥','🏷️','🎁','⭐','💥','🎉','💰','🆕'].map(i=>`<option>${i}</option>`).join('')}</select></label><label class="fld">Couleur<select name="tcolor">${opts({rouge:'Rouge',orange:'Orange',vert:'Vert',violet:'Violet',noir:'Noir',or:'Doré'},'rouge')}</select></label></div>
+ <label class="fld">Transition d'entrée<select name="tanim">${opts(TANL,'slide')}</select></label>
+ <label class="chk"><input type="checkbox" name="tactive"> Afficher l'étiquette sur la boutique dès maintenant</label></div>
+ <div class="ft"><button type="button" class="btn" data-act="close">Fermer</button><button class="btn pri">Appliquer la réduction</button></div></form>`);dfPv()}
+function dfPv(){const f=$('[data-form="disc"]');if(!f)return;const ids=[...f.querySelectorAll('[name=pid]:checked')],n=ids.length,pct=+f.elements.pct.value||0,one=n===1?prod(+ids[0].value):null;
+ $('#dsn').textContent=n?'· '+n+' sélectionné'+(n>1?'s':''):'';
+ const e=$('#dtp');if(e)e.innerHTML=tagPrev({label:f.elements.tlabel.value||'−'+(pctS(pct)||'X')+'%',sub:f.elements.tsub.value||(one?one.name:'sur une sélection de produits'),icon:f.elements.ticon.value,color:f.elements.tcolor.value})}
+Object.assign(A,{
+ flnew:()=>flForm(null),
+ fledit:d=>{const f=(S.flashes||[]).find(x=>x.id==d.id);f&&flForm({...f})},
+ fltog:d=>{const f=(S.flashes||[]).find(x=>x.id==d.id);f&&run(async()=>must(await sb.from('flash_sales').update({active:!f.active}).eq('id',f.id)),f.active?'Vente flash masquée':'Vente flash affichée sur la boutique')},
+ fldel:d=>{confirm('Supprimer cette vente flash ?')&&run(async()=>must(await sb.from('flash_sales').delete().eq('id',d.id)),'Vente flash supprimée')},
+ flup:d=>reorder('flash_sales',S.flashes,d.id,-1),fldn:d=>reorder('flash_sales',S.flashes,d.id,1),
+ flkind:d=>{const f=$('[data-form="fl"]');if(!f)return;f.elements.kind.value=d.k;$('#flc').style.display=d.k==='code'?'grid':'none';$('#fld2').style.display=d.k==='disc'?'block':'none';f.querySelectorAll('.seg button').forEach(b=>b.classList.toggle('on',b.dataset.k===d.k))},
+ discnew:()=>discForm(),
+ dsall:d=>{const f=$('[data-form="disc"]');if(!f)return;const b=[...f.querySelectorAll('[name=pid]')].filter(x=>x.dataset.c===d.c),all=b.every(x=>x.checked);b.forEach(x=>x.checked=!all);dfPv()}
+});
+document.addEventListener('input',e=>{const t=e.target;if(t.closest&&t.closest('[data-form="disc"]')){if(t.id==='dsq'){const q=t.value.trim().toLowerCase();document.querySelectorAll('#dsl label').forEach(l=>l.style.display=!q||l.dataset.n.includes(q)?'flex':'none')}dfPv()}});
+document.addEventListener('change',e=>{const t=e.target;if(t.id==='dmk'){$('#dtg').style.display=t.checked?'block':'none';dfPv()}else if(t.closest&&t.closest('[data-form="disc"]'))dfPv()});
+document.addEventListener('submit',async e=>{const f=e.target.closest('[data-form]');if(!f)return;const k=f.dataset.form;if(k!=='fl'&&k!=='disc')return;e.preventDefault();const fd=new FormData(f);
+ if(k==='fl'){const kind=fd.get('kind'),row={kind,title:String(fd.get('title')||'').trim(),active:!!fd.get('active'),code:null,product_ids:[],ends_at:null};
+  if(kind==='code'){const c=fd.get('code'),p=(S.promos||[]).find(x=>x.code===c);if(!p)return toast('Choisissez un code promo');if(!p.ends_at)return toast('Ce code n\'a pas de date de fin : impossible de l\'ajouter');row.code=c;row.ends_at=new Date(p.ends_at+'T23:59:59').toISOString()}
+  else{const ids=fd.getAll('pid').map(Number);if(!ids.length)return toast('Choisissez au moins un produit');if(!fd.get('end'))return toast('Indiquez la fin de l\'offre : sans délai, impossible de l\'ajouter');row.product_ids=ids;row.ends_at=new Date(fd.get('end')).toISOString()}
+  if(new Date(row.ends_at).getTime()<=Date.now())return toast('Cette date de fin est déjà passée');
+  if(await run(async()=>{FL&&FL.id?must(await sb.from('flash_sales').update(row).eq('id',FL.id)):must(await sb.from('flash_sales').insert({...row,position:(S.flashes||[]).length}))},'Vente flash enregistrée'))closeModal()}
+ if(k==='disc'){const pct=Math.min(90,Math.max(1,+fd.get('pct')||0)),ids=fd.getAll('pid').map(Number);if(!pct)return toast('Entrez un pourcentage');if(!ids.length)return toast('Choisissez au moins un produit');const mk=!!fd.get('mk');
+  if(mk&&S.tags===null)return toast('Étiquettes : exécutez d\'abord bangmarket_vitrine.sql');
+  if(await run(async()=>{must(await sb.from('products').update({discount_pct:pct}).in('id',ids));
+   if(mk){const one=ids.length===1?prod(ids[0]):null;must(await sb.from('shop_tags').insert({kind:'disc',label:(String(fd.get('tlabel')||'').trim()||'−'+pctS(pct)+'%').slice(0,24),sub:String(fd.get('tsub')||'').trim()||(one?one.name.slice(0,40):'sur une sélection de produits'),icon:fd.get('ticon'),color:fd.get('tcolor'),anim:fd.get('tanim'),secs:7,link:one?'product':'offers',product_id:one?one.id:null,code:null,active:!!fd.get('tactive'),position:(S.tags||[]).length}))}},
+   mk?'−'+pctS(pct)+'% appliqué · étiquette créée (Vitrine › Étiquettes)':'−'+pctS(pct)+'% appliqué à '+ids.length+' produit'+(ids.length>1?'s':'')))closeModal()}});
 boot();
 </script>
 </body>

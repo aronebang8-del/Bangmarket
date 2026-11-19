@@ -744,10 +744,14 @@ $('#scroll').querySelectorAll('[data-b100]').forEach(b=>b.onclick=()=>{const f=s
 const cpa=$('#cpa');if(cpa)cpa.onclick=()=>{const k=$('#cpi').value.replace(/\s+/g,'').toUpperCase();if(!k){st.coupon='';return renderCart()}if(!COUPONS[k])return toastE('Code promo invalide');st.coupon=k;sfx('pop');toast(!cpOk(COUPONS[k])?`${k} : ${COUPONS[k].minQty} pcs minimum (${cartQty()} dans le panier)`:k+' appliqué');renderCart()};
 const co=$('#co');if(co)co.onclick=()=>{for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq)return toastE('Minimum '+pp.moq+' pcs pour : '+pp.n+' (encore '+(pp.moq-inCart(pp.id))+')');if(inCart(pp.id)>ST[pp.id])return toastE('Stock insuffisant : '+pp.n)}st.chk=true;sfx('open');renderCart();$('#scroll').scrollTop=0}}
 function renderOffers(){const l=P.filter(p=>D[p.id]).sort((a,b)=>D[b.id]-D[a.id]);const dm=Object.values(D).length?Math.max(...Object.values(D)):0,fOn=FLASH.on&&(FLASH.fake||!FLASH.end||FLASH.end>Date.now())&&(dm>0||FLASH.title);if(FLASH.fake){if(!st.end)st.end=Date.now()+(3*3600+14*60)*1000}else st.end=FLASH.end;
-$('#scroll').innerHTML=`<div class="logo" style="font-size:24px">Offres</div>${fOn?`<div class="flash"><div><small>VENTE FLASH</small><b>${FLASH.title?esc(FLASH.title):'Jusqu’à '+pctS(dm)+'% de réduction'}</b></div>${st.end?'<div class="cd" id="cd">--:--:--</div>':''}</div>`:''}<div class="sec"><b>Codes promo</b></div>${Object.entries(COUPONS).map(([k,c])=>`<div class="cp lf"><div class="lw"><img class="lefe" alt="${k}" src="${c.img||LEFE_IMG}"><div><b>${k}</b><small>${pctS(c.rate)}% de réduction · dès ${c.minQty} pcs, toutes catégories</small><small>Panier : ${Math.min(cartQty(),c.minQty)} / ${c.minQty} pcs</small></div></div><button data-cp="${k}">${st.coupon===k?'Appliqué':'Appliquer'}</button></div>`).join('')||'<div class="oh-n">Aucun code promo actif pour le moment.</div>'}<div class="sec"><b>Bonnes affaires du jour</b></div><div class="grid" id="grid">${cards(l)}</div>`;
+$('#scroll').innerHTML=`<div class="logo" style="font-size:24px">Offres</div>${Array.isArray(window.FLASHES)?flashBars():fOn?`<div class="flash"><div><small>VENTE FLASH</small><b>${FLASH.title?esc(FLASH.title):'Jusqu’à '+pctS(dm)+'% de réduction'}</b></div>${st.end?'<div class="cd" id="cd">--:--:--</div>':''}</div>`:''}<div class="sec"><b>Codes promo</b></div>${Object.entries(COUPONS).map(([k,c])=>`<div class="cp lf"><div class="lw"><img class="lefe" alt="${k}" src="${c.img||LEFE_IMG}"><div><b>${k}</b><small>${pctS(c.rate)}% de réduction · dès ${c.minQty} pcs, toutes catégories</small><small>Panier : ${Math.min(cartQty(),c.minQty)} / ${c.minQty} pcs</small></div></div><button data-cp="${k}">${st.coupon===k?'Appliqué':'Appliquer'}</button></div>`).join('')||'<div class="oh-n">Aucun code promo actif pour le moment.</div>'}<div class="sec"><b>Bonnes affaires du jour</b></div><div class="grid" id="grid">${cards(l)}</div>`;
 bindGrid();$('#scroll').querySelectorAll('[data-cp]').forEach(b=>b.onclick=()=>{st.coupon=b.dataset.cp;toast(cpOk(COUPONS[st.coupon])?st.coupon+' appliqué à ton panier':`${st.coupon} : ${COUPONS[st.coupon].minQty} pcs minimum (${cartQty()} dans le panier)`);renderOffers()});
 clearInterval(st.ti);tick();st.ti=setInterval(tick,1000)}
-function tick(){const e=$('#cd');if(!e||!st.end){clearInterval(st.ti);return}const s=Math.max(0,Math.floor((st.end-Date.now())/1000));e.textContent=[s/3600|0,(s/60)%60|0,s%60].map(n=>String(n).padStart(2,'0')).join(':')}
+function tick(){const e=$('#cd'),all=[...document.querySelectorAll('[data-end]')];if(!all.length&&(!e||!st.end)){clearInterval(st.ti);return}
+ const f=s=>{const d=s/86400|0;return (d?d+'j ':'')+[(s/3600)%24|0,(s/60)%60|0,s%60].map(n=>String(n).padStart(2,'0')).join(':')};
+ if(e&&st.end){const s=Math.max(0,Math.floor((st.end-Date.now())/1000));e.textContent=[s/3600|0,(s/60)%60|0,s%60].map(n=>String(n).padStart(2,'0')).join(':')}
+ let over=false;all.forEach(x=>{const s=Math.max(0,Math.floor((+x.dataset.end-Date.now())/1000));x.textContent=f(s);if(!s)over=true});
+ if(over&&st.view==='offers'){clearInterval(st.ti);renderOffers()}}
 function renderProfile(){const sub=cartSub(),sv=bulkSaved(),g0=st.guide;st.guide=null;
 const ex=P.find(p=>!D[p.id]&&pr(p)>=4)||P[0],u100=Math.max(.1,r2(pr(ex)-BULK.off));
 const row=(ic,t,sm,a)=>`<button class="pf-row" data-a="${a}"><span class="pi">${ic}</span><span class="pt"><b>${t}</b><small>${sm}</small></span><i>›</i></button>`;
@@ -952,7 +956,7 @@ try{gone=sessionStorage.getItem('bm_lfx')==='1'}catch(e){}
 window.TAGS=null; /* null = table absente : ancien comportement (1er code promo) */
 const key=g=>g.id||('p'+g.code);
 function list(){if(window.TAGS===null){const K=Object.keys(COUPONS)[0];return K?[{kind:'promo',code:K,icon:'mascotte',color:'orange',anim:'slide',secs:7,link:'offers'}]:[]}
- const td=new Date().toISOString().slice(0,10);return window.TAGS.filter(x=>(!x.ends_at||x.ends_at>=td)&&(!x.code||COUPONS[x.code]))}
+ const td=new Date().toISOString().slice(0,10);return window.TAGS.filter(x=>(!x.ends_at||x.ends_at>=td)&&(!x.code||COUPONS[x.code])&&(x.link!=='product'||P.find(p=>p.id==x.product_id)))}
 function label(g){const c=g.code?COUPONS[g.code]:null,on=c&&st.coupon===g.code;
  w.querySelector('.mc').innerHTML=g.icon==='mascotte'?`<img alt="" src="${(c&&c.img)||LEFE_IMG}">`:`<span style="font-size:18px;line-height:1">${esc(g.icon||'🏷️')}</span>`;
  const L=g.label||g.code||'';$('#lfk').textContent=L;$('#lfp').textContent=c?'−'+pctS(c.rate)+'%':L.split(' ')[0].slice(0,9);
@@ -968,7 +972,7 @@ window.lefeSync=function(){const L=list();
 function act(){const g=list().find(x=>key(x)===shown);if(!g)return;const K=g.code;
  if(K&&COUPONS[K]){if(st.coupon===K){sfx('tap');go('offers');return}st.coupon=K;sfx('pop');label(g);
   toast(cpOk(COUPONS[K])?K+' appliqué à ton panier':K+' ajouté : '+COUPONS[K].minQty+' pcs minimum ('+cartQty()+' dans le panier)');return}
- sfx('tap');if(g.link==='offers')go('offers');else if(g.link==='shop'){const f=$('#feat');f&&f.scrollIntoView({behavior:'smooth'})}}
+ sfx('tap');if(g.link==='offers')go('offers');else if(g.link==='shop'){const f=$('#feat');f&&f.scrollIntoView({behavior:'smooth'})}else if(g.link==='product'){const p=P.find(x=>x.id==g.product_id);p&&openDetail(p.id)}}
 t.addEventListener('click',e=>{if(e.target.closest('#lfx'))return;act()});
 t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act()}});
 $('#lfx').addEventListener('click',e=>{e.stopPropagation();sfx('tap');gone=true;clearTimeout(timer);try{sessionStorage.setItem('bm_lfx','1')}catch(_){}
@@ -1229,14 +1233,22 @@ function openPanel(){const h=$('#home');let p=$('#npn');if(p)p.remove();p=docume
  p.querySelectorAll('[data-l]').forEach(e=>e.onclick=()=>{close();const l=e.dataset.l;if(l==='offers')go('offers');else if(l==='shop')go('home')});
  try{if(NF.length)localStorage.setItem('bm_nseen',NF[0].id)}catch(e){}bellSync()}
 async function pull(){if(!sb)return;const q=async f=>{try{const r=await f();return r.error?null:r.data}catch(e){return null}};
- const [b,tg,nt,se]=await Promise.all([q(()=>sb.from('shop_banners').select('*').eq('active',true).order('position').order('id')),q(()=>sb.from('shop_tags').select('*').eq('active',true).order('position').order('id')),q(()=>sb.from('notifications').select('*').order('id',{ascending:false}).limit(30)),q(()=>sb.from('shop_settings').select('banner_secs').eq('id',1).maybeSingle())]);
- const s=JSON.stringify([b,tg,nt,se]);if(s===sig)return;const first=sig==='';sig=s;BN=b||[];BSEC=(se&&+se.banner_secs)||5;window.TAGS=tg;
+ const [b,tg,nt,se,fl]=await Promise.all([q(()=>sb.from('shop_banners').select('*').eq('active',true).order('position').order('id')),q(()=>sb.from('shop_tags').select('*').eq('active',true).order('position').order('id')),q(()=>sb.from('notifications').select('*').order('id',{ascending:false}).limit(30)),q(()=>sb.from('shop_settings').select('banner_secs').eq('id',1).maybeSingle()),q(()=>sb.from('flash_sales').select('*').eq('active',true).order('position').order('id'))]);
+ const s=JSON.stringify([b,tg,nt,se,fl]);if(s===sig)return;const first=sig==='';sig=s;BN=b||[];BSEC=(se&&+se.banner_secs)||5;window.TAGS=tg;const fs=JSON.stringify(fl),fch=fs!==window._fsig;window._fsig=fs;window.FLASHES=fl;
  const old=NF.length?NF[0].id:0;NF=nt||[];
  if(!first&&NF.length&&NF[0].id>old){toast('🔔 '+NF[0].title);try{if('Notification' in window&&Notification.permission==='granted')new Notification(NF[0].title,{body:NF[0].body||''})}catch(e){}}
- bannerSync();bellSync();window.lefeSync&&window.lefeSync()}
+ bannerSync();bellSync();window.lefeSync&&window.lefeSync();if(fch&&st.view==='offers')renderOffers()}
+
+window.FLASHES=null;
+window.flashBars=function(){const now=Date.now();return window.FLASHES.map(f=>{const end=Date.parse(f.ends_at),c=f.kind==='code'?COUPONS[f.code]:null,ids=(f.product_ids||[]).filter(id=>D[id]);
+ if(!(end>now)||(f.kind==='code'?!c:!ids.length))return '';const dm=ids.length?Math.max(...ids.map(id=>D[id])):0,
+ sub=c?'Code '+f.code+' · −'+pctS(c.rate)+'% dès '+c.minQty+' pcs':ids.length+' produit'+(ids.length>1?'s':'')+' · jusqu’à −'+pctS(dm)+'%';
+ return `<div class="flash" data-fl="${f.id}" style="cursor:pointer"><div><small>VENTE FLASH</small><b>${esc(f.title||(c?f.code:'Jusqu’à '+pctS(dm)+'% de réduction'))}</b><small style="letter-spacing:0;margin-top:3px">${esc(sub)}</small></div><div class="cd" data-end="${end}">--:--:--</div></div>`}).join('')};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-fl]');if(!b)return;const f=(window.FLASHES||[]).find(x=>String(x.id)===b.dataset.fl);if(!f)return;
+ if(f.kind==='code'&&COUPONS[f.code]){st.coupon=f.code;sfx('pop');toast(cpOk(COUPONS[f.code])?f.code+' appliqué à ton panier':f.code+' : '+COUPONS[f.code].minQty+' pcs minimum ('+cartQty()+' dans le panier)');renderOffers()}else{const g=$('#grid');g&&g.scrollIntoView({behavior:'smooth'})}});
 const _r0=render;render=function(){_r0();bannerSync();bellSync()};
 let _vt=0;const later2=()=>{clearTimeout(_vt);_vt=setTimeout(pull,600)};
-try{let ch=sb.channel('bm-vitrine');['shop_tags','shop_banners','notifications','shop_settings'].forEach(t=>{ch=ch.on('postgres_changes',{event:'*',schema:'public',table:t},later2)});ch.subscribe()}catch(e){}
+try{let ch=sb.channel('bm-vitrine');['shop_tags','shop_banners','notifications','shop_settings','flash_sales'].forEach(t=>{ch=ch.on('postgres_changes',{event:'*',schema:'public',table:t},later2)});ch.subscribe()}catch(e){}
 setInterval(()=>{if(!document.hidden)pull()},30000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});pull();
 })();
 </script>
