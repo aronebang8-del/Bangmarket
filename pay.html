@@ -123,6 +123,23 @@ main:has(.sheet){padding:0 16px;gap:0}
 .dock>div{border-top:0;background:linear-gradient(to top,var(--bg) 70%,transparent);backdrop-filter:none}
 .dock .btn{border-radius:16px;min-height:56px}
 </style>
+<style>.bpl{display:grid;justify-items:center;gap:10px;text-align:center;padding:6px 0 2px}
+.bpl .bplg{position:relative;width:92px;height:92px;display:grid;place-items:center}
+.bpl .bplg svg{width:84px;height:84px;filter:drop-shadow(0 12px 22px rgba(255,90,0,.38));animation:bpPop .9s cubic-bezier(.2,1.4,.4,1) both}
+.bpl .bplg i{position:absolute;inset:4px;border-radius:26px;border:2px solid #ff7a2e;opacity:0;animation:bpRing 2.4s ease-out .7s infinite}
+.bpl .bplg i+i{animation-delay:1.5s}
+.bpl .bpb{stroke-dasharray:140;stroke-dashoffset:140;animation:bpDraw 1s ease .35s forwards}
+.bpl .wm{font:700 26px/1 Sora,Inter,system-ui,sans-serif;letter-spacing:.5px;animation:bpUp .7s ease .55s both;background:linear-gradient(100deg,currentColor 40%,#ff7a2e 50%,currentColor 60%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:bpUp .7s ease .55s both,bpShine 2.8s ease 1.3s infinite}
+.bpl .wm b{font:inherit;color:#ff6a1a;-webkit-text-fill-color:#ff6a1a}
+.bpl .sc{display:inline-flex;gap:6px;align-items:center;font:600 12px Inter,system-ui,sans-serif;padding:5px 11px;border-radius:99px;background:rgba(15,138,79,.12);color:#0f8a4f;animation:bpUp .7s ease .8s both}
+.bpl .sc:before{content:"🔒";font-size:11px}
+@keyframes bpPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}100%{transform:none;opacity:1}}
+@keyframes bpDraw{to{stroke-dashoffset:0}}
+@keyframes bpRing{0%{transform:scale(.85);opacity:.7}100%{transform:scale(1.6);opacity:0}}
+@keyframes bpUp{0%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+@keyframes bpShine{0%{background-position:100% 0}100%{background-position:-100% 0}}
+@media (prefers-reduced-motion:reduce){.bpl *{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}}
+.bpl{color:var(--ink)}.gate{display:grid;gap:14px;padding:4px 0 18px}.gate h1{font:700 21px/1.25 Sora,Inter,system-ui;text-align:center}.gate .sub{text-align:center}.gate .amt{text-align:center;font:600 13px Inter;color:var(--mut)}.gate .amt b{color:var(--ink)}.gate input{border-radius:14px;border:1px solid var(--line);padding:13px;background:var(--sf);color:var(--ink);width:100%}.gate .codein{letter-spacing:3px;text-transform:uppercase;text-align:center;font-size:20px}.gate .or2{display:flex;align-items:center;gap:10px;color:var(--mut);font-size:12px}.gate .or2:before,.gate .or2:after{content:"";flex:1;height:1px;background:var(--line)}.gate .bx{background:var(--sf);border:1px solid var(--line);border-radius:16px;padding:14px;display:grid;gap:10px;font-size:13.5px;color:var(--mut)}.gate .bx b{color:var(--ink)}</style>
 </head>
 <body>
 <div class="app">
@@ -180,7 +197,7 @@ async function load(quiet){
  const r=await sb.rpc('order_pay_info',{p_order:REF});
  if(r.error)return askRef('Connexion impossible. Vérifiez internet et réessayez.');
  if(!r.data||!r.data.length)return askRef('Commande introuvable. Vérifiez la référence.');
- if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
+ if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];try{CODE=localStorage.getItem('bpc_'+INFO.number)||''}catch(e){}PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
 
 function card(i){const n=i.number.replace(/^([A-Za-z]+)-?(\d+)$/,'$1 $2');
  return `<div class="bc"><div class="t"><span>BANG PAY</span>${IC.ctl}</div><div class="chip"></div><div class="n">${esc(n)}</div><div class="b"><div><small>Titulaire</small><b>${esc((i.prenom||'Client').toUpperCase())}</b></div><div class="am"><small>À payer</small><b>${money(i.total)}</b></div></div></div>`}
@@ -197,7 +214,21 @@ function statusPage(){const i=INFO,paid=i.status==='payee'||i.status==='facturee
   <a class="btn wa" href="https://wa.me/${WA}?text=${encodeURIComponent('Bonjour, j’ai payé la commande '+i.number+' ('+money(i.total)+'). Pouvez-vous vérifier mon paiement ?')}">Accélérer sur WhatsApp</a>`;return true}
  return false}
 
-function paint(){clearInterval(POLL);if(statusPage())return;const i=INFO;
+
+let CODE='';try{CODE=localStorage.getItem('bpc_'+REF)||''}catch(e){}
+const claimMsg=i=>'Salut Bang Market 👋\nJe suis la commande *'+i.number+'*'+(i.prenom?' ('+i.prenom+')':'')+' ('+money(i.total)+').\nJe souhaite avoir mon code paiement pour valider ma commande.';
+function gate(err){const i=INFO;back(false);dock('');
+ $('#app').innerHTML=`<div class="gate"><div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bpgp" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#bpgp)"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div><h1>Entrez votre code paiement</h1><p class="sub">Ce code personnel est indispensable pour payer la commande <b>${esc(i.number)}</b>. Sans lui, aucun paiement n’est possible.</p><div class="amt">Montant : <b>${money(i.total)}</b></div>
+ <form id="gf" class="col"><label class="fld"><span>Code paiement</span><input id="gc" class="code codein" autocomplete="off" autocapitalize="characters" placeholder="BP-XXXX-XXXX" required minlength="4" maxlength="20"></label>${err?`<div class="err">${esc(err)}</div>`:''}<button class="btn or" id="gb">${IC.lock}Valider mon code</button></form>
+ <div class="or2">pas encore de code ?</div>
+ <a class="btn wa" target="_blank" rel="noopener" href="https://wa.me/${WA}?text=${encodeURIComponent(claimMsg(i))}">💬 Réclamer mon code paiement</a>
+ <div class="bx"><span>${i.has_code?'<b>Votre code a été envoyé</b> sur le numéro WhatsApp indiqué lors de la commande. Vérifiez vos messages.':'Touchez le bouton ci-dessus : un message est prêt, il suffit de l’envoyer. Nous vous répondrons avec votre code sur WhatsApp.'}</span></div></div>`;
+ $('#gf').onsubmit=async e=>{e.preventDefault();const c=$('#gc').value,bt=$('#gb');bt.disabled=true;bt.textContent='Vérification…';
+  const r=await sb.rpc('pay_unlock',{p_order:i.number,p_code:c});
+  if(r.error)return gate('Connexion impossible, réessayez.');
+  if(!r.data)return gate('Code incorrect. Vérifiez-le ou réclamez-en un par WhatsApp.');
+  CODE=c.trim();try{localStorage.setItem('bpc_'+i.number,CODE)}catch(x){}paint()}}
+function paint(){clearInterval(POLL);if(statusPage())return;const i=INFO;if(!CODE)return gate();
  const warn=i.pay_status==='refuse'?'Votre dernier paiement a été refusé'+(i.note?' : '+i.note:'')+'. Vous pouvez réessayer.':'';
  const ok=i.status==='confirmee'?'<div class="okb">✅ Votre commande est validée. Il ne reste que le paiement.</div>':'';
  if(PAGE===2)return page2(warn,'',ok);
@@ -234,8 +265,8 @@ function page2(warn,err,ok){const i=INFO,m=METH[SEL];back(true);
   const path=i.number+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)+'.'+PROOF.ext;
   const up=await sb.storage.from('payment-proofs').upload(path,PROOF.blob,{contentType:PROOF.blob.type,upsert:false});
   if(up.error)return page2(warn,'Envoi de la capture impossible. Vérifiez internet et réessayez.',ok);
-  const r=await sb.rpc('submit_payment',{p_order:i.number,p_method:SEL,p_code:FV.c,p_phone:FV.p||null,p_proof:path});
-  if(r.error){const t=r.error.message||'';return page2(warn,/Failed to fetch|Network/i.test(t)?'Connexion impossible, réessayez.':t,ok)}
+  const r=await sb.rpc('submit_payment',{p_order:i.number,p_method:SEL,p_code:FV.c,p_phone:FV.p||null,p_proof:path,p_pay_code:CODE});
+  if(r.error){const t=r.error.message||'';if(/code paiement/i.test(t)){CODE='';try{localStorage.removeItem('bpc_'+i.number)}catch(x){}return gate('Code paiement invalide. Entrez-le à nouveau.')}return page2(warn,/Failed to fetch|Network/i.test(t)?'Connexion impossible, réessayez.':t,ok)}
   PROOF=null;FV={c:'',p:''};PAGE=1;history.replaceState(null,'','?c='+encodeURIComponent(i.number));load()}}
 
 async function shrink(file){const url=URL.createObjectURL(file);const img=await new Promise((ok,ko)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=ko;x.src=url});
