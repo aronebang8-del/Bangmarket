@@ -993,13 +993,14 @@ const A={
   if(!f){if(!await run(async()=>must(await sb.rpc('issue_invoice',{p_order:o.dbId}))))return;f=inv(o);if(!f)return toast('Facture introuvable');toast('Facture '+f.no+' créée')}
   showInvoice(f)},
  print:()=>window.print(),
- sendpdf:async d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);if(o.deliv&&!confirm('Cette commande a déjà été livrée le '+fdatel(o.deliv)+'. Renvoyer quand même la facture ?'))return;toast('Création du PDF…');
-  let blob;try{blob=await invoicePdf()}catch(e){console.error(e);return toast('PDF impossible : '+(e.message||e))}
+ sendpdf:async d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);if(o.deliv&&!confirm('Cette commande a déjà été livrée le '+fdatel(o.deliv)+'. Renvoyer quand même la facture ?'))return;toast('Création du PDF…');const w=window.open('','_blank');
+  let blob;try{blob=await invoicePdf()}catch(e){console.error(e);if(w)w.close();return toast('PDF impossible : '+(e.message||e))}
   const name=`Facture-${f.no}.pdf`,file=new File([blob],name,{type:'application/pdf'});
-  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture ${f.no} (commande ${o.id}) — ${COMPANY.name}.\nVérification : ${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n🧾 Votre facture est bien là, ci-jointe.\n\nMerci pour votre confiance ! 🙏`;
-  const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);
-  toast('PDF téléchargé · conversation WhatsApp ouverte : touchez 📎 puis joignez « '+name+' »');
-  setTimeout(()=>window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt),'_blank','noopener'),500)},
+  let dl='';try{const path=f.no+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)+'.pdf',up=await sb.storage.from('invoices-pdf').upload(path,blob,{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;dl=sb.storage.from('invoices-pdf').getPublicUrl(path).data.publicUrl}catch(e){console.error(e);toast('Lien PDF indisponible (exécutez bangmarket_facture_pdf.sql) : PDF téléchargé à joindre')}
+  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture ${f.no} (commande ${o.id}) — ${COMPANY.name}.\n${dl?`📄 *Télécharger ma facture (PDF)* :\n${dl}\n\n`:''}Vérification : ${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n🧾 Votre facture est bien là${dl?'.':', ci-jointe.'}\n\nMerci pour votre confiance ! 🙏`;
+  if(!dl){const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+  else toast('Lien de la facture créé · conversation WhatsApp ouverte');
+  const url='https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt);if(w)w.location.href=url;else window.open(url,'_blank','noopener')},
  sendinv:d=>{const f=S.invoices.find(x=>x.no===d.n),o=order(f.orderId);if(o.deliv&&!confirm('Cette commande a déjà été livrée le '+fdatel(o.deliv)+'. Renvoyer quand même la facture ?'))return;
   const msg=`Bonjour ${o.client.split(' ')[0]} 👋\nVoici votre facture *${f.no}* — *${COMPANY.name}*\nCommande ${o.id}\n\n━━━━━━━━━━━━━━\n🧾 *DÉTAIL*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL PAYÉ : ${fmt(total(o))}*\n━━━━━━━━━━━━━━\n🔒 Vérifier l'authenticité :\n${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n🧾 Votre facture est bien là, ci-jointe.\n\nMerci pour votre confiance ! 🙏`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener')},
