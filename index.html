@@ -633,7 +633,7 @@ user:'<circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-widt
 const svg=n=>`<svg viewBox="0 0 24 24">${ic[n]}</svg>`;
 const st={view:'home',cat:null,q:'',sortBy:'default',cart:[],fav:new Set(),cur:P[0],color:null,size:null,need:null,sub:null,thumb:0,mx:{},qty:0,mxT:0,notif:true,coupon:'',menu:false,favOnly:false};
 const D={};P.forEach(p=>{if(p.id%3===1&&!p.nodisc)D[p.id]=[.2,.15,.25,.3,.1][p.id%5]});
-const COUPONS={LEFE10:{rate:.02,minQty:500}};const pctS=r=>String(+(r*100).toFixed(1));
+const COUPONS={LEFE10:{rate:.02,minQty:500}};const pctS=r=>String(+(r*100).toFixed(2));
 const cartQty=()=>st.cart.reduce((a,x)=>a+x.q,0);
 const cpOk=c=>!!c&&cartQty()>=c.minQty;
 const pr=p=>p.net!=null?p.net:Math.round(p.p*(1-(D[p.id]||0))*100)/100;
@@ -964,7 +964,7 @@ function label(g){const c=g.code?COUPONS[g.code]:null,on=c&&st.coupon===g.code;
  [...w.classList].forEach(k=>/^[ca]-/.test(k)&&w.classList.remove(k));w.classList.add('c-'+(g.color||'orange'),'a-'+(g.anim||'slide'));w.classList.toggle('ok',!!on)}
 function loop(){const L=list();if(!L.length||st.view!=='home'||gone)return;idx%=L.length;const g=L[idx];shown=key(g);
  w.classList.remove('show','mini');label(g);w.classList.remove('off');void w.offsetWidth;
- timer=setTimeout(()=>{w.classList.add('show');timer=setTimeout(()=>{if(L.length>1){w.classList.remove('show');timer=setTimeout(()=>{idx++;loop()},900)}else w.classList.add('mini')},Math.max(3,+g.secs||7)*1000)},700)}
+ timer=setTimeout(()=>{w.classList.add('show');timer=setTimeout(()=>{if(L.length>1){w.classList.remove('show');timer=setTimeout(()=>{idx++;loop()},900)}else w.classList.add('mini')},Math.max(1,+g.secs||7)*1000)},700)}
 window.lefeSync=function(){const L=list();
  if(st.view!=='home'||gone||!L.length){clearTimeout(timer);w.classList.remove('show');w.classList.add('off');shown=null;return}
  if(shown!==null&&w.classList.contains('show')){const g=L.find(x=>key(x)===shown);if(g){label(g);return}}
@@ -1221,7 +1221,7 @@ function bannerSync(){clearInterval(bt);const bn=$('#bn');if(!bn)return;bn.class
  const z=[...bn.querySelectorAll('.bz')],dots=document.createElement('div');dots.className='bd2';dots.innerHTML=BN.length>1?BN.map((_,k)=>`<i class="${k?'':'on'}"></i>`).join(''):'';bn.appendChild(dots);let i=0;
  const to=n=>{if(n===i)return;const o=z[i],c=z[n],a=BA[BN[n].anim]||BA.slide,op={duration:650,easing:'cubic-bezier(.2,.8,.3,1)'};c.style.opacity=1;c.style.zIndex=2;o.style.zIndex=1;c.animate(a[0],op);
   const oa=o.animate(a[1],{...op,fill:'forwards'});oa.onfinish=()=>{o.style.opacity=0;oa.cancel()};[...dots.children].forEach((d,k)=>d.classList.toggle('on',k===n));i=n};
- if(BN.length>1&&!RM)bt=setInterval(()=>to((i+1)%BN.length),Math.max(2,BSEC)*1000);
+ if(BN.length>1&&!RM)bt=setInterval(()=>to((i+1)%BN.length),Math.max(1,BSEC)*1000);
  bn.onclick=()=>{BN[i].link==='offers'?go('offers'):$('#feat').scrollIntoView({behavior:'smooth'})}}
 function bellSync(){const b=$('#bell');if(!b)return;const un=NF.filter(n=>n.id>seen()).length;let d=b.querySelector('.dot');
  if(un&&!d){d=document.createElement('i');d.className='dot';b.appendChild(d)}if(!un&&d)d.remove();b.onclick=openPanel}
