@@ -526,7 +526,7 @@ function refresh(){const y=window.scrollY;chrome();$('#main').innerHTML=VIEWS[S.
 
 /* Connexion */
 let LOGGED=false,LIVE_CH=null,_lt=null;
-function listen(){if(LIVE_CH)return;try{LIVE_CH=sb.channel('bm-orders').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)}).on('postgres_changes',{event:'*',schema:'public',table:'payments'},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)}).subscribe()}catch(e){}}
+function listen(){if(LIVE_CH)return;try{{let ch=sb.channel('bm-orders');['orders','order_items','payments','invoices','products','variants','product_images','categories','subcategories','promos','shop_settings','tags','banners','notifications','stock_moves'].forEach(t=>{ch=ch.on('postgres_changes',{event:'*',schema:'public',table:t},()=>{clearTimeout(_lt);_lt=setTimeout(()=>soft(),1200)})});LIVE_CH=ch.subscribe()}}catch(e){}}
 function showLogin(msg){LOGGED=false;$('#login').hidden=false;$('#lload').hidden=true;$('[data-form=login]').hidden=false;$('#lerr').textContent=msg||'';document.body.classList.add('lock')}
 async function boot(){
  try{

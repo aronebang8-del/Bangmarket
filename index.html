@@ -1028,6 +1028,8 @@ for(const x of st.cart){const pp=P.find(p=>p.id===x.id);if(inCart(pp.id)<pp.moq)
 const total=ckTotal(),qty=cnt(),lines=st.cart.map(x=>({n:P.find(p=>p.id===x.id).n,c:x.color,z:x.size,q:x.q}));
 if(!sb||!window.LIVE||st.cart.some(x=>!P.find(p=>p.id===x.id).dbId))return toastE('Connexion impossible, réessaie dans un instant');
 const btn=$('#ckOk');if(btn){if(btn.disabled)return;btn.disabled=true;btn.textContent='Envoi en cours…'}
+try{await syncCatalog()}catch(e){}
+if(ckTotal()!==total){if(btn){btn.disabled=false;btn.textContent='Confirmer la commande · '+fmt(ckTotal())}return}
 const items=st.cart.map(x=>({product_id:P.find(p=>p.id===x.id).dbId,color:x.color||'',size:x.size||'',qty:x.q}));
 let res;try{res=await sb.rpc('place_order',{p_name:FM.prenom.trim()+' '+FM.nom.trim(),p_wa:waFmt(wa),p_province:FM.prov,p_lieu:kin?FM.rp.trim():FM.ville,p_items:items,p_coupon:cpOk(COUPONS[st.coupon])?st.coupon:null})}catch(e){res={error:e}}
 if(res.error||!res.data){if(btn){btn.disabled=false;btn.textContent='Confirmer la commande · '+fmt(ckTotal())}
@@ -1099,6 +1101,9 @@ const hexFor=c=>{if(COLORS[c])return COLORS[c];let h=0;for(const ch of c)h=(h*31
 const stockOf=r=>(r.variants||[]).reduce((a,v)=>a+Math.max(0,(v.stock||0)-(v.reserved||0)),0);
 const sigOf=p=>p?pr(p)+'|'+p.moq+'|'+ST[p.id]+'|'+p.cols.join(',')+'|'+(p.sizes||[]).join(',')+'|'+(p.imgs||[]).map(i=>i.url+i.color+i.main).join(',')+'|'+Object.keys(AV).filter(k=>k.startsWith(p.id+'|')).map(k=>AV[k]+'/'+RS[k]).join(','):'';
 let syncing=false,again=false,lastSig='';
+function priceAlert(pl){const old=document.getElementById('pgal');if(old)old.remove();sfx('error');
+ const d=document.createElement('div');d.id='pgal';d.innerHTML=`<div class="pga"><div class="pgi">💬</div><h3>Les prix viennent de changer</h3><p>Pendant que tu préparais ta commande, Bang Market a mis à jour ses tarifs :</p><ul>${pl.map(x=>`<li><b>${esc(x[0])}</b><span>${fmt(x[1])} → <b class="${x[2]>x[1]?'up':'dn'}">${fmt(x[2])}</b> / pièce</span></li>`).join('')}</ul>${st.cart.length?`<div class="pgt">Nouveau total : <b>${fmt(ckTotal())}</b></div>`:''}<button class="cta" id="pgok">J’ai compris</button></div>`;
+ document.body.appendChild(d);d.querySelector('#pgok').onclick=()=>d.remove()}
 async function syncCatalog(){
  if(!sb)return;
  if(syncing){again=true;return}
@@ -1116,7 +1121,7 @@ async function syncCatalog(){
   if(!first&&sig===lastSig)return;
   lastSig=sig;
   const catSig=JSON.stringify([cats,subs]),catChanged=catSig!==window._catSig;window._catSig=catSig;applyCats(cats,subs);const pch=applyPromos(promos);const sch=applySets(sets);
-  const curBefore=sigOf(st.cur),totBefore=st.cart.length?ckTotal():0,keep=[];
+  const curBefore=sigOf(st.cur),totBefore=st.cart.length?ckTotal():0,keep=[],pb={};st.cart.forEach(x=>{const q=P.find(z=>z.id===x.id);if(q&&!(q.id in pb))pb[q.id]=unitCart(q)});
   for(const r of data){
    let p=REG.get(r.name);
    const vs=r.variants||[],cat=knownCat(r.category)?r.category:'accessoires';
@@ -1155,6 +1160,7 @@ async function syncCatalog(){
   if(open&&det.classList.contains('open')&&sigOf(st.cur)!==curBefore){if(mxClamp(st.cur))toastS('⏳ Le stock vient de changer : tes quantités ont été ajustées au disponible');drawDetail()}
   const cl=[];st.cart.forEach(x=>{const pp=P.find(p=>p.id===x.id);if(pp&&x.q>avRaw(pp,x.color,x.size)){const a=avRaw(pp,x.color,x.size);cl.push(vlabel(pp,x.color,x.size)+' → '+a);x.q=a}});st.cart=st.cart.filter(x=>x.q>0);if(cl.length)toastS('Stock modifié, panier ajusté : '+cl.join(' ; '));
   if(n0!==st.cart.length)toast('Un produit de ton panier n’est plus disponible');
+  {const pl=[];Object.keys(pb).forEach(id=>{const q=P.find(z=>z.id==id);if(q&&inCart(q.id)){const nu=unitCart(q);if(Math.abs(nu-pb[id])>0.004)pl.push([q.n,pb[id],nu])}});if(pl.length)priceAlert(pl)}
   if(st.view==='cart'&&!st.done){
    if(st.chk&&st.cart.length){if(ckTotal()!==totBefore){toast('Les prix ont été mis à jour');renderCheckout()}}
    else renderCart();
@@ -1282,6 +1288,7 @@ setInterval(()=>{if(!document.hidden)pull()},30000);document.addEventListener('v
 @media (prefers-reduced-motion:reduce){.bpl *{animation:none!important;stroke-dashoffset:0!important;opacity:1!important}}
 .bpd{display:grid;gap:12px;padding-top:6px}.bpd-ok{justify-self:center;font:600 12.5px Inter,system-ui;color:#0f8a4f;background:rgba(15,138,79,.12);padding:5px 12px;border-radius:99px}.bpd .bpl{color:#0a1230}.bpd-t{margin:4px 0 0;text-align:center;font:700 20px/1.25 Sora,Inter,system-ui}.bpd-s{margin:0;text-align:center;color:#6b6b70;font-size:14px;line-height:1.45}.bpd-k{display:flex;gap:10px;align-items:flex-start;background:#fff3e8;color:#7a3a00;border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.45}.bpd-go{display:block;text-align:center;text-decoration:none;background:linear-gradient(135deg,#ff8a3d,#ff5a00)!important;color:#fff!important;box-shadow:0 10px 24px rgba(255,90,0,.35)}</style>
 <style>.cpn{display:flex;gap:8px;max-width:100%}.cpn input{min-width:0;flex:1 1 auto}.cpn button{flex:none}.cps{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:-4px 0 12px;padding:10px 12px;border-radius:12px;background:#f4f4f6;color:#555;font-size:12.5px;line-height:1.4}.cps.ok{background:#fff3e8;color:#7a3a00}.cps b{color:inherit}.cps button{flex:none;border-radius:99px;background:var(--or);color:#fff;font-weight:600;font-size:12px;padding:7px 14px}</style>
+<style>#pgal{position:fixed;left:0;top:0;right:0;bottom:0;z-index:300;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:20px}.pga{background:#fff;border-radius:22px;padding:22px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.35);animation:pgIn .3s ease}.pga h3{margin:6px 0 8px;font-size:18px}.pga p{margin:0 0 10px;color:#666;font-size:13.5px;line-height:1.45}.pgi{font-size:34px}.pga ul{list-style:none;margin:0 0 12px;padding:0;text-align:left;display:grid;gap:8px}.pga li{display:flex;justify-content:space-between;gap:10px;background:#f6f6f8;border-radius:12px;padding:10px 12px;font-size:13px}.pga li span{white-space:nowrap}.pga .up{color:#c0392b}.pga .dn{color:#0f8a4f}.pgt{margin:0 0 14px;font-size:15px}@keyframes pgIn{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}</style>
 <style>.oh-n{font-size:13px;color:#6b6b70;margin:0 2px 12px;line-height:1.4}.oh{background:#fff;border-radius:16px;margin-bottom:10px;box-shadow:0 2px 10px rgba(0,0,0,.07);overflow:hidden}.oh summary{list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:13px 14px;cursor:pointer}.oh summary::-webkit-details-marker{display:none}.oh summary span{display:grid;gap:2px}.oh summary small{color:#6b6b70;font-size:12px}.oh-s{font-style:normal;font-size:12px;font-weight:700;border-radius:99px;padding:2px 10px;width:fit-content}.oh-s.w{background:#fff1cf;color:#7a5200}.oh-s.ok{background:#dff3e6;color:#14663a}.oh-s.x{background:#fde0dd;color:#a3231a}.oh-v{color:var(--or,#ff6a1a)}.oh-b{padding:0 14px 14px;display:grid;gap:6px;font-size:13px}.oh-b>div{display:flex;justify-content:space-between;gap:8px}.oh-wa{display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff!important;text-decoration:none;font-weight:700;border-radius:99px;min-height:46px;padding:0 18px;text-align:center;box-shadow:0 6px 16px rgba(37,211,102,.35)}.oh-pay{background:linear-gradient(135deg,#ff8a3d,#ff3d2e)!important;box-shadow:0 6px 16px rgba(255,90,30,.35)!important}.oh-clr{display:block;margin:6px auto;background:none;color:#e5383b;font-weight:600;font-size:13px}#glass{position:fixed;top:max(12px,env(safe-area-inset-top));left:50%;transform:translate(-50%,-140%);width:min(92vw,420px);z-index:99999;display:flex;gap:10px;align-items:flex-start;padding:13px 16px;border-radius:18px;background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:0 10px 30px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.85);color:#1c1c1e;font-size:14px;font-weight:600;line-height:1.35;opacity:0;pointer-events:none;transition:transform .35s cubic-bezier(.2,.9,.3,1),opacity .25s}#glass.on{transform:translate(-50%,0);opacity:1;pointer-events:auto}.mxg .na{display:block;text-align:center;color:#aaa;padding:10px 0}.mxg .av{font-style:normal;font-size:10px;color:#2a9d4a;text-align:center;font-weight:600;line-height:1.2}.mxg .av.r{color:#b8741a}.mxg .av.z{color:#e5383b}.mxg select:disabled{opacity:.45}</style>
 <style id="cat3d-css">
 .cats{position:relative;padding:30px 4px 14px;margin:-24px 0 -8px}
