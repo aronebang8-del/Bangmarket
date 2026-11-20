@@ -161,7 +161,7 @@ button.lrow:hover b{color:var(--or-ink)}
 #vars td,#vars th{padding:6px 4px}
 
 /* Fenêtres */
-.ov{position:fixed;inset:0;background:rgba(28,28,30,.5);z-index:60;display:grid;place-items:center;padding:16px;overflow:auto}
+.ov{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(28,28,30,.5);z-index:60;display:grid;place-items:center;padding:16px;overflow:auto}
 .sheet{background:var(--surface);border-radius:24px;width:min(560px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:22px;box-shadow:0 -8px 24px rgba(0,0,0,.1);outline:0}
 .sheet.wide{width:min(760px,100%)}
 .sh{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
@@ -234,7 +234,7 @@ button.lrow:hover b{color:var(--or-ink)}
  .sgh .btn{padding:0 12px}
  .dgrid{grid-template-columns:1fr}
  .olayout{grid-template-columns:1fr}
- .detail{position:fixed;inset:0;z-index:55;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px;transform:translateY(100%);visibility:hidden;transition:transform .3s,visibility 0s .3s}
+ .detail{position:fixed;top:0;right:0;bottom:0;left:0;z-index:55;background:var(--bg);overflow:auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px 40px;transform:translateY(100%);visibility:hidden;transition:transform .3s,visibility 0s .3s}
  .olayout.has .detail{transform:none;visibility:visible;transition:transform .3s,visibility 0s}
  .back{display:inline-flex}
  .acts{grid-template-columns:1fr}
@@ -256,7 +256,7 @@ button.lrow:hover b{color:var(--or-ink)}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(14px);opacity:.6}to{transform:none;opacity:1}}}
-#login{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
+#login{position:fixed;top:0;right:0;bottom:0;left:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:16px}
 .lbox{width:min(400px,100%);display:grid;gap:14px;padding:26px}
 .lerr{color:var(--red);font-size:13.5px;min-height:18px}
 .qr.on{border:0;padding:0}.qr svg{width:100%;height:100%;display:block}
@@ -274,7 +274,7 @@ button.lrow:hover b{color:var(--or-ink)}
 .szrow button{background:var(--card);border-radius:99px;padding:5px 12px;font-weight:600;font-size:13px}.szrow button:hover{background:var(--peach)}
 .gal{display:grid;gap:10px}
 .gprev{position:relative;height:210px;background:var(--card);border-radius:16px;overflow:hidden;color:var(--mut);display:flex;align-items:center;justify-content:center;text-align:center}
-.gprev img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.gprev img{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:contain}
 .gtag{position:absolute;left:8px;bottom:8px;background:rgba(28,28,30,.75);color:#fff;font-size:12px;border-radius:99px;padding:3px 10px}
 .gchips{display:flex;flex-wrap:wrap;gap:6px}
 .gchips button{background:var(--card);border-radius:99px;padding:4px 12px;font-size:13px;font-weight:600}.gchips button.on{background:var(--ink);color:var(--surface)}
@@ -320,7 +320,7 @@ button.lrow:hover b{color:var(--or-ink)}
 .iv-foot .qr{width:96px;height:96px;flex:none}
 .iv-foot p{margin:0;color:#4b4b50;font-size:12.5px}.iv-foot .code{font-size:17px;color:#1c1c1e}
 .iv-legal{margin-top:16px;text-align:center;color:#8a8a8e;font-size:11.5px}
-.iv-wm{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none;font:800 110px/1 Inter,system-ui,sans-serif;color:rgba(198,40,40,.12);transform:rotate(-24deg);letter-spacing:8px}
+.iv-wm{position:absolute;top:0;right:0;bottom:0;left:0;display:grid;place-items:center;pointer-events:none;font:800 110px/1 Inter,system-ui,sans-serif;color:rgba(198,40,40,.12);transform:rotate(-24deg);letter-spacing:8px}
 @media print{@page{size:A4;margin:10mm}.iv{border:0;border-radius:0}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -331,6 +331,7 @@ window.BM_IMG={"ace76f":"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000
 window.BM_PHOTOS={"Sac à dos Campus":"ace76f","Tote bag Étudiante":"3c3d57","Pochette Satin":"1fe6ea","Mini sac Perlé":"1fe6ea","Sac bandoulière Chic":"67b4fe","Sac baguette":"67b4fe","Sac de sport Active":"0d3180","Sac banane Run":"0d3180","Montre Campus":"455203","Montre Digitale Soft":"455203","Montre Or Rose":"455203","Montre Bracelet Strass":"455203","Coffret Montre + Bracelet Cœur":"c12b09","Montre Cuir Chic":"455203","Montre Minimaliste":"455203","Montre Sport Active":"455203","Montre Silicone Fit":"455203","Filet à cheveux Noir":"f9e6dc","Filet Satin Nuit":"f9e6dc","Chouchou Satin":"1bf122","Pack Chouchous x6":"1bf122","Pince Crabe":"e76b6c","Barrettes Perles":"e76b6c","Bandeau Sport":"1780e7","Bandeau Noué":"1780e7","Top Bardot Col Replié":"56700e","Top Bardot Manches Évasées":"c85fcf","Caraco Nœuds Épaules":"5ee655","Crop Top Froncé":"4995ed","Crop Top Côtelé":"810b4d","Crop Top Zippé":"810b4d","T-shirt Oversize":"8c2e29","T-shirt Basique":"8c2e29","Chemise Satin":"35dd44","Blouse Fleurie":"35dd44","Pull Maille":"93905e","Sweat Court":"93905e","Robe Cerises Évasée":"dd9307","Ensemble Coquillages Dos Nu":"7abbce","Robe Longue Plage Palmiers":"8e3a46","Robe Asymétrique Fleur":"e6f8e5","Robe Bardot Nœuds Satin":"91af6e","Robe Longue Épaule Asymétrique":"8299b7","Robe Bustier Nœuds & Dentelle":"62e29a","Robe Papillons Bretelles Nouées":"24359d","Maillot Club Domicile":"402205","Maillot Club Extérieur":"402205","Maillot Équipe Nationale":"402205","Maillot Supporter":"402205","Maillot Rétro 90":"402205","Maillot Rétro Rayé":"402205","Gourde Sport":"9542b0","Gourde à Paille":"9542b0","Gourde Étudiante":"9542b0","Gourde Pastel":"9542b0","Gourde Isotherme":"9542b0","Gourde Inox Premium":"9542b0","Lunettes Rondes":"b4ae5f","Lunettes Papillon":"b4ae5f","Collier Or Fin":"36b660","Collier Pendentif":"36b660","Ceinture Chaîne":"9b5520","Ceinture Cuir":"9b5520","Foulard Soie":"a06bd3","Écharpe Douce":"a06bd3","Sac Week-end":"b26751","Valise Cabine":"4f16bf","Débardeur Côtelé":"32aded","Body Manches Longues":"edc5e9","Veste Courte":"dedb8f","Gilet Maille":"9c424d","Portefeuille Zippé":"3a37ec","Porte-cartes Mini":"fdc753","Sandales Plates Cuir":"acabdb","Sandales Bride Cheville":"acabdb","Sandales à Talon Bloc":"f7f7d3","Sandales Talon Fin":"f7f7d3","Babouches Brodées":"b5b5e3","Babouches Classiques":"b5b5e3","Gloss Brillant":"bd0bb9","Gloss Repulpant":"bd0bb9","Gloss Teinté Cerise":"bd0bb9","Gloss Effet Miroir":"bd0bb9","Baume Lèvres Karité":"3debb4","Baume Teinté":"3debb4"};
 window.BM_CAT_PHOTOS={"sacs":"037cb4","montres":"455203","chaussures":"c5468c","beaute":"1346aa","cheveux":"1260b7","hauts":"f501d4","tshirts":"00a232","robes":"86b8b0","foot":"2909e8","gourdes":"23505c","accessoires":"374b03"};
 </script>
+<style>.iv-promo{margin:8px 0 0;padding:7px 10px;background:#fff3e8;color:#7a3a00;border-radius:8px;font-size:12px}.v.pr{color:#b45309!important;font-weight:600}</style>
 <style>
 :root,:root[data-theme="light"]{--bg:#f8f1e1;--surface:#fffcf5;--card:#f5ecd8;--line:#e8dcc2;--peach:#f8dcc4}
 body{background:var(--bg)}
@@ -387,7 +388,7 @@ body{background:var(--bg)}
  .iv-foot{gap:12px;margin-top:18px}.iv-foot .qr{width:82px;height:82px}.iv-foot p{font-size:11.5px}.iv-stamp{font-size:13px}
 }
 @media print{@page{size:A4;margin:8mm}.iv{font-size:11.5px}.iv-in{padding:18px 22px 14px}.iv-meta{margin:14px 0}.iv-parties{margin-bottom:14px;gap:18px}.iv td,.iv th{padding:6px 10px}.iv tr,.iv-payb,.iv-foot,.iv-tot{break-inside:avoid}.iv-foot{margin-top:14px;padding-top:12px}.iv-payb{margin-top:12px}.iv-legal{margin-top:10px}.iv-wm{font-size:90px}}
-.lbx{position:fixed;inset:0;z-index:9999;background:rgba(6,8,16,.94);display:flex;flex-direction:column;animation:lbin .2s both}
+.lbx{position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;background:rgba(6,8,16,.94);display:flex;flex-direction:column;animation:lbin .2s both}
 @keyframes lbin{from{opacity:0}to{opacity:1}}
 .lbh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;color:#fff}.lbh small{display:block;color:#aab2d5;font-size:13px}
 .lbh button{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;flex:none}
@@ -509,8 +510,8 @@ async function loadAll(){
  let pim=[];try{pim=await fetchAll('product_images')}catch(e){pim=[]}
  pim.forEach(i=>{const p=byP.get(i.product_id);if(p)p.images.push({id:i.id,key:'i'+i.id,color:i.color||'',path:i.path,main:i.is_main,url:imgUrl(i.path)})});
  const byO=new Map();
- S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
- oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price})});
+ S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',promo:o.promo_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
+ oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price,lp:i.list_price==null?null:+i.list_price,lbl:i.promo_label||''})});
  try{const pr=await sb.from('payments').select('*').order('id',{ascending:false}).limit(500);S.payErr=pr.error?pr.error.message:'';S.pays=pr.error?[]:pr.data.map(p=>({id:p.id,orderId:byO.get(p.order_id)?byO.get(p.order_id).id:null,method:p.method,code:p.tx_code,phone:p.payer_phone||'',amount:+p.amount,status:p.status,note:p.note||'',proof:p.proof_path||'',d:new Date(p.created_at)}))}catch(e){S.pays=[]}
  S.invoices=iv.map(f=>({dbId:f.id,no:f.no,code:f.code,orderId:byO.get(f.order_id)?byO.get(f.order_id).id:null,d:new Date(f.created_at),status:f.status,checks:f.checks}));
  S.moves=mv.map(m=>({d:new Date(m.created_at),type:m.type,pid:m.product_id,color:m.color,size:m.size,qty:m.qty,reason:m.reason||'',ref:m.ref||''}));
@@ -607,6 +608,7 @@ ${payBlock(o)}
  ${o.deliv?`<div class="banner" style="background:#e2f6ea;color:#0f8a4f">✅ <b>Livrée le ${fdatel(o.deliv)}</b> · commande clôturée, anti-fraude : toute nouvelle réclamation est à vérifier.</div>`:''}
  <div class="acts">
   <button class="act ${o.pcode&&!o.claim?'':'go'}" data-act="paycode" data-id="${o.id}" ${canWa&&o.status!=='payee'&&o.status!=='facturee'?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>${o.pcode?'Renvoyer le code paiement':'Envoyer un code paiement'}</b><br><small>${o.pcode?'Code '+esc(o.pcode)+' · renvoi sur '+esc(o.wa):'Part sur WhatsApp vers '+esc(o.wa)}</small></span></button>
+  <button class="act" data-act="delorder" data-id="${o.id}" style="color:#c0392b"><span class="ico">${ic('x')}</span><span><b>Supprimer la commande</b><br><small>Disparaît définitivement de l'espace admin</small></span></button>
   <button class="act ${o.status==='facturee'&&!o.deliv?'go':''}" data-act="deliver" data-id="${o.id}" ${o.deliv||o.status!=='facturee'?'disabled':''}><span class="ico">${ic('box')}</span><span><b>${o.deliv?'Commande livrée ✓':'Marquer comme livrée'}</b><br><small>${o.deliv?fdatel(o.deliv):o.status==='facturee'?'À confirmer après remise au client':'Disponible une fois la facture émise'}</small></span></button>
   <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)||o.deliv?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
   <button class="act ${o.status==='payee'?'go':''}" data-act="invoice" data-id="${o.id}" ${o.status==='annulee'?'disabled':''} ${(o.status==='payee'||o.status==='facturee')?'':'style="opacity:.75"'}><span class="ico">${ic('doc')}</span><span><b>${f?'Voir la facture':(o.status==='payee'?'Générer la facture':'🔒 Facture verrouillée')}</b><br><small>${f?f.no:(o.status==='payee'?'Paiement validé':'Paiement à valider dans Bang Pay')}</small></span></button>
@@ -673,13 +675,13 @@ function showInvoice(f){
  const o=order(f.orderId),ann=f.status==='annulee',sub=total(o),n=count(o),C=COMPANY;
  const pay=S.pays.find(p=>p.orderId===o.id&&p.status==='valide'),pm=pay?(PM[pay.method]||[''])[0]:'',mode=o.pay?(o.pay.mode||pm||'—'):(pm||'—');
  const co=[C.address,[C.phone,C.email].filter(Boolean).join(' · '),[C.rccm&&'RCCM '+C.rccm,C.idnat&&'ID Nat. '+C.idnat,C.nif&&'NIF '+C.nif].filter(Boolean).join(' · ')].filter(Boolean);
- const rows=o.items.map((it,k)=>`<tr><td class="c-n">${k+1}</td><td><b class="pn">${esc(prod(it.pid)?prod(it.pid).name:'Produit supprimé')}</b><span class="v">Réf. ${pref(it.pid)}${(it.color||it.size)?' · '+esc(vlabel(it)):''}</span><span class="v ph">${it.qty} × ${fmt(it.price)}</span></td><td class="r">${it.qty}</td><td class="r c-u">${fmt(it.price)}</td><td class="r"><b>${fmt(it.qty*it.price)}</b></td></tr>`).join('');
+ const rows=o.items.map((it,k)=>`<tr><td class="c-n">${k+1}</td><td><b class="pn">${esc(prod(it.pid)?prod(it.pid).name:'Produit supprimé')}</b><span class="v">Réf. ${pref(it.pid)}${(it.color||it.size)?' · '+esc(vlabel(it)):''}</span><span class="v ph">${it.qty} × ${fmt(it.price)}</span>${it.lbl?`<span class="v pr">🏷️ ${it.lp!=null&&it.lp>it.price?`Prix catalogue ${fmt(it.lp)} → ${fmt(it.price)} · `:''}${esc(it.lbl)}</span>`:''}</td><td class="r">${it.qty}</td><td class="r c-u">${fmt(it.price)}</td><td class="r"><b>${fmt(it.qty*it.price)}</b></td></tr>`).join('');
  modal(head(`Facture ${f.no}`)+`<div class="iv" id="print"><div class="iv-bar"></div>${ann?'<div class="iv-wm">ANNULÉE</div>':''}<div class="iv-in">
  <div class="iv-top"><div class="iv-brand"><b>${esc(C.name)}</b><span>${esc(C.tagline)}</span>${co.map(x=>`<span>${esc(x)}</span>`).join('')}</div><div class="iv-title"><h2>FACTURE</h2><div>N° ${f.no}</div><span class="iv-stamp ${ann?'x':''}">${ann?'ANNULÉE':'PAYÉE'}</span></div></div>
  <div class="iv-meta"><div><small>Date d'émission</small><b>${fdatel(f.d)}</b></div><div><small>Commande</small><b>${o.id}</b></div><div><small>Date de paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div><div><small>Devise</small><b>USD ($)</b></div></div>
  <div class="iv-parties"><div><small>Émetteur</small><b>${esc(C.name)}</b>${co.map(x=>`<span>${esc(x)}</span>`).join('')||`<span>${esc(C.tagline)}</span>`}</div><div><small>Facturé à</small><b>${esc(o.client)}</b><span>WhatsApp : ${esc(o.wa)}</span>${(o.prov||o.lieu)?`<span>${esc([o.prov,o.lieu].filter(Boolean).join(' · '))}</span>`:''}</div></div>
  <table class="iv-items"><thead><tr><th class="c-n" style="width:30px">#</th><th>Désignation</th><th class="r" style="width:54px">Qté</th><th class="r c-u" style="width:92px">Prix unit.</th><th class="r" style="width:96px">Montant</th></tr></thead><tbody>${rows}</tbody></table>
- <div class="iv-tot"><table><tr><td>Articles</td><td class="r">${n.toLocaleString('fr-FR')}</td></tr><tr><td>Sous-total</td><td class="r">${fmt(sub)}</td></tr><tr class="g"><td>TOTAL</td><td class="r">${fmt(sub)}</td></tr><tr><td>Montant payé</td><td class="r">${ann?fmt(0):fmt(sub)}</td></tr><tr><td>Solde dû</td><td class="r"><b>${ann?fmt(sub):fmt(0)}</b></td></tr></table></div>
+ ${o.promo?`<div class="iv-promo">🎟️ Code promo appliqué : <b>${esc(o.promo)}</b></div>`:''}<div class="iv-tot"><table><tr><td>Articles</td><td class="r">${n.toLocaleString('fr-FR')}</td></tr><tr><td>Sous-total</td><td class="r">${fmt(sub)}</td></tr><tr class="g"><td>TOTAL</td><td class="r">${fmt(sub)}</td></tr><tr><td>Montant payé</td><td class="r">${ann?fmt(0):fmt(sub)}</td></tr><tr><td>Solde dû</td><td class="r"><b>${ann?fmt(sub):fmt(0)}</b></td></tr></table></div>
  <div class="iv-payb"><div class="pbt">Détails du paiement</div><div class="pbg"><div><small>Mode de paiement</small><b>${esc(mode)}</b></div><div><small>Date du paiement</small><b>${o.pay?fdatel(o.pay.date):'—'}</b></div><div><small>Code de transaction</small><b class="mono">${pay?esc(pay.code):'—'}</b></div><div><small>N° de l'envoyeur</small><b>${pay&&pay.phone?esc(pay.phone):'—'}</b></div><div><small>Montant reçu</small><b>$${fmt(ann?0:sub)}</b></div><div><small>Statut</small><b class="${ann?'no':'ok'}">${ann?'Annulée':'Payée intégralement'}</b></div></div></div>
  <div class="iv-foot"><div class="qr" id="qrbox"></div><div><p>Vérifiez l'authenticité de cette facture en scannant le QR code ou sur :<br><span style="word-break:break-all">${esc(vurl(f))}</span></p><p style="margin-top:6px">Code de vérification : <span class="code">${f.code}</span></p></div></div>
  <div class="iv-legal">Facture acquittée · Merci pour votre confiance · ${esc(C.name)}</div></div></div>
@@ -981,6 +983,10 @@ const A={
  deliver:d=>{const o=order(d.id);if(o.deliv)return;
   if(!confirm('Confirmer que la commande '+o.id+' a bien été livrée au client ?\nCette action est définitive : elle sert de preuve contre les réclamations frauduleuses.'))return;
   run(async()=>must(await sb.from('orders').update({delivered_at:new Date().toISOString()}).eq('id',o.dbId)),'Commande marquée comme livrée')},
+ delorder:d=>{const o=order(d.id);if(!o)return;const x=o.status==='facturee'||o.status==='payee';
+  if(!confirm('Supprimer définitivement la commande '+o.id+' ('+o.client+') ?'+(x?'\n\n⚠ Elle est '+(o.status==='facturee'?'facturée':'payée')+' : sa facture et son paiement seront supprimés aussi.':'')+'\nCette action est irréversible.'))return;
+  if(x&&!confirm('Dernière confirmation : supprimer '+o.id+' ainsi que ses factures et paiements ?'))return;
+  run(async()=>must(await sb.rpc('delete_order',{p_order:o.dbId})),'Commande supprimée').then(ok=>{if(ok){closeModal();S.sel=null;S.view='orders';render()}})},
  manage:d=>openManage(d.id),
  mtab:d=>openManage(d.id,d.t),
  step:(d,el)=>{const i=el.parentElement.querySelector('input');i.value=Math.max(0,(+i.value||0)+ +d.d);i.dispatchEvent(new Event('input',{bubbles:true}))},

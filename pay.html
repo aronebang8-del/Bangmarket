@@ -33,7 +33,7 @@ h1{font:700 24px/1.2 Sora,Inter;letter-spacing:-.6px}h2{font:700 17px Sora,Inter
 .sub{color:var(--mut);font-size:14px;margin-top:4px}
 /* carte bancaire */
 .bc{position:relative;overflow:hidden;border-radius:22px;padding:20px 20px 18px;color:#fff;aspect-ratio:1.62/1;display:flex;flex-direction:column;justify-content:space-between;background:radial-gradient(120% 90% at 100% 0,rgba(255,106,26,.55),transparent 55%),radial-gradient(90% 90% at 0 100%,rgba(70,100,255,.45),transparent 60%),linear-gradient(135deg,#0a1230,#18306e);box-shadow:0 18px 40px rgba(10,18,48,.35),inset 0 1px 0 rgba(255,255,255,.14)}
-.bc:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 2px,transparent 2px 9px);pointer-events:none}
+.bc:after{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.035) 0 2px,transparent 2px 9px);pointer-events:none}
 .bc .t{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1}
 .bc .t span{font:700 15px Sora;letter-spacing:.5px}.bc .t svg{width:26px;height:26px;opacity:.85}
 .chip{width:42px;height:32px;border-radius:7px;background:linear-gradient(135deg,#f5d58a,#c89a3b);position:relative;z-index:1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
@@ -126,7 +126,7 @@ main:has(.sheet){padding:0 16px;gap:0}
 <style>.bpl{display:grid;justify-items:center;gap:10px;text-align:center;padding:6px 0 2px}
 .bpl .bplg{position:relative;width:92px;height:92px;display:grid;place-items:center}
 .bpl .bplg svg{width:84px;height:84px;filter:drop-shadow(0 12px 22px rgba(255,90,0,.38));animation:bpPop .9s cubic-bezier(.2,1.4,.4,1) both}
-.bpl .bplg i{position:absolute;inset:4px;border-radius:26px;border:2px solid #ff7a2e;opacity:0;animation:bpRing 2.4s ease-out .7s infinite}
+.bpl .bplg i{position:absolute;top:4px;right:4px;bottom:4px;left:4px;border-radius:26px;border:2px solid #ff7a2e;opacity:0;animation:bpRing 2.4s ease-out .7s infinite}
 .bpl .bplg i+i{animation-delay:1.5s}
 .bpl .bpb{stroke-dasharray:140;stroke-dashoffset:140;animation:bpDraw 1s ease .35s forwards}
 .bpl .wm{font:700 26px/1 Sora,Inter,system-ui,sans-serif;letter-spacing:.5px;animation:bpUp .7s ease .55s both;background:linear-gradient(100deg,currentColor 40%,#ff7a2e 50%,currentColor 60%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:bpUp .7s ease .55s both,bpShine 2.8s ease 1.3s infinite}
@@ -255,14 +255,14 @@ function page2(warn,err,ok){const i=INFO,m=METH[SEL];back(true);
  <div class="pn"><div class="rw" style="border-top:0"><div style="display:flex;align-items:center;gap:12px"><i class="mi" style="background:${m.col}">${m.ini}</i><div><b style="display:block;text-align:left">${m.n}</b><span style="font-size:13px;display:block;text-align:left">${spaced(m.num)}</span></div></div><b style="font:700 18px Sora">${money(i.total)}</b></div></div>
  <form id="f" class="col">
  <label class="fld"><span>Code de transaction</span><input id="c" type="text" class="code" autocomplete="off" placeholder="Ex. MP2511161234" required minlength="5" maxlength="40"></label>
- <div class="fld"><span>Capture d’écran de la preuve</span><label class="up ${PROOF?'has':''}" for="pf"><span class="pv">${PROOF?`<img src="${PROOF.url}" alt="">`:IC.cam}</span><span><b>${PROOF?'Preuve ajoutée ✓':'Ajouter la capture'}</b><small>${PROOF?Math.round(PROOF.blob.size/1024)+' Ko · touchez pour changer':'Photo du message de confirmation'}</small></span></label><input id="pf" type="file" accept="image/*" hidden></div>
- <label class="fld"><span>Votre numéro qui a payé <em>(facultatif)</em></span><input id="p" type="tel" inputmode="tel" placeholder="Ex. 0812345678" maxlength="20"></label>
+ <div class="fld"><span>Capture d’écran de la preuve <em style="color:#d33">*</em></span><label class="up ${PROOF?'has':''}" for="pf"><span class="pv">${PROOF?`<img src="${PROOF.url}" alt="">`:IC.cam}</span><span><b>${PROOF?'Preuve ajoutée ✓':'Ajouter la capture'}</b><small>${PROOF?Math.round(PROOF.blob.size/1024)+' Ko · touchez pour changer':'Photo du message de confirmation'}</small></span></label><input id="pf" type="file" accept="image/*" hidden></div>
+ <label class="fld"><span>Numéro depuis lequel l’argent a été envoyé</span><input id="p" type="tel" inputmode="tel" placeholder="Ex. 0812345678" required minlength="8" maxlength="20"></label>
  ${err?`<div class="err">${esc(err)}</div>`:''}</form>
  <p class="help">Un souci ? <a href="https://wa.me/${WA}">Écrire sur WhatsApp</a></p></div>`;
  dock(`<button class="btn or" id="go" form="f">${IC.lock}Envoyer ma preuve</button>`);
  if(FV.c)$('#c').value=FV.c;if(FV.p)$('#p').value=FV.p;
  $('#pf').onchange=async e=>{const f=e.target.files[0];if(!f)return;keep();$('#app').classList.remove('fx');$('.up b').textContent='Compression…';try{PROOF=await shrink(f)}catch(x){PROOF=null;return page2(warn,'Image illisible, essayez une autre capture.',ok)}page2(warn,'',ok)};
- $('#f').onsubmit=async e=>{e.preventDefault();keep();if(!PROOF)return page2(warn,'Ajoutez la capture d’écran de votre paiement.',ok);
+ $('#f').onsubmit=async e=>{e.preventDefault();keep();if(!PROOF)return page2(warn,'Ajoutez la capture d’écran de votre paiement.',ok);if(!(FV.p||$('#p').value||'').replace(/\D/g,'').match(/^\d{8,}$/))return page2(warn,'Indiquez le numéro depuis lequel l’argent a été envoyé.',ok);if(($('#c').value||'').trim().length<5)return page2(warn,'Indiquez le code de transaction.',ok);
   const bt=$('#go');bt.disabled=true;bt.textContent='Envoi en cours…';
   const path=i.number+'/'+Date.now().toString(36)+Math.random().toString(36).slice(2,7)+'.'+PROOF.ext;
   const up=await sb.storage.from('payment-proofs').upload(path,PROOF.blob,{contentType:PROOF.blob.type,upsert:false});
