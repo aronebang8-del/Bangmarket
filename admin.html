@@ -419,6 +419,8 @@ body{background:var(--bg)}
 .cpt.inv .cph,.cpt.inv .cpr{grid-template-columns:48px 1.1fr 2fr 96px 130px;padding-top:6px;padding-bottom:6px}.cpr.st{cursor:default}.cpr .ph{width:42px;height:42px;border-radius:10px;background:var(--card);display:grid;place-items:center;overflow:hidden;color:var(--mut);font-weight:700}.cpr .ph img{width:100%;height:100%;object-fit:cover}.vs{display:flex;flex-wrap:wrap;gap:4px}.vs i{font-style:normal;background:var(--card);border-radius:99px;padding:2px 9px;font-size:11.5px;white-space:nowrap}.vs i b{color:var(--or-ink)}.dp b{display:block;font-size:13px}.dp u{display:block;height:4px;background:var(--line);border-radius:4px;margin-top:4px;text-decoration:none}.dp s{display:block;height:100%;background:var(--or);border-radius:4px;text-decoration:none}
 .cpw{background:#fff3e8;color:#7a3a00;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:12px}.cpe{text-align:center;color:var(--mut);padding:34px 10px;background:var(--surface);border-radius:16px}
 @media (max-width:760px){.cpk{grid-template-columns:1fr 1fr}.cph{display:none}.cpr{grid-template-columns:46px 1fr auto;gap:8px}.cpr .c{grid-column:2;grid-row:2;font-size:12px;color:var(--mut)}.cpr .x,.cpr .m{display:none}.cpr .n{grid-column:2;grid-row:1}.cpr .t{grid-row:1}.cpr .a{grid-column:3;grid-row:1/3}.cpt.mg .cpr{grid-template-columns:1fr auto auto}.cpt.mg .cpr .t{grid-column:1;grid-row:1}.cpt.mg .cpr .n{grid-column:1;grid-row:2}.cpt.mg .cpr .c{display:none}.cpt.mg .cpr .r{display:none}.cpt.mg .cpr b.r{display:block;grid-column:3;grid-row:1/3}.cpt.inv .cpr{grid-template-columns:46px 1fr auto}.cpt.inv .cpr .vs{grid-column:2/4;grid-row:2}.cpt.inv .cpr .x{display:block;grid-column:2;font-size:11.5px;color:var(--mut)}.cpt.inv .cpr .dp{grid-column:3;grid-row:1}}</style>
+<style>.ibar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}.ibar .search{flex:1;min-width:220px;margin:0}.isb{display:flex;gap:8px;flex-wrap:wrap}.kb{font-style:normal;font-size:12px;font-weight:600;padding:3px 10px;border-radius:99px;white-space:nowrap}.kb.free{background:#eceef1;color:#5b6270}.kb.assigned{background:#ffe9d6;color:#9a4a0f}.kb.used{background:#dff3e7;color:#14663a}.cpt.kt .cph,.cpt.kt .cpr{grid-template-columns:54px 130px 170px 1fr 120px 70px}@media (max-width:760px){.cpt.kt .cpr{grid-template-columns:44px 1fr auto;gap:6px 8px}.cpt.kt .cpr b{grid-column:2}.cpt.kt .cpr>span:nth-child(3){grid-column:3;grid-row:1}.cpt.kt .cpr>span:nth-child(4){grid-column:2;grid-row:2;font-size:12px}.cpt.kt .cpr>span:nth-child(5){display:none}.cpt.kt .cpr .btn{grid-column:3;grid-row:2}}</style>
+<style>.vr{flex-wrap:wrap;row-gap:8px}.vl{min-width:0;flex:1 1 150px}.vl b{overflow-wrap:anywhere}.qn{white-space:nowrap;flex:none;min-width:56px}.va{display:flex;gap:8px;align-items:center;flex:none;margin-left:auto}.va input{width:96px;min-width:0}@media (max-width:760px){.vr{display:grid;grid-template-columns:1fr auto;align-items:center}.vl{grid-column:1}.qn{grid-column:2;font-size:20px}.va{grid-column:1/3;margin-left:0}.va input{flex:1;width:auto}}</style>
 </head>
 <body>
 <div id="login"><div id="lload" class="logo">Bang Market</div><form class="lbox card" data-form="login" hidden><div><div class="logo">Bang Market</div><div class="tagl">Espace administrateur</div></div><label class="fld">E-mail<input name="email" type="email" autocomplete="username" required></label><label class="fld">Mot de passe<input name="pw" type="password" autocomplete="current-password" required></label><div class="lerr" id="lerr" role="alert"></div><button class="btn pri">Se connecter</button></form></div>
@@ -888,7 +890,7 @@ function paintStock(){
   const groups=S.products.map(p=>({p,vs:p.variants.map((v,i)=>({v,i})).filter(({v})=>fn(v)&&(!q||(p.name+' '+vlabel(v)).toLowerCase().includes(q)))})).filter(g=>g.vs.length&&inSc(g.p));
   const card=({p,vs})=>{const c=CATS[p.cat]||'#6b6b70',t=p.variants.reduce((a,v)=>a+v.stock,0);
    return `<section class="card sg"><div class="sgh"><span class="sw2">${photo(p)}</span><div><b>${esc(p.name)}</b><br><span class="mut">${esc(p.cat)} · ${t.toLocaleString('fr-FR')} pièces</span></div><button class="btn sm" data-act="editprod" data-id="${p.id}">Modifier</button><button class="btn sm" data-act="addlist" data-pid="${p.id}">${ic('plus')}Taille ou couleur</button></div>
-   ${vs.map(({v,i})=>`<div class="vr"><div class="vl"><b>${esc(vlabel(v))}</b>${v.stock===0?'<span class="tag e">Épuisé</span>':v.stock<=3?'<span class="tag w">Stock bas</span>':''}</div><span class="qn ${v.stock===0?'z':v.stock<=3?'l':''}" aria-label="${v.stock} en stock">${v.stock.toLocaleString('fr-FR')}${v.reserved?`<small style="display:block;font-size:11px;font-weight:600;color:#b8741a">dispo ${Math.max(0,v.stock-v.reserved)} · rés. ${v.reserved}</small>`:''}</span><div class="va"><input type="number" step="any" inputmode="numeric" placeholder="Qté à ajouter" aria-label="Quantité à ajouter pour ${esc(p.name)} ${esc(vlabel(v))}"><button class="plus" data-act="qadd" data-pid="${p.id}" data-vi="${i}" aria-label="Ajouter au stock">+</button></div></div>`).join('')}</section>`};
+   ${vs.map(({v,i})=>`<div class="vr"><div class="vl"><b>${esc(vlabel(v))}</b>${v.stock===0?'<span class="tag e">Épuisé</span>':v.stock<=3?'<span class="tag w">Stock bas</span>':''}</div><span class="qn ${v.stock===0?'z':v.stock<=3?'l':''}" aria-label="${v.stock} en stock">${v.stock.toLocaleString('fr-FR')}${v.reserved?`<small style="display:block;font-size:11px;font-weight:600;color:#b8741a">dispo ${Math.max(0,v.stock-v.reserved)} · rés. ${v.reserved}</small>`:''}</span><div class="va"><input type="number" step="any" inputmode="numeric" placeholder="+ Qté" aria-label="Quantité à ajouter pour ${esc(p.name)} ${esc(vlabel(v))}"><button class="plus" data-act="qadd" data-pid="${p.id}" data-vi="${i}" aria-label="Ajouter au stock">+</button></div></div>`).join('')}</section>`};
   $('#mlist').innerHTML=groups.length?allCats().map(c=>{const gs=groups.filter(g=>g.p.cat===c);if(!gs.length)return '';const pcs=gs.reduce((a,g)=>a+g.p.variants.reduce((b,v)=>b+v.stock,0),0);
    return `<section class="pcat"><h2><i style="background:${catCol(c)}"></i>${esc(c)}<em>${gs.length} produit${gs.length>1?'s':''} · ${pcs.toLocaleString('fr-FR')} pièces</em></h2>${gs.map(card).join('')}</section>`}).join(''):'<div class="card empty"><b>Aucune ligne de stock</b>Changez le filtre, ou ajoutez un produit avec « Ajouter un produit ».</div>';
  }else{
@@ -950,12 +952,10 @@ function paintPay(){const P=S.pays,wait=P.filter(p=>p.status==='attente'),ok=P.f
   else{const rows=P.filter(p=>p.status===S.pf);html=rows.length?rows.map(payCard).join(''):empty('Aucun paiement ici','Les paiements déclarés par les clients apparaîtront ici.')}
  $('#plist').innerHTML=head+html;
  fillProofs()}
-VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérification n'est visible que par vous.</p></div></div>
- <label class="search">${ic('search')}<input id="iq" type="search" placeholder="Rechercher par numéro, code ou client" value="${esc(S.iq)}" aria-label="Rechercher une facture"></label><div class="card" style="padding:6px 12px" id="ilist"></div>`;
-AFTER.invoices=paintInvoices;
+
 function paintInvoices(){
  const q=S.iq.trim().toLowerCase(),rows=S.invoices.filter(f=>!q||(f.no+f.code+order(f.orderId).client).toLowerCase().includes(q)).sort((a,b)=>b.no.localeCompare(a.no));
- $('#ilist').innerHTML=rows.length?`<table><thead><tr><th>Facture</th><th>Client</th><th class="r">Montant</th><th>Code</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(f=>{const o=order(f.orderId),sh=S.reveal.has(f.no);return `<tr><td><b>${f.no}</b><br><span class="mut">${fdate(f.d)} · ${o.id}</span></td><td>${esc(o.client)}</td><td class="r">${fmt(total(o))}</td><td><button class="code" data-act="reveal" data-n="${f.no}" aria-label="${sh?'Masquer':'Afficher'} le code">${sh?f.code:'••••-••••'}</button><br><span class="mut" style="font-size:12.5px">Vérifié ${f.checks} fois</span></td><td>${f.status==='valide'?'<span class="pill s-p">Valide</span>':'<span class="pill s-x">Annulée</span>'}</td><td class="r"><button class="btn sm" data-act="viewinv" data-n="${f.no}">Voir</button> ${f.status==='valide'?`<button class="btn sm dng" data-act="cancelinv" data-n="${f.no}">Annuler</button> `:''}<button class="btn sm dng" data-act="delinv" data-n="${f.no}" title="Supprimer définitivement">Supprimer</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty"><b>Aucune facture</b>Générez-en une depuis une commande payée.</div>';
+ $('#ilist').innerHTML=rows.length?`<table><thead><tr>${S.isel?'<th></th>':''}<th>Facture</th><th>Client</th><th class="r">Montant</th><th>Code</th><th>Statut</th><th></th></tr></thead><tbody>${rows.map(f=>{const o=order(f.orderId),sh=S.reveal.has(f.no);return `<tr>${S.isel?`<td><input type="checkbox" data-isl="${f.no}" ${S.isl.has(f.no)?'checked':''}></td>`:''}<td><b>${f.no}</b><br><span class="mut">${fdate(f.d)} · ${o.id}</span></td><td>${esc(o.client)}</td><td class="r">${fmt(total(o))}</td><td><button class="code" data-act="reveal" data-n="${f.no}" aria-label="${sh?'Masquer':'Afficher'} le code">${sh?f.code:'••••-••••'}</button><br><span class="mut" style="font-size:12.5px">Vérifié ${f.checks} fois</span></td><td>${f.status==='valide'?'<span class="pill s-p">Valide</span>':'<span class="pill s-x">Annulée</span>'}</td><td class="r"><button class="btn sm" data-act="viewinv" data-n="${f.no}">Voir</button> ${f.status==='valide'?`<button class="btn sm dng" data-act="cancelinv" data-n="${f.no}">Annuler</button> `:''}<button class="btn sm dng" data-act="delinv" data-n="${f.no}" title="Supprimer définitivement">Supprimer</button></td></tr>`}).join('')}</tbody></table>`:'<div class="empty"><b>Aucune facture</b>Générez-en une depuis une commande payée.</div>';
 }
 
 /* ============ Achats et dépenses ============ */
@@ -977,18 +977,19 @@ function saleOf(o){const f=inv(o),pay=S.pays.find(p=>p.orderId===o.id&&p.status=
  return {o,f,pay,d,rev,cost,unk,mg:rev-cost,qty:count(o),tx:pay?pay.code:'',mode:(o.pay&&o.pay.mode)||pm||'—',ann:f&&f.status==='annulee'}}
 function inPer(d){const n=new Date(),k=dk(d);if(S.cp==='jour')return k===dk(n);if(S.cp==='7j'){const a=new Date(n);a.setDate(a.getDate()-6);return k>=dk(a)&&k<=dk(n)}
  if(S.cp==='mois')return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();if(S.cp==='custom')return(!S.cfrom||k>=S.cfrom)&&(!S.cto||k<=S.cto);return true}
-const salesList=()=>S.orders.filter(o=>o.status==='payee'||o.status==='facturee').map(saleOf).filter(s=>!s.ann&&inPer(s.d)).sort((a,b)=>b.d-a.d);
+const salesList=()=>S.orders.filter(o=>o.status==='payee'||o.status==='facturee').map(saleOf).filter(s=>!s.ann&&s.pay&&inPer(s.d)).sort((a,b)=>b.d-a.d);
 const CT=[['ventes','Ventes'],['stock','Inventaire'],['marges','Marges'],['treso','Achats & dépenses']];
 const PER=[['jour','Aujourd’hui'],['7j','7 jours'],['mois','Ce mois'],['tout','Tout'],['custom','Période']];
 VIEWS.money=()=>`<div class="top"><div><h1>Comptabilité</h1><p>Ventes, inventaire, marges et dépenses de Bang Market.</p></div></div>
 <div class="chips" style="margin-bottom:12px">${CT.map(([k,l])=>`<button class="chip ${S.ct===k?'on':''}" data-act="ctab" data-k="${k}">${l}</button>`).join('')}</div>
+${(S.ct==='ventes'||S.ct==='marges')&&S.pays.some(p=>p.status==='attente')?`<div class="cpw" style="display:flex;gap:10px;align-items:center;justify-content:space-between"><span>⏳ <b>${S.pays.filter(p=>p.status==='attente').length}</b> paiement${S.pays.filter(p=>p.status==='attente').length>1?'s':''} en attente : validez-${S.pays.filter(p=>p.status==='attente').length>1?'les':'le'} dans Bang Pay pour que la vente apparaisse ici.</span><button class="btn sm pri" data-act="gopay">Ouvrir Bang Pay</button></div>`:''}
 ${S.ct==='ventes'||S.ct==='marges'?`<div class="cpbar"><div class="chips">${PER.map(([k,l])=>`<button class="chip ${S.cp===k?'on':''}" data-act="cper" data-k="${k}">${l}</button>`).join('')}</div>${S.cp==='custom'?`<div class="cpd"><label>Du <input type="date" data-cd="from" value="${S.cfrom}"></label><label>au <input type="date" data-cd="to" value="${S.cto}"></label></div>`:''}${S.ct==='ventes'?`<input class="cpq" id="cq" type="search" placeholder="Rechercher : client, facture, commande, transaction…" value="${esc(S.cq)}">`:''}</div>`:''}
 <div id="cbody"></div>`;
 AFTER.money=()=>paintC();
 function kpi4(a){return `<div class="cpk">${a.map(([l,v,c])=>`<div><span>${l}</span><b class="${c||''}">${v}</b></div>`).join('')}</div>`}
 function paintC(){const b=$('#cbody');if(!b)return;
  if(S.ct==='treso'){b.innerHTML=oldMoney();return}
- if(S.ct==='stock'){b.innerHTML=paintStock();return}
+ if(S.ct==='stock'){b.innerHTML=paintInv();return}
  const L=salesList(),q=S.cq.trim().toLowerCase();
  if(S.ct==='marges'){const ok=L.filter(s=>!s.unk),rev=L.reduce((a,s)=>a+s.rev,0),mg=ok.reduce((a,s)=>a+s.mg,0),rv2=ok.reduce((a,s)=>a+s.rev,0),cost=ok.reduce((a,s)=>a+s.cost,0),miss=L.length-ok.length;
   b.innerHTML=kpi4([['Chiffre d’affaires',fmt(rev)],['Coût d’achat',fmt(cost)],['Marge brute',fmt(mg),mg<0?'no':'ok'],['Taux de marge',rv2?(mg/rv2*100).toFixed(1).replace('.',',')+' %':'—']])+(miss?`<div class="cpw">⚠ ${miss} vente${miss>1?'s':''} sans prix d’achat complet : exclue${miss>1?'s':''} des totaux de marge. Renseignez le « Prix d’achat unitaire » dans Produits › Modifier.</div>`:'')+(S.costOk===false?`<div class="cpw">Exécutez <b>bangmarket_compta.sql</b> dans Supabase pour activer les prix d’achat.</div>`:'')+
@@ -1004,7 +1005,7 @@ function stockData(){const sold={};S.orders.filter(o=>o.status==='payee'||o.stat
  return S.products.map(p=>{const cur=p.variants.reduce((a,v)=>a+(+v.stock||0),0),mv=S.moves.filter(m=>m.pid===p.id&&m.type==='entree'),ent=mv.reduce((a,m)=>a+m.qty,0),first=mv.length?mv.reduce((a,m)=>m.d<a?m.d:a,mv[0].d):(p.created||null);
   return {p,cur,dep:Math.max(ent>0?ent:cur+(sold[p.id]||0),cur),first,vs:p.variants.filter(v=>+v.stock>0),img:(p.images.find(i=>i.main)||p.images[0]||{}).url||''}}).sort((a,b)=>a.p.cat.localeCompare(b.p.cat)||a.p.name.localeCompare(b.p.name))}
 const cats=D=>[...new Set(D.map(x=>x.p.cat))];
-function paintStock(){const D=stockData().filter(x=>x.cur>0),C=cats(D),sel=S.ccf&&C.includes(S.ccf)?S.ccf:'',L=sel?D.filter(x=>x.p.cat===sel):D;
+function paintInv(){const D=stockData().filter(x=>x.cur>0),C=cats(D),sel=S.ccf&&C.includes(S.ccf)?S.ccf:'',L=sel?D.filter(x=>x.p.cat===sel):D;
  const tp=L.length,tu=L.reduce((a,x)=>a+x.cur,0),tv=L.reduce((a,x)=>a+x.cur*x.p.price,0);
  return kpi4([['Produits disponibles',tp],['Pièces en stock',tu.toLocaleString('fr-FR')],['Valeur à la vente',fmt(tv)],['Catégories',sel?1:C.length]])+
  `<div class="cpbar"><div class="chips"><button class="chip ${sel?'':'on'}" data-act="ccf" data-k="">Toutes</button>${C.map(c=>`<button class="chip ${sel===c?'on':''}" data-act="ccf" data-k="${esc(c)}">${esc(c)}</button>`).join('')}</div>
@@ -1027,6 +1028,33 @@ async function invPdf(kind){await Promise.all([loadJS('https://cdnjs.cloudflare.
 document.addEventListener('input',e=>{if(e.target&&e.target.id==='cq'){S.cq=e.target.value;S.cn=40;paintC()}});
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.cd){S[t.dataset.cd==='from'?'cfrom':'cto']=t.value;S.cn=40;paintC()}});
 
+/* ============ Factures : sélection multiple + historique des codes ============ */
+S.ik='fac';S.isel=false;S.isl=new Set();S.ck='pay';S.kf='tous';S.kq='';S.kn=100;S.codes=undefined;S.codesLoading=false;S.codesErr='';
+VIEWS.invoices=()=>`<div class="top"><div><h1>Factures</h1><p>Le code de vérification n'est visible que par vous.</p></div></div>
+<div class="chips"><button class="chip ${S.ik==='fac'?'on':''}" data-act="itab" data-k="fac">Factures</button><button class="chip ${S.ik==='codes'?'on':''}" data-act="itab" data-k="codes">Historique des codes</button></div>
+${S.ik==='codes'?'<div id="kbody"></div>':`<div class="ibar"><label class="search">${ic('search')}<input id="iq" type="search" placeholder="Rechercher par numéro, code ou client" value="${esc(S.iq)}" aria-label="Rechercher une facture"></label><div class="isb">${S.isel?`<button class="btn sm" data-act="iall">Tout sélectionner</button><button class="btn sm dng" data-act="idelsel" ${S.isl.size?'':'disabled'}>Supprimer (${S.isl.size})</button><button class="btn sm" data-act="isel">Annuler</button>`:'<button class="btn sm" data-act="isel">Sélectionner</button>'}</div></div><div class="card" style="padding:6px 12px" id="ilist"></div>`}`;
+AFTER.invoices=()=>{if(S.ik==='codes'){if(S.codes===undefined&&!S.codesLoading)loadCodes();paintCodesHist()}else paintInvoices()};
+async function loadCodes(){if(S.codesLoading)return;S.codesLoading=true;S.codesErr='';paintCodesHist();try{S.codes=await fetchAll('codes')}catch(e){S.codes=null;S.codesErr=e.message||String(e)}S.codesLoading=false;paintCodesHist()}
+const cst=c=>{if(!c.used)return 'free';if(c.kind==='pay')return c.confirmed_at?'used':'assigned';const f=S.invoices.find(x=>x.code===c.code);return f&&f.checks>0?'used':'assigned'};
+const CLAB={pay:{free:'Pas encore utilisé',assigned:'Envoyé au client',used:'Utilisé par le client'},verif:{free:'Pas encore utilisé',assigned:'Sur une facture',used:'Facture vérifiée'}};
+function kRows(){const L=(S.codes||[]).filter(c=>c.kind===S.ck);let free=0;const rk=new Map();L.filter(c=>!c.used).forEach(c=>rk.set(c.id,++free));
+ let R=L.map(c=>({c,s:cst(c),r:rk.get(c.id)||0}));const q=S.kq.trim().toLowerCase();if(S.kf!=='tous')R=R.filter(x=>x.s===S.kf);if(q)R=R.filter(x=>(x.c.code+' '+(x.c.ref||'')).toLowerCase().includes(q));
+ R.sort((a,b)=>(a.s==='free')-(b.s==='free')||(a.s==='free'?a.c.id-b.c.id:new Date(b.c.used_at||0)-new Date(a.c.used_at||0)));return {L,R}}
+function paintCodesHist(){const b=$('#kbody');if(!b)return;
+ if(S.codesLoading&&!S.codes){b.innerHTML='<div class="cpe">Chargement des codes…</div>';return}
+ if(!S.codes){b.innerHTML=`<div class="cpw">Les codes ne sont pas disponibles${S.codesErr?' ('+esc(S.codesErr)+')':''}. Exécutez <b>bangmarket_codes.sql</b> dans Supabase (SQL Editor) pour créer la réserve de 10 000 codes.</div>`;return}
+ const {L}=kRows(),cnt=k=>L.filter(c=>cst(c)===k).length,P=S.ck==='pay';
+ b.innerHTML=`<div class="chips"><button class="chip ${P?'on':''}" data-act="kkind" data-k="pay">Codes de paiement</button><button class="chip ${P?'':'on'}" data-act="kkind" data-k="verif">Codes de vérification de facture</button></div>
+ ${kpi4([['Total',L.length.toLocaleString('fr-FR')],['Disponibles (futurs)',cnt('free').toLocaleString('fr-FR')],['Attribués',cnt('assigned')],['Utilisés',cnt('used'),'ok']])}
+ <div class="cpw" style="background:var(--card);color:var(--ink)"><b>Comment sont-ils générés ?</b> ${P?'Les codes de paiement ont le format <b>BP-XXXX-XXXX</b> (lettres et chiffres sans 0/O/1/I). 10 000 codes uniques sont préparés à l’avance ; en cliquant « Envoyer un code paiement » dans une commande, le <b>prochain code de la liste</b> est attribué au client.':'Les codes de vérification ont le format <b>XXXX-XXXX</b> (hexadécimal). 10 000 codes uniques sont préparés à l’avance ; le prochain est imprimé sur chaque nouvelle facture et sert au QR code de vérification.'} Un code déjà attribué ne revient <b>jamais</b>.</div>
+ <div class="cpbar"><div class="chips">${[['tous','Tous'],['free','Pas encore utilisés'],['assigned',P?'Envoyés':'Sur facture'],['used','Utilisés']].map(([k,l])=>`<button class="chip ${S.kf===k?'on':''}" data-act="kfil" data-k="${k}">${l}</button>`).join('')}</div>
+ <div class="cpx"><input class="cpq" id="kq" type="search" placeholder="Rechercher un code ou une référence" value="${esc(S.kq)}"><button class="btn" data-act="kcsv">⬇ Exporter (CSV)</button><button class="btn" data-act="krefill">↻ Compléter la réserve</button></div></div><div id="klist"></div>`;
+ paintKList()}
+function paintKList(){const b=$('#klist');if(!b)return;const {R}=kRows(),P=S.ck==='pay';
+ b.innerHTML=R.length?`<div class="cpg"><div class="cpt kt"><div class="cph"><span>N°</span><span>Code</span><span>État</span><span>${P?'Commande':'Facture'}</span><span class="r">Date</span><span></span></div>${R.slice(0,S.kn).map(x=>`<div class="cpr"><span class="t">${x.s==='free'?'#'+x.r:''}</span><b class="mono">${esc(x.c.code)}</b><span><i class="kb ${x.s}">${CLAB[S.ck][x.s]}</i></span><span>${esc(x.c.ref||'—')}${x.c.kind==='verif'&&x.s!=='free'?(()=>{const f=S.invoices.find(z=>z.code===x.c.code);return f?` <small class="mut">· vérifiée ${f.checks} fois</small>`:' <small class="mut">· facture supprimée</small>'})():''}</span><span class="r mut">${x.c.used_at?fdatel(new Date(x.c.used_at)):x.r===1?'Prochain':''}</span><button class="btn sm" data-act="kcopy" data-c="${esc(x.c.code)}">Copier</button></div>`).join('')}</div></div>${R.length>S.kn?`<button class="btn" data-act="kmore" style="margin:12px auto;display:block">Afficher plus (${R.length-S.kn})</button>`:''}`:'<div class="cpe">Aucun code.</div>'}
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='kq'){S.kq=e.target.value;S.kn=100;paintKList()}});
+document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.isl){t.checked?S.isl.add(t.dataset.isl):S.isl.delete(t.dataset.isl);const bt=document.querySelector('[data-act=idelsel]');if(bt){bt.textContent='Supprimer ('+S.isl.size+')';bt.disabled=!S.isl.size}}});
+
 /* ============ Actions ============ */
 const A={
  nav:d=>{S.view=d.v;S.sel=null;render()},
@@ -1041,6 +1069,7 @@ const A={
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
   if(o.status==='nouvelle')run(async()=>must(await sb.from('orders').update({status:'contacte'}).eq('id',o.dbId)),'Statut : client contacté')},
  paycode:async d=>{const o=order(d.id);let c=o.pcode;
+  if(!c){const rp=await sb.rpc('next_pay_code',{p_order:o.dbId});S.codes=undefined;if(!rp.error&&rp.data){c=rp.data;o.pcode=c}}
   if(!c){const al='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',r=n=>Array.from(crypto.getRandomValues(new Uint8Array(n)),x=>al[x%al.length]).join('');c='BP-'+r(4)+'-'+r(4);
    try{must(await sb.from('orders').update({pay_code:c,pay_code_sent_at:new Date().toISOString()}).eq('id',o.dbId))}catch(e){return toast('Code non enregistré : exécutez bangmarket_codepaiement.sql dans Supabase')}
    o.pcode=c}
@@ -1063,6 +1092,20 @@ const A={
  ccx:d=>{S.ccx[d.k]=S.ccx[d.k]===false;paintC()},
  viewsale:d=>{const o=order(d.id),f=o&&inv(o);if(f)showInvoice(f);else{S.view='orders';S.sel=d.id;render()}},
  invpdf:async d=>{toast('Création du PDF…');try{const blob=await invPdf(d.k),n='Inventaire-'+(d.k==='full'?'detaille-':'')+'Bang-Market-'+dk(new Date())+'.pdf',u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=n;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000);toast('PDF enregistré : '+n)}catch(e){console.error(e);toast('PDF impossible : '+(e.message||e))}},
+ itab:d=>{S.ik=d.k;render()},
+ isel:()=>{S.isel=!S.isel;S.isl=new Set();render()},
+ iall:()=>{const q=S.iq.trim().toLowerCase();S.invoices.filter(f=>!q||(f.no+f.code+order(f.orderId).client).toLowerCase().includes(q)).forEach(f=>S.isl.add(f.no));render()},
+ idelsel:async()=>{const ns=[...S.isl];if(!ns.length)return;if(!confirm('Supprimer définitivement '+ns.length+' facture'+(ns.length>1?'s':'')+' ?\n\nLeurs QR codes ne seront plus valides. Les commandes reviennent à « payée ». Les codes de vérification utilisés ne seront jamais réattribués.'))return;
+  const ids=ns.map(n=>{const f=S.invoices.find(x=>x.no===n),o=f&&order(f.orderId);return o&&o.dbId}).filter(Boolean);
+  if(await run(async()=>{must(await sb.from('invoices').delete().in('no',ns));if(ids.length)must(await sb.from('orders').update({status:'payee'}).in('id',ids).eq('status','facturee'))},ns.length+' facture'+(ns.length>1?'s supprimées':' supprimée'))){S.isel=false;S.isl=new Set();render()}},
+ kkind:d=>{S.ck=d.k;S.kf='tous';S.kn=100;paintCodesHist()},
+ kfil:d=>{S.kf=d.k;S.kn=100;paintCodesHist()},
+ kmore:()=>{S.kn+=200;paintKList()},
+ kcopy:d=>{try{navigator.clipboard.writeText(d.c);toast('Code copié : '+d.c)}catch(e){toast(d.c)}},
+ krefill:async()=>{const r=await sb.rpc('refill_codes');if(r.error)return toast('Impossible : '+r.error.message);S.codes=undefined;toast('Réserve complétée à 10 000 codes disponibles');loadCodes()},
+ kcsv:()=>{const {R}=kRows(),P=S.ck==='pay',rows=[['N°','Code','État',P?'Commande':'Facture','Date']].concat(R.map(x=>[x.r||'',x.c.code,CLAB[S.ck][x.s],x.c.ref||'',x.c.used_at?dk(new Date(x.c.used_at)):'']));
+  const csv='﻿'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n'),u=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),l=document.createElement('a');l.href=u;l.download='codes-'+(P?'paiement':'verification')+'-'+dk(new Date())+'.csv';document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)},
+ gopay:()=>{S.view='pay';S.pf='attente';render()},
  manage:d=>openManage(d.id),
  mtab:d=>openManage(d.id,d.t),
  step:(d,el)=>{const i=el.parentElement.querySelector('input');i.value=Math.max(0,(+i.value||0)+ +d.d);i.dispatchEvent(new Event('input',{bubbles:true}))},
