@@ -734,7 +734,7 @@ $('#scroll').innerHTML=`<div class="hdr"><div class="l3w" id="l3w" role="img" ar
 <div class="bn" id="bn" role="img" aria-label="Bang Market"><div class="dc"><i class="b" style="left:4%;top:12%;--s:18px;--d:0s"></i><i class="k" style="left:9%;top:36%;--s:11px;--d:-.8s"></i><i class="b" style="left:2%;top:56%;--s:14px;--d:-1.6s"></i><i class="k" style="left:8%;top:80%;--s:9px;--d:-1.2s"></i><i class="k" style="right:9%;top:10%;--s:11px;--d:-.4s"></i><i class="b" style="right:3%;top:32%;--s:16px;--d:-2.2s"></i><i class="k" style="right:6%;top:58%;--s:9px;--d:-1.8s"></i><i class="b" style="right:4%;top:74%;--s:18px;--d:-.6s"></i></div><div class="sl s1"></div><div class="sl s2"></div><div class="sh"></div><div class="pg"><i></i><i></i></div></div>
 ${BULK.on&&BULK.off>0?`<button class="strip" id="bulkInfo"><span>💡</span><b>Dès ${BULK.min} pcs du même produit : −${fmt(BULK.off)} / pièce</b><i>›</i></button>`:''}
 <div class="sec"><b>Catégories</b><button id="seeCat">Tout voir ›</button></div>
-<div class="cats">${CATS.map(c=>`<button class="cat ${st.cat===c.id?'on':''}" data-cat="${c.id}">${c.img?`<img class="cim" alt="" src="${c.img}" loading="lazy">`:g(c.t,c.c)}${c.s||c.n}</button>`).join('')}</div>
+<div class="cats">${CATS.filter(c=>!c.hid).map(c=>`<button class="cat ${st.cat===c.id?'on':''}" data-cat="${c.id}">${c.img?`<img class="cim" alt="" src="${c.img}" loading="lazy">`:g(c.t,c.c)}${c.s||c.n}</button>`).join('')}</div>
 <div class="subs ${subsHtml()?'open':''}" id="subs">${subsHtml()}</div>
 <div class="sec" id="feat"><b id="ft">${ftitle()}</b><button id="seeAll">Tout voir ›</button></div>
 <div class="grid" id="grid">${cards()}</div>`;ANIM=false;bindHome();const bi=$('#bulkInfo');if(bi)bi.onclick=()=>{st.guide='bulk';go('profile')}}
@@ -1060,7 +1060,8 @@ const OST={nouvelle:['⏳ En attente de validation','w'],contacte:['⏳ En atten
 const payBtn=o=>{const r=encodeURIComponent(o.r),h='<a class="oh-wa oh-pay oh-pb" data-r="'+esc(o.r)+'" href="pay.html?c='+r+'"';
  if(o.s==='payee'||o.s==='facturee'||o.s==='annulee')return '<span class="oh-pb" data-r="'+esc(o.r)+'"></span>';
  if(o.ps==='attente')return h+' style="opacity:.85">⏳ Attente de validation du paiement</a>';
- if(o.cl)return h+'>🔑 Valider mon code paiement</a>';
+ if(o.s==='confirmee')return h+'>🔑 Valider mon code paiement</a>';
+ if(o.cl)return h+' style="opacity:.85">⏳ En attente de confirmation</a>';
  return h+'>💳 Payer avec Bang Pay</a>'};
 const ostHtml=o=>{const t=ostSt(o);return '<i class="oh-s '+t[1]+'" data-r="'+esc(o.r)+'">'+t[0]+'</i>'};
 async function ostSync(){if(!sb)return;const h=histGet();if(!h.length)return;let r;try{r=await sb.rpc('order_status',{p_refs:h.map(o=>o.r)})}catch(e){return}
@@ -1076,7 +1077,7 @@ $('#ohBack').onclick=()=>go('profile');ostSync();const c=$('#ohClr');if(c)c.oncl
 function renderDone(){const d=st.done;
 $('#scroll').innerHTML=`<div class="bpd"><div class="bpd-ok">✓ Commande enregistrée · ${d.ref}</div><div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bpgi" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#bpgi)"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div><h2 class="bpd-t">Procédez au paiement avec Bang Pay</h2><p class="bpd-s">Merci ${esc(d.prenom)} ! Pour valider votre commande, réglez-la en toute sécurité via Bang Pay.</p>
 <div class="ok-box"><div><span>Client</span><b>${esc(d.prenom)} ${esc(d.nom)}</b></div><div><span>Livraison</span><b>${d.prov} · ${esc(d.lieu)}</b></div><div><span>${d.qty} pièces</span><b style="color:var(--or)">${fmt(d.total)}</b></div></div>
-<div class="bpd-k">🔑 <span>Un <b>code paiement</b> vous sera demandé. Pas encore de code ? Vous pourrez le réclamer par WhatsApp dans Bang Pay.</span></div>
+<div class="bpd-k">🔑 <span>Nous allons d’abord <b>confirmer votre commande</b>. Vous recevrez ensuite votre <b>code paiement</b> sur WhatsApp. Touchez « Payer avec Bang Pay » pour nous prévenir.</span></div>
 <a class="cta bpd-go" href="pay.html?c=${encodeURIComponent(d.ref)}">Payer avec Bang Pay</a>
 <button class="oh-clr" id="okHome" style="margin-top:6px">Continuer mes achats</button></div>`;$('#okHome').onclick=()=>go('home')}
 const _rc=renderCart;renderCart=function(){if(st.done)return renderDone();if(st.chk&&st.cart.length)return renderCheckout();st.chk=false;_rc()};
@@ -1096,8 +1097,9 @@ function applyPromos(list){if(!list)return false;const today=new Date().toISOStr
 const SBP=p=>p?SB_URL+'/storage/v1/object/public/product-images/'+p:'';
 const CPAL=['#8e5bd0','#16a5a5','#e5383b','#1f6feb','#d4af37','#e91e8c','#c0562f','#2e9e5b'];
 function applyCats(cats,subs){for(let i=CATS.length-1;i>=0;i--)if(CATS[i].dyn)CATS.splice(i,1);
+ window._HID=new Set(cats.filter(c=>c.hidden).map(c=>c.id));CATS.forEach(b=>{if(b.dyn)return;if(b.n0===undefined){b.n0=b.n;b.img0=b.img}b.n=b.n0;b.img=b.img0;b.hid=false;const o=cats.find(c=>c.id===b.id);if(o){b.n=o.name||b.n0;if(o.photo)b.img=SBP(o.photo);b.hid=!!o.hidden}});
  const at=Math.max(0,CATS.findIndex(c=>c.id==='promos'));let k=0;
- cats.forEach(c=>{if(CATS.some(x=>x.id===c.id))return;
+ cats.forEach(c=>{if(CATS.some(x=>x.id===c.id)||c.hidden)return;
   let h=0;for(const ch of c.name)h=(h*31+ch.charCodeAt(0))>>>0;
   CATS.splice(at+k++,0,{id:c.id,n:c.name,t:'tote',c:CPAL[h%CPAL.length],img:SBP(c.photo),dyn:true,subs:subs.filter(s=>s.category===c.id).map(s=>[s.slug,s.name,SBP(s.photo)])})})}
 const hexFor=c=>{if(COLORS[c])return COLORS[c];let h=0;for(const ch of c)h=(h*31+ch.charCodeAt(0))>>>0;const hx='#'+[0,1,2].map(k=>(70+((h>>(k*8))&0x7f)).toString(16).padStart(2,'0')).join('');COLORS[c]=hx;HEXN[hx]=c;return hx};
@@ -1118,7 +1120,7 @@ async function syncCatalog(){
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock),product_images(color,path,is_main)').order('id'));
   if(error)({data,error}=await sb.from('products').select('id,name,category,subcategory,price,moq,variants(color,size,stock)').order('id'));
   if(error||!data||!data.length)return; /* base vide ou injoignable : on garde l'affichage actuel */
-  let cats=[],subs=[];try{const a1=await sb.from('categories').select('id,name,photo,position').order('position').order('created_at'),b1=await sb.from('subcategories').select('category,slug,name,photo').order('id');if(!a1.error&&a1.data)cats=a1.data;if(!b1.error&&b1.data)subs=b1.data}catch(e){}
+  let cats=[],subs=[];try{const a1=await sb.from('categories').select('*').order('position').order('created_at'),b1=await sb.from('subcategories').select('category,slug,name,photo').order('id');if(!a1.error&&a1.data)cats=a1.data;if(!b1.error&&b1.data)subs=b1.data}catch(e){}
   let sets=null;try{const s1=await sb.from('shop_settings').select('*').eq('id',1).maybeSingle();if(!s1.error&&s1.data)sets=s1.data}catch(e){}
   let promos=null;try{const p1=await sb.from('promos').select('code,rate,min_qty,image,ends_at').eq('active',true).order('created_at');if(!p1.error&&p1.data)promos=p1.data}catch(e){}
   const first=!window.LIVE,sig=JSON.stringify([data,cats,subs,promos,sets]);
@@ -1127,6 +1129,8 @@ async function syncCatalog(){
   const catSig=JSON.stringify([cats,subs]),catChanged=catSig!==window._catSig;window._catSig=catSig;applyCats(cats,subs);const pch=applyPromos(promos);const sch=applySets(sets);
   const curBefore=sigOf(st.cur),totBefore=st.cart.length?ckTotal():0,keep=[],pb={};st.cart.forEach(x=>{const q=P.find(z=>z.id===x.id);if(q&&!(q.id in pb))pb[q.id]=unitCart(q)});
   for(const r of data){
+   if('product_images' in r&&!(r.product_images||[]).length)continue;
+   if(window._HID&&window._HID.has(r.category))continue;
    let p=REG.get(r.name);
    const vs=r.variants||[],cat=knownCat(r.category)?r.category:'accessoires';
    if(!p){p={id:NEXTID++,dyn:true,t:GEN_T[cat]||'glasses',n:r.name,rate:'4.8',rev:0};REG.set(r.name,p)}
