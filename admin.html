@@ -729,11 +729,12 @@ function paintCodes(l){
 const tierTxt=p=>p.tmin==null&&p.toff==null?'Règle du site':(+p.toff>0?`Dès ${p.tmin} pcs : −${fmt(p.toff)}/pc`:'Aucun');
 function paintDisc(l){
  if(!S.pricingOk){l.innerHTML=noSql();return}
- S.pc=S.pc||'Toutes';const cats=['Toutes',...allCats()],list=S.products.filter(p=>S.pc==='Toutes'||p.cat===S.pc),on=S.products.filter(p=>p.pct>0).length;
+ S.pc=S.pc||'Toutes';const cats=['Toutes',...allCats()],noimg=S.products.filter(p=>!(p.images||[]).length),list=S.products.filter(p=>(S.pc==='Toutes'||p.cat===S.pc)&&(S.pni||(p.images||[]).length)),on=S.products.filter(p=>p.pct>0&&(p.images||[]).length).length;
  l.innerHTML=`<div class="hlp"><b>Comment ça marche :</b> tapez un pourcentage à côté d'un produit. Le client voit l'ancien prix barré, un badge rouge « −X% » et paie le nouveau prix. Mettez <b>0</b> pour retirer la réduction. <b>${on}</b> produit${on>1?'s':''} en promotion actuellement.</div>
  <div class="card pbulk"><b>Nouvelle réduction</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Choisissez les produits, le pourcentage, et créez au besoin une étiquette pour l'annoncer.</span><button class="btn pri sm" data-act="discnew">Ajouter une réduction</button></div></div>
  <div class="card pbulk"><b>Étiquette d'accueil</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Annoncez vos réductions avec une étiquette sur l'accueil.</span><button class="btn sm" data-act="tagfrom" data-k="disc">Créer l'étiquette</button></div></div>
  <div class="card pbulk"><b>Appliquer à toute une catégorie</b><div class="prow"><select id="pbc">${allCats().map(c=>`<option>${esc(c)}</option>`).join('')}</select><label class="pin"><input id="pbp" type="number" step="any" placeholder="0"><span>%</span></label><button class="btn pri sm" data-act="pbapply">Appliquer</button></div></div>
+ ${noimg.length?`<div class="cpw" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>📷 <b>${noimg.length}</b> produit${noimg.length>1?'s':''} sans photo ${noimg.length>1?'sont masqués':'est masqué'} du site${S.pni?'':' et de cette liste'}.</span><button class="btn sm" data-act="pnoimg">${S.pni?'Cacher ces produits':'Les afficher'}</button></div>`:''}
  <div class="chips" id="pdc">${cats.map(c=>`<button class="chip ${S.pc===c?'on':''}" data-act="pdcat" data-c="${esc(c)}">${esc(c)}</button>`).join('')}</div>
  <div class="pdl">${list.length?list.map(p=>`<div class="pdr" data-r="${p.id}"><div class="pdth">${photo(p)}</div><div class="pdi"><b>${esc(p.name)}</b><small>${esc(p.cat)} · Prix normal <b>${fmt(p.price)}</b> · ${tierTxt(p)}</small></div><div class="pdv"><label class="pin"><input type="number" step="any" value="${p.pct||0}" data-pdisc="${p.id}" aria-label="Réduction en pourcentage"><span>%</span></label><button type="button" class="btn sm" data-act="tagfrom" data-k="prod" data-id="${p.id}">Étiquette</button><div class="pdn ${p.pct>0?'on':''}" id="pn${p.id}">${p.pct>0?'Client paie '+fmt(netP(p.price,p.pct)):'Pas de réduction'}</div></div></div>`).join(''):'<div class="card empty"><b>Aucun produit</b></div>'}</div>`}
 function paintTier(l){
@@ -1191,6 +1192,7 @@ const A={
  scat:d=>{S.sc=d.c;paintStock()},
  ptab:d=>{S.pt=d.t;render()},
  pdcat:d=>{S.pc=d.c;paintPromos()},
+ pnoimg:()=>{S.pni=!S.pni;paintPromos()},
  pbapply:()=>{const c=$('#pbc').value,v=nz($('#pbp').value);if(!okPct(v,'sur « '+c+' »'))return;const n=S.products.filter(p=>p.cat===c).length;if(!n)return toast('Aucun produit dans cette catégorie');
   if(!confirm(v?`Appliquer −${v}% aux ${n} produit(s) de « ${c} » ?`:`Retirer les réductions des ${n} produit(s) de « ${c} » ?`))return;
   run(async()=>must(await sb.from('products').update({discount_pct:v}).eq('category',CAT_ID[c]||c)),v?`−${v}% appliqué à « ${c} »`:'Réductions retirées')},
