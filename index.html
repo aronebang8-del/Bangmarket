@@ -1060,7 +1060,7 @@ const OST={nouvelle:['⏳ En attente de validation','w'],contacte:['⏳ En atten
 const payBtn=o=>{const r=encodeURIComponent(o.r),h='<a class="oh-wa oh-pay oh-pb" data-r="'+esc(o.r)+'" href="pay.html?c='+r+'"';
  if(o.s==='payee'||o.s==='facturee'||o.s==='annulee')return '<span class="oh-pb" data-r="'+esc(o.r)+'"></span>';
  if(o.ps==='attente')return h+' style="opacity:.85">⏳ Attente de validation du paiement</a>';
- if(o.s==='confirmee')return h+'>🔑 Valider mon code paiement</a>';
+ if(o.s==='confirmee')return h+'>🔑 Générer mon code paiement</a>';
  if(o.cl)return h+' style="opacity:.85">⏳ En attente de confirmation</a>';
  return h+'>💳 Payer avec Bang Pay</a>'};
 const ostHtml=o=>{const t=ostSt(o);return '<i class="oh-s '+t[1]+'" data-r="'+esc(o.r)+'">'+t[0]+'</i>'};

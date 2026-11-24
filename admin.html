@@ -1101,7 +1101,7 @@ const A={
  paycode:async d=>{const o=order(d.id);if(o.status!=='confirmee')return toast('Validez d’abord la commande, puis relancez le client avec son code.');let c=o.pcode;
   if(!c){const rp=await sb.rpc('next_pay_code',{p_order:o.dbId});S.codes=undefined;if(!rp.error&&rp.data){c=rp.data;o.pcode=c}else return toast('Code non généré : '+((rp.error&&rp.error.message)||'exécutez bangmarket_parcours.sql'))}
   const pr=o.client.split(' ')[0],base=location.href.replace(/[^/]*$/,''),
-  msg=`Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅ (${fmt(total(o))}).\n\nVoici votre *code paiement* :\n🔑 *${c}*\n\nPour payer via Bang Pay, touchez ce lien (votre code est déjà rempli) :\n👉 ${base}pay.html?c=${encodeURIComponent(o.id)}&k=${encodeURIComponent(c)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance ! 🙏`;
+  msg=`Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅ (${fmt(total(o))}).\n\nVous pouvez *générer votre code paiement* directement sur le site (bouton « Générer mon code paiement ») ou utiliser celui-ci :\n🔑 *${c}*\n\nPour payer via Bang Pay, touchez ce lien (votre code est déjà rempli) :\n👉 ${base}pay.html?c=${encodeURIComponent(o.id)}&k=${encodeURIComponent(c)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance ! 🙏`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
   sb.from('orders').update({pay_code_sent_at:new Date().toISOString()}).eq('id',o.dbId).then(()=>{});toast('Message prêt dans WhatsApp')},
  deliver:d=>{const o=order(d.id);if(o.deliv)return;
