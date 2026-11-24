@@ -174,6 +174,7 @@ const IC={
  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
  info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/></svg>',
  ctl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 8a6 6 0 0 1 0 8M12 5.5a10 10 0 0 1 0 13M16 3a14 14 0 0 1 0 18"/></svg>'};
+const wget=r=>{try{return localStorage.getItem('bpw_'+r)||''}catch(e){return ''}};let LOADED=Date.now();const fmtT=s=>s>=3600?Math.floor(s/3600)+' h '+String(Math.floor(s%3600/60)).padStart(2,'0')+' min':Math.max(0,Math.floor(s/60))+' min';
 let REF=new URLSearchParams(location.search).get('c')||'',INFO=null,SEL='orange',POLL=null,PROOF=null,PAGE=1,FV={c:'',p:''};
 const keep=()=>{const c=$('#c'),p=$('#p');if(c)FV.c=c.value;if(p)FV.p=p.value};
 const hd=(t,s)=>`<div><h1>${t}</h1>${s?`<p class="sub">${s}</p>`:''}</div>`;
@@ -187,6 +188,9 @@ window.addEventListener('popstate',()=>{keep();$('#app').classList.add('fx');PAG
 addEventListener('scroll',()=>$('#bar').classList.toggle('sc',scrollY>6),{passive:true});
 const sumRows=i=>{const it=i.items||[];return it.map(x=>`<div class="rw"><span>${esc(x.n)}${x.c?' · '+esc(x.c):''}${x.s?' · '+esc(x.s):''}</span><b>×${x.q}</b></div>`).join('')};
 
+function askWa(err){clearInterval(POLL);back(false);dock('');
+ $('#app').innerHTML=`${hd('Vérification','Pour protéger votre commande '+esc(REF)+', entrez le numéro WhatsApp utilisé lors de la commande.')}<form id="fw" class="col"><label class="fld"><span>Numéro WhatsApp</span><input id="wn" type="tel" inputmode="tel" class="code" autocomplete="tel" placeholder="0826 000 000" required minlength="8"></label>${err?`<div class="err">${esc(err)}</div>`:''}<button class="btn or">Continuer ${IC.arr}</button></form>`;
+ $('#fw').onsubmit=e=>{e.preventDefault();try{localStorage.setItem('bpw_'+REF,$('#wn').value.trim())}catch(x){}load()}}
 function askRef(err){clearInterval(POLL);back(false);dock('');
  $('#app').innerHTML=`${hd('Payer ma commande','Entrez la référence reçue après votre commande.')}<form id="f" class="col"><label class="fld"><span>Référence de commande</span><input id="r" type="text" class="code" autocomplete="off" placeholder="CMD-0000" value="${esc(REF)}" required></label>${err?`<div class="err">${esc(err)}</div>`:''}<button class="btn or">Continuer ${IC.arr}</button></form>`;
  $('#f').onsubmit=e=>{e.preventDefault();REF=$('#r').value.trim().toUpperCase();load()}}
@@ -194,18 +198,18 @@ function askRef(err){clearInterval(POLL);back(false);dock('');
 async function load(quiet){
  if(!REF)return askRef();
  if(!quiet){back(false);dock('');$('#app').innerHTML='<div class="stt"><div class="ring w">'+IC.w+'</div><b>Chargement…</b></div>'}
- const r=await sb.rpc('order_pay_info',{p_order:REF});
- if(r.error)return askRef('Connexion impossible. Vérifiez internet et réessayez.');
- if(!r.data||!r.data.length)return askRef('Commande introuvable. Vérifiez la référence.');
- if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];JUST=false;try{CODE=localStorage.getItem('bpc_'+INFO.number)||''}catch(e){}
-  if(!CODE&&INFO.status==='confirmee'){const K=new URLSearchParams(location.search).get('k');if(K){try{const u=await sb.rpc('pay_unlock',{p_order:INFO.number,p_code:K});if(u.data){CODE=K.trim();try{localStorage.setItem('bpc_'+INFO.number,CODE)}catch(x){}}}catch(e){}}}PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
+ const r=await sb.rpc('order_pay_info',{p_order:REF,p_wa:wget(REF)});
+ if(r.error)return askRef(/Trop d/i.test(r.error.message||'')?r.error.message:'Connexion impossible. Vérifiez internet et réessayez.');
+ if(!r.data||!r.data.length)return askWa(wget(REF)?'Ce numéro ne correspond pas à cette commande (ou la commande est introuvable).':'');
+ if(!quiet)$('#app').classList.add('fx');INFO=r.data[0];LOADED=Date.now();JUST=false;try{CODE=localStorage.getItem('bpc_'+INFO.number)||''}catch(e){}
+  if(!CODE&&INFO.status==='confirmee'){const K=new URLSearchParams(location.search).get('k');if(K){try{const u=await sb.rpc('pay_unlock',{p_order:INFO.number,p_code:K,p_wa:wget(INFO.number)});if(u.data&&u.data.ok){CODE=K.trim();try{localStorage.setItem('bpc_'+INFO.number,CODE)}catch(x){}}}catch(e){}}}PAGE=location.hash==='#confirmer'?2:1;history.replaceState(null,'','?c='+encodeURIComponent(INFO.number)+location.hash);paint()}
 
 function card(i){const n=i.number.replace(/^([A-Za-z]+)-?(\d+)$/,'$1 $2');
  return `<div class="bc"><div class="t"><span>BANG PAY</span>${IC.ctl}</div><div class="chip"></div><div class="n">${esc(n)}</div><div class="b"><div><small>Titulaire</small><b>${esc((i.prenom||'Client').toUpperCase())}</b></div><div class="am"><small>À payer</small><b>${money(i.total)}</b></div></div></div>`}
 
 function statusPage(){const i=INFO,paid=i.status==='payee'||i.status==='facturee'||i.pay_status==='valide';back(false);
  const rows=`<div class="pn"><div class="rw"><span>Commande</span><b>${esc(i.number)}</b></div>${sumRows(i)}<div class="rw tt"><span>Total</span><b>${money(i.total)}</b></div></div>`;
- if(i.status==='annulee'){dock('');$('#app').innerHTML=`<div class="stt"><div class="ring r">${IC.x}</div><h2>Commande annulée</h2><p class="sub">Cette commande ne peut plus être payée.</p></div><a class="btn gh" href="https://wa.me/${WA}">Écrire sur WhatsApp</a>`;return true}
+ if(i.status==='annulee'){dock('');$('#app').innerHTML=`<div class="stt"><div class="ring r">${IC.x}</div><h2>Commande annulée</h2><p class="sub">${/Délai/i.test(i.reason||'')?'Le délai de <b>2 h</b> pour payer est dépassé : la commande a été annulée et les produits ne sont plus réservés pour vous.':/Code/i.test(i.reason||'')?'Le code paiement a été saisi de travers <b>3 fois</b> : par sécurité, la commande est annulée.':'Cette commande ne peut plus être payée.'} Vous pouvez refaire votre commande.</p></div><div class="col"><a class="btn or" href="${SITE}">🛍️ Refaire une commande</a><a class="btn gh" href="https://wa.me/${WA}">Écrire sur WhatsApp</a></div>`;return true}
  if(paid){dock('');$('#app').innerHTML=`<div class="stt"><div class="ring o">${IC.ok}</div><h2>Paiement confirmé</h2><p class="sub">Merci ${esc(i.prenom||'')} ! Votre commande est validée et sera préparée.</p></div>${rows}<div class="col"><a class="btn or" href="${SITE}">Continuer mes achats</a><a class="btn gh" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent('Je commande en gros sur Bang Market 🛍️ et je paie avec Bang Pay : '+SITE)}">Partager Bang Market</a></div><div class="cats">${['Sacs','Montres','Chaussures','Beauté','Cheveux','Robes','Accessoires'].map(c=>`<a href="${SITE}">${c}</a>`).join('')}</div>`;return true}
  if(i.pay_status==='attente'){dock('');POLL=setInterval(()=>load(true),12000);
   $('#app').innerHTML=`<div class="stt"><div class="ring w">${IC.w}</div><h2>Vérification en cours</h2><p class="sub">Cette page se met à jour toute seule. Vous pouvez la fermer et la rouvrir avec votre référence.</p></div>
@@ -219,40 +223,44 @@ function statusPage(){const i=INFO,paid=i.status==='payee'||i.status==='facturee
 let CODE='';try{CODE=localStorage.getItem('bpc_'+REF)||''}catch(e){}
 const claimMsg=i=>'Salut Bang Market 👋\nJe suis la commande *'+i.number+'*'+(i.prenom?' ('+i.prenom+')':'')+' ('+money(i.total)+').\nJe souhaite avoir mon code paiement pour valider ma commande.';
 let JUST=false;const wt=s=>Math.floor(s/3600)+' h '+String(Math.ceil((s%3600)/60)).padStart(2,'0')+' min';
+const expBox=()=>INFO&&INFO.exp_secs!=null?`<div class="bx wt"><span>⏳ <b>Payez dans les 2 h suivant la confirmation</b> : il vous reste <b class="expt">${fmtT(Math.max(0,INFO.exp_secs-Math.floor((Date.now()-LOADED)/1000)))}</b>. Passé ce délai, la commande est annulée et les produits ne sont plus réservés pour vous.</span></div>`:'';
+setInterval(()=>{if(!INFO||INFO.exp_secs==null)return;const s=INFO.exp_secs-Math.floor((Date.now()-LOADED)/1000);document.querySelectorAll('.expt').forEach(e=>e.textContent=fmtT(Math.max(0,s)));if(s<=0&&!window._ex){window._ex=1;load(true)}},20000);
 function logoBlock(id){return `<div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#${id})"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div>`}
 async function genCode(btn,errBox){const i=INFO;btn.disabled=true;const t0=btn.innerHTML;btn.textContent='Génération…';
- const r=await sb.rpc('pay_generate',{p_order:i.number});
+ const r=await sb.rpc('pay_generate',{p_order:i.number,p_wa:wget(i.number)});
  if(r.error||!r.data){const m=(r.error&&r.error.message)||'';btn.disabled=false;btn.innerHTML=t0;
   if(/confirm/i.test(m)){INFO.status='nouvelle';errBox.textContent='Votre commande n’est pas encore confirmée par Bang Market. Prévenez-nous sur WhatsApp : dès la confirmation, le bouton fonctionnera.'}
   else errBox.textContent=/introuvable/i.test(m)?'Commande introuvable.':'Connexion impossible, réessayez.';
   errBox.hidden=false;return false}
  CODE=String(r.data).trim();try{localStorage.setItem('bpc_'+i.number,CODE)}catch(x){}INFO.status='confirmee';return true}
 function gate(err){const i=INFO;back(false);dock('');
- $('#app').innerHTML=`<div class="gate">${logoBlock('bpgp')}<h1>Votre commande est confirmée ✅</h1><p class="sub">Générez votre code paiement personnel : il se crée ici, directement, sans attendre de message. Il sert à sécuriser le règlement de la commande <b>${esc(i.number)}</b>.</p><div class="amt">Montant : <b>${money(i.total)}</b></div>
+ $('#app').innerHTML=`<div class="gate">${logoBlock('bpgp')}<h1>Votre commande est confirmée ✅</h1><p class="sub">Générez votre code paiement personnel : il se crée ici, directement, sans attendre de message. Il sert à sécuriser le règlement de la commande <b>${esc(i.number)}</b>.</p><div class="amt">Montant : <b>${money(i.total)}</b></div>${expBox()}
  <div class="col"><button class="btn or" id="gg">${IC.lock}Générer mon code paiement</button><div class="err" id="ge" ${err?'':'hidden'}>${esc(err||'')}</div></div>
  <details class="bx" style="margin-top:14px"><summary style="cursor:pointer"><b>J’ai déjà reçu un code</b></summary><form id="gf" class="col" style="margin-top:10px"><input id="gc" class="code codein" autocomplete="off" autocapitalize="characters" placeholder="BP-XXXX-XXXX" minlength="4" maxlength="20"><button class="btn gh" id="gb">Valider ce code</button></form></details></div>`;
  $('#gg').onclick=async()=>{if(await genCode($('#gg'),$('#ge')))reveal()};
  $('#gf').onsubmit=async e=>{e.preventDefault();const c=$('#gc').value,bt=$('#gb');if(!c.trim())return;bt.disabled=true;bt.textContent='Vérification…';
-  const r=await sb.rpc('pay_unlock',{p_order:i.number,p_code:c});
+  const r=await sb.rpc('pay_unlock',{p_order:i.number,p_code:c,p_wa:wget(i.number)});
   if(r.error)return gate('Connexion impossible, réessayez.');
-  if(!r.data)return gate('Code incorrect. Utilisez plutôt « Générer mon code paiement ».');
+  const u=r.data||{};if(u.locked){INFO.status='annulee';INFO.reason='Code paiement erroné 3 fois';return paint()}
+  if(u.wa===false)return askWa('Numéro WhatsApp incorrect.');
+  if(!u.ok)return gate('Code incorrect. Il vous reste '+(u.left||0)+' essai'+((u.left||0)>1?'s':'')+'. Après 3 erreurs, la commande est annulée : utilisez plutôt « Générer mon code paiement ».');
   CODE=c.trim();try{localStorage.setItem('bpc_'+i.number,CODE)}catch(x){}paint()}}
 function reveal(){const i=INFO;clearInterval(POLL);back(false);dock('');
- $('#app').innerHTML=`<div class="gate">${logoBlock('bpgr')}<h1>Code généré ✨</h1><p class="sub">Votre code paiement est enregistré automatiquement : vous n’avez rien à recopier.</p><div class="bx" style="text-align:center"><small>Code paiement · ${esc(i.number)}</small><div class="code" style="font-size:26px;letter-spacing:2px;margin:6px 0;font-weight:800">${esc(CODE)}</div></div><div class="col"><button class="btn or" id="gn">Confirmer et continuer vers le paiement</button></div></div>`;
+ $('#app').innerHTML=`<div class="gate">${logoBlock('bpgr')}<h1>Code généré ✨</h1><p class="sub">Votre code paiement est enregistré automatiquement : vous n’avez rien à recopier.</p><div class="bx" style="text-align:center"><small>Code paiement · ${esc(i.number)}</small><div class="code" style="font-size:26px;letter-spacing:2px;margin:6px 0;font-weight:800">${esc(CODE)}</div></div>${expBox()}<div class="col"><button class="btn or" id="gn">Confirmer et continuer vers le paiement</button></div></div>`;
  $('#gn').onclick=()=>paint()}
 const notifMsg=i=>'Salut Bang Market 👋\nJe viens de passer la commande *'+i.number+'*'+(i.prenom?' ('+i.prenom+')':'')+' ('+money(i.total)+').\nMerci de la confirmer afin que je reçoive mon code paiement et que je règle via Bang Pay.';
 function waitC(){const i=INFO,W=i.claimed?(i.wait_secs||0):0;back(false);dock('');
- $('#app').innerHTML=`<div class="gate"><div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bpgw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#bpgw)"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div><h1>Commande en attente de confirmation</h1><p class="sub">Votre commande <b>${esc(i.number)}</b> (${money(i.total)}) est bien enregistrée. Dès que nous l’aurons confirmée, votre <b>code paiement</b> pourra être généré ici même et vous pourrez régler via Bang Pay.</p>
+ $('#app').innerHTML=`<div class="gate"><div class="bpl"><div class="bplg"><i></i><i></i><svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="bpgw" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a4d"/><stop offset="1" stop-color="#ff5a00"/></linearGradient></defs><rect width="64" height="64" rx="18" fill="url(#bpgw)"/><path class="bpb" d="M23 14v36M23 14h12a9 9 0 010 17H23M23 31h14a9.5 9.5 0 010 19H23" fill="none" stroke="#fff" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="wm">Bang <b>Pay</b></div><span class="sc">Paiement sécurisé</span></div><h1>Commande en attente de confirmation</h1><p class="sub">Votre commande <b>${esc(i.number)}</b> (${money(i.total)}) est bien enregistrée. Dès que nous l’aurons confirmée, votre <b>code paiement</b> pourra être généré ici même et vous pourrez régler via Bang Pay. <b>Une fois confirmée, vous aurez 2 h pour payer</b> : passé ce délai, la commande est annulée et les produits sont libérés.</p>
  ${W>0?`<div class="bx wt"><span>${JUST?'<b>✅ Merci, nous sommes prévenus.</b> Nous confirmons votre commande au plus vite.':'<b>⏳ Votre commande est en cours d’étude.</b> Inutile de nous écrire à nouveau avant quelques heures.'}<br><small>Vous pouvez continuer vos achats en attendant.</small></span></div>`:`<a class="btn wa" id="clm" target="_blank" rel="noopener" href="https://wa.me/${WA}?text=${encodeURIComponent(notifMsg(i))}">💬 Prévenir Bang Market sur WhatsApp</a><div class="bx"><span>Touchez le bouton : le message est déjà écrit, il suffit de l’envoyer. Vous pourrez ensuite continuer vos achats.</span></div>`}
  <button class="btn gh" id="gw">🔑 Générer mon code paiement</button><div class="err" id="gwe" hidden></div>
  <a class="btn or" href="${SITE}">🛍️ Continuer mes achats</a>
  <div class="bx"><span>Retrouvez l’avancement dans <b>« Mes commandes »</b> : le bouton changera dès que votre commande sera confirmée.</span></div></div>`;
  $('#gw').onclick=async()=>{if(await genCode($('#gw'),$('#gwe')))reveal()};
- const cl=$('#clm');if(cl)cl.onclick=()=>{sb.rpc('claim_pay_code',{p_order:i.number}).then(()=>{});setTimeout(()=>{INFO.claimed=true;INFO.wait_secs=14400;JUST=true;waitC()},600)};
+ const cl=$('#clm');if(cl)cl.onclick=()=>{sb.rpc('claim_pay_code',{p_order:i.number,p_wa:wget(i.number)}).then(()=>{});setTimeout(()=>{INFO.claimed=true;INFO.wait_secs=14400;JUST=true;waitC()},600)};
  POLL=setInterval(()=>load(true),20000)}
 function paint(){clearInterval(POLL);if(statusPage())return;const i=INFO;if(i.status!=='confirmee')return waitC();if(!CODE)return gate();
  const warn=i.pay_status==='refuse'?'Votre dernier paiement a été refusé'+(i.note?' : '+i.note:'')+'. Vous pouvez réessayer.':'';
- const ok=i.status==='confirmee'?'<div class="okb">✅ Votre commande est validée. Il ne reste que le paiement.</div>':'';
+ const ok=i.status==='confirmee'?'<div class="okb">✅ Votre commande est validée. Il ne reste que le paiement.</div>'+expBox():'';
  if(PAGE===2)return page2(warn,'',ok);
  const m=METH[SEL];back(false);
  $('#app').innerHTML=`${hero(1,i)}<div class="sheet">${warn?`<div class="err">${esc(warn)}</div>`:''}

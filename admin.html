@@ -478,6 +478,9 @@ const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',
  products:[],orders:[],invoices:[],pays:[],pf:'apayer',sales:[],moves:[],achats:[],depenses:[]};
 const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Validée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
+const expLeft=o=>{if(o.status!=='confirmee'||!o.conf||(S.pays||[]).some(p=>p.orderId===o.id&&['attente','valide'].includes(p.status)))return null;return o.conf.getTime()+7200000-Date.now()};
+const expTxt=ms=>ms>=3600000?Math.floor(ms/3600000)+' h '+String(Math.floor(ms%3600000/60000)).padStart(2,'0')+' min':Math.max(0,Math.ceil(ms/60000))+' min';
+const expTag=o=>{const l=expLeft(o);if(l!=null)return l<=0?' · <b style="color:#c0392b">⏰ délai de 2 h dépassé</b>':l<1800000?' · <b style="color:#c0392b">⏰ reste '+expTxt(l)+'</b>':' · ⏳ reste '+expTxt(l);return o.status==='annulee'&&o.reason?' · <b style="color:#c0392b">annulée auto</b>':''};
 const pill=s=>`<span class="pill s-${ST[s][1]}">${ST[s][0]}</span>`;
 const prod=id=>S.products.find(p=>p.id===id)||(S.allProducts||[]).find(p=>p.id===id);
 const visProducts=()=>{const H=new Set((S.catRows||[]).filter(c=>c.hidden).flatMap(c=>[c.name,CAT_LBL[c.id]]).filter(Boolean));return (S.allProducts||[]).filter(p=>S.pni||((p.images||[]).length&&!H.has(p.cat)))};
@@ -509,6 +512,7 @@ const sameDay=(a,b)=>a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMont
 async function loadAll(){
  const [pr,va,or,oi,iv,pu,ex]=await Promise.all(['products','variants','orders','order_items','invoices','purchases','expenses'].map(fetchAll));
  try{await sb.rpc('sync_stock_entries')}catch(e){}
+ try{const ex=await sb.rpc('expire_orders');if(ex&&ex.data>0)S.expN=(S.expN||0)+ex.data}catch(e){}
  const mv=must(await sb.from('stock_moves').select('*').order('id',{ascending:false}).limit(5000));
  try{const [ca,sa]=await Promise.all([sb.from('categories').select('*').order('position').order('created_at'),sb.from('subcategories').select('*').order('id')]);
   S.catRows=ca.error?[]:ca.data;S.subRows=sa.error?[]:sa.data;
@@ -526,7 +530,7 @@ async function loadAll(){
  pim.forEach(i=>{const p=byP.get(i.product_id);if(p)p.images.push({id:i.id,key:'i'+i.id,color:i.color||'',path:i.path,main:i.is_main,url:imgUrl(i.path)})});
  S.allProducts=S.products;S.products=visProducts();
  const byO=new Map();
- S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',promo:o.promo_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
+ S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',promo:o.promo_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,conf:o.confirmed_at?new Date(o.confirmed_at):null,reason:o.cancel_reason||'',items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
  oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price,cp:i.cost_price==null?null:+i.cost_price,lp:i.list_price==null?null:+i.list_price,lbl:i.promo_label||''})});
  try{const pr=await sb.from('payments').select('*').order('id',{ascending:false}).limit(500);S.payErr=pr.error?pr.error.message:'';S.pays=pr.error?[]:pr.data.map(p=>({id:p.id,orderId:byO.get(p.order_id)?byO.get(p.order_id).id:null,method:p.method,code:p.tx_code,phone:p.payer_phone||'',amount:+p.amount,status:p.status,note:p.note||'',proof:p.proof_path||'',d:new Date(p.created_at)}))}catch(e){S.pays=[]}
  S.invoices=iv.map(f=>({dbId:f.id,no:f.no,code:f.code,orderId:byO.get(f.order_id)?byO.get(f.order_id).id:null,d:new Date(f.created_at),status:f.status,checks:f.checks}));
@@ -537,6 +541,8 @@ async function loadAll(){
  S.sales=days.map(d=>S.orders.filter(o=>(o.status==='payee'||o.status==='facturee')&&o.pay&&sameDay(o.pay.date,d)).reduce((a,o)=>a+total(o),0));
 }
 let BUSY=false;
+setInterval(async()=>{if(!LOGGED||!sb)return;try{const x=await sb.rpc('expire_orders');if(x&&x.data>0){toast('⏰ '+x.data+' commande'+(x.data>1?'s':'')+' annulée'+(x.data>1?'s':'')+' automatiquement : 2 h dépassées sans paiement.');soft()}else if(S.view==='orders')refresh()}catch(e){}},300000);
+setInterval(()=>{if(S.expN&&LOGGED){toast('⏰ '+S.expN+' commande'+(S.expN>1?'s':'')+' annulée'+(S.expN>1?'s':'')+' automatiquement : 2 h dépassées sans paiement. Les produits sont libérés.');S.expN=0}},2500);
 async function run(fn,msg){if(BUSY)return false;BUSY=true;try{await fn();await loadAll();refresh();if(msg)toast(msg);return true}catch(e){toast(errMsg(e));return false}finally{BUSY=false}}
 function refresh(){const y=window.scrollY;chrome();$('#main').innerHTML=VIEWS[S.view]();AFTER[S.view]&&AFTER[S.view]();window.scrollTo(0,y)}
 
@@ -610,7 +616,7 @@ function paintOrders(){
  const fn=FILT.find(f=>f[0]===S.f)[2],q=S.q.trim().toLowerCase();
  const rows=S.orders.filter(fn).filter(o=>!q||(o.id+o.client+o.wa).toLowerCase().includes(q)).sort((a,b)=>b.id.localeCompare(a.id));
  S.orows=rows;osbPaint(rows);
- $('#olist').innerHTML=rows.length?rows.map(o=>S.osel?`<label class="orow ${S.osl.has(o.id)?'on':''}" style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" data-osl="${o.id}" ${S.osl.has(o.id)?'checked':''}><span><span class="o1"><b>${o.id}</b><span>${fdate(o.d)}</span></span><span class="o2" style="display:block">${esc(o.client)}</span><span class="o3"><span>${count(o)} articles · ${fmt(total(o))}</span>${pill(o.status)}</span></span></label>`:`<button class="orow ${S.sel===o.id?'on':''}" data-act="open" data-id="${o.id}"><div class="o1"><b>${o.id}</b><span>${fdate(o.d)}</span></div><div class="o2">${esc(o.client)}</div><div class="o3"><span>${count(o)} articles · ${fmt(total(o))}${o.claim&&['nouvelle','contacte'].includes(o.status)?' · 🔔':''}</span>${pill(o.status)}</div></button>`).join(''):`<div class="empty card"><b>Aucune commande trouvée</b>Changez le filtre ou la recherche.</div>`;
+ $('#olist').innerHTML=rows.length?rows.map(o=>S.osel?`<label class="orow ${S.osl.has(o.id)?'on':''}" style="display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;cursor:pointer"><input type="checkbox" data-osl="${o.id}" ${S.osl.has(o.id)?'checked':''}><span><span class="o1"><b>${o.id}</b><span>${fdate(o.d)}</span></span><span class="o2" style="display:block">${esc(o.client)}</span><span class="o3"><span>${count(o)} articles · ${fmt(total(o))}</span>${pill(o.status)}</span></span></label>`:`<button class="orow ${S.sel===o.id?'on':''}" data-act="open" data-id="${o.id}"><div class="o1"><b>${o.id}</b><span>${fdate(o.d)}</span></div><div class="o2">${esc(o.client)}</div><div class="o3"><span>${count(o)} articles · ${fmt(total(o))}${o.claim&&['nouvelle','contacte'].includes(o.status)?' · 🔔':''}${expTag(o)}</span>${pill(o.status)}</div></button>`).join(''):`<div class="empty card"><b>Aucune commande trouvée</b>Changez le filtre ou la recherche.</div>`;
  $('#olay').classList.toggle('has',!!S.sel);
  const o=S.sel&&order(S.sel);
  $('#odet').innerHTML=o?detail(o):`<div class="card empty"><b>Choisissez une commande</b>Le détail et les actions s'affichent ici.</div>`;
@@ -619,7 +625,7 @@ function detail(o){
  const i=FLOW.indexOf(o.status),f=inv(o),canWa=o.status!=='annulee';
  const manageLabel={nouvelle:'Valider la commande, ajuster ou annuler',contacte:'Valider la commande, ajuster ou annuler',confirmee:'Commande validée · paiement à valider dans Bang Pay',payee:'Annuler possible, pensez au remboursement',facturee:'Commande facturée',annulee:'Commande annulée'}[o.status];
  return `<div class="card"><div class="dhead"><button class="back" data-act="back">${ic('back')}Commandes</button><h2>${o.id}</h2>${pill(o.status)}<span class="mut">Reçue le ${fdatel(o.d)}</span></div>
- ${o.status==='annulee'?`<div class="banner">Commande annulée. Le stock sorti a été remis en rayon.</div>`:`<div class="steps" aria-label="Avancement">${FLOW.map((s,k)=>`<div class="stp ${k<i?'d':k===i?'n':''}">${ST[s][0]}</div>`).join('')}</div>`}
+ ${(()=>{const l=expLeft(o);return l==null?'':`<div class="banner" style="background:${l<1800000?'#fde8e8':'#fff4e0'};color:${l<1800000?'#a12a1f':'#8a5200'}">${l<=0?'⏰ <b>Délai de 2 h dépassé</b> sans paiement : la commande va être annulée automatiquement et les produits libérés.':'⏳ Le client a <b>'+expTxt(l)+'</b> pour payer. Passé ce délai, la commande est annulée automatiquement et les produits sont libérés.'}</div>`})()}${o.status==='annulee'?`<div class="banner">Commande annulée${o.reason?' automatiquement : <b>'+esc(o.reason)+'</b>':''}. ${o.reason?'Les produits réservés ont été libérés.':'Le stock sorti a été remis en rayon.'}</div>`:`<div class="steps" aria-label="Avancement">${FLOW.map((s,k)=>`<div class="stp ${k<i?'d':k===i?'n':''}">${ST[s][0]}</div>`).join('')}</div>`}
  <div class="who"><div><b>${esc(o.client)}</b><span class="mut">WhatsApp ${esc(o.wa)}</span>${o.prov?`<span class="mut">${esc(o.prov)}${o.lieu?' · '+esc(o.lieu):''}</span>`:''}</div>${o.claim&&['nouvelle','contacte'].includes(o.status)?`<div><b style="color:#b45309">🔔 Client prévenu sur WhatsApp</b><span class="mut">le ${fdatel(o.claim)} · à valider</span></div>`:''}${o.pay?`<div><b>Paiement reçu</b><span class="mut">${esc(o.pay.mode)} · ${fdate(o.pay.date)}</span></div>`:''}</div>
  <table><thead><tr><th>Article</th><th class="r">Qté</th><th class="r">Prix</th><th class="r">Total</th></tr></thead><tbody>${o.items.map(it=>`<tr><td>${esc(iname(it))}</td><td class="r">${it.qty}</td><td class="r">${fmt(it.price)}</td><td class="r">${fmt(it.qty*it.price)}</td></tr>`).join('')}</tbody></table>
  <div class="tot"><span>Total</span><span>${fmt(total(o))}</span></div>
@@ -1118,7 +1124,7 @@ const A={
  paycode:async d=>{const o=order(d.id);if(o.status!=='confirmee')return toast('Validez d’abord la commande, puis relancez le client avec son code.');let c=o.pcode;
   if(!c){const rp=await sb.rpc('next_pay_code',{p_order:o.dbId});S.codes=undefined;if(!rp.error&&rp.data){c=rp.data;o.pcode=c}else return toast('Code non généré : '+((rp.error&&rp.error.message)||'exécutez bangmarket_parcours.sql'))}
   const pr=o.client.split(' ')[0],base=location.href.replace(/[^/]*$/,''),
-  msg=`Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅ (${fmt(total(o))}).\n\nVous pouvez *générer votre code paiement* directement sur le site (bouton « Générer mon code paiement ») ou utiliser celui-ci :\n🔑 *${c}*\n\nPour payer via Bang Pay, touchez ce lien (votre code est déjà rempli) :\n👉 ${base}pay.html?c=${encodeURIComponent(o.id)}&k=${encodeURIComponent(c)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance ! 🙏`;
+  msg=`Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅ (${fmt(total(o))}).\n\n⏳ Vous avez *2 h* pour payer : passé ce délai, la commande est annulée et les produits ne sont plus réservés.\n\nVous pouvez *générer votre code paiement* directement sur le site (bouton « Générer mon code paiement ») ou utiliser celui-ci :\n🔑 *${c}*\n\nPour payer via Bang Pay, touchez ce lien (votre code est déjà rempli) :\n👉 ${base}pay.html?c=${encodeURIComponent(o.id)}&k=${encodeURIComponent(c)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance ! 🙏`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
   sb.from('orders').update({pay_code_sent_at:new Date().toISOString()}).eq('id',o.dbId).then(()=>{});toast('Message prêt dans WhatsApp')},
  deliver:d=>{const o=order(d.id);if(o.deliv)return;
