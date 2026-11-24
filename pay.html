@@ -292,10 +292,10 @@ function page2(warn,err,ok){const i=INFO,m=METH[SEL];back(true);
   PROOF=null;FV={c:'',p:''};PAGE=1;history.replaceState(null,'','?c='+encodeURIComponent(i.number));load()}}
 
 async function shrink(file){const url=URL.createObjectURL(file);const img=await new Promise((ok,ko)=>{const x=new Image();x.onload=()=>ok(x);x.onerror=ko;x.src=url});
- let max=1000,q=.72,blob,ext='webp';
- for(let k=0;k<5;k++){const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+ let max=900,q=.68,blob,ext='webp';
+ for(let k=0;k<7;k++){const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   blob=await new Promise(r=>c.toBlob(r,'image/webp',q));if(!blob||blob.type!=='image/webp'){ext='jpg';blob=await new Promise(r=>c.toBlob(r,'image/jpeg',q))}
-  if(blob.size<=450*1024)break;max*=.8;q-=.08}
+  if(blob.size<=140*1024)break;max*=.85;q=Math.max(.4,q-.07)}
  URL.revokeObjectURL(url);return{blob,ext,url:URL.createObjectURL(blob)}}
 async function copy(b){const t=b.dataset.cp;try{await navigator.clipboard.writeText(t)}catch(e){const x=document.createElement('textarea');x.value=t;document.body.appendChild(x);x.select();try{document.execCommand('copy')}catch(_){}x.remove()}
  b.classList.add('dn');b.innerHTML=IC.ok;setTimeout(()=>{b.classList.remove('dn');b.innerHTML=IC.cp},1400)}
