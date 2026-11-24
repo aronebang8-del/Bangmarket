@@ -960,12 +960,12 @@ e.animate([{transform:'translate(-50%,-50%) scale(1)',opacity:1},{transform:`tra
 const w=$('#lfw'),t=$('#lft'),sc=$('#scroll');if(!w||!t||!sc)return;
 let gone=false,timer=0,lastY=0,idx=0,shown=null;
 try{gone=sessionStorage.getItem('bm_lfx')==='1'}catch(e){}
-window.TAGS=null; /* null = table absente : ancien comportement (1er code promo) */
+window.TP=id=>P.find(p=>p.dbId==id||p.id==id);window.TAGS=null; /* null = table absente : ancien comportement (1er code promo) */
 const key=g=>g.id||('p'+g.code);
 function list(){if(window.TAGS===null){const K=Object.keys(COUPONS)[0];return K?[{kind:'promo',code:K,icon:'mascotte',color:'orange',anim:'slide',secs:7,link:'offers'}]:[]}
- const td=new Date().toISOString().slice(0,10);return window.TAGS.filter(x=>(!x.ends_at||x.ends_at>=td)&&(!x.code||COUPONS[x.code])&&(x.link!=='product'||P.find(p=>p.id==x.product_id)))}
+ const td=new Date().toISOString().slice(0,10);return window.TAGS.filter(x=>(!x.ends_at||x.ends_at>=td)&&(!x.code||COUPONS[x.code])&&(x.link!=='product'||TP(x.product_id)))}
 function label(g){const c=g.code?COUPONS[g.code]:null,on=c&&st.coupon===g.code;
- w.querySelector('.mc').innerHTML=(g.icon==='photo'&&(()=>{const q=P.find(x=>x.id==g.product_id);return q&&q.imgs&&q.imgs[0]})())?`<img alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" src="${P.find(x=>x.id==g.product_id).imgs[0].url}">`:g.icon==='mascotte'?`<img alt="" src="${(c&&c.img)||LEFE_IMG}">`:`<span style="font-size:18px;line-height:1">${esc(g.icon||'🏷️')}</span>`;
+ w.querySelector('.mc').innerHTML=(g.icon==='photo'&&(()=>{const q=TP(g.product_id);return q&&q.imgs&&q.imgs[0]})())?`<img alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" src="${TP(g.product_id).imgs[0].url}">`:g.icon==='mascotte'?`<img alt="" src="${(c&&c.img)||LEFE_IMG}">`:`<span style="font-size:18px;line-height:1">${esc(g.icon||'🏷️')}</span>`;
  const L=g.label||g.code||'';$('#lfk').textContent=L;$('#lfp').textContent=c?'−'+pctS(c.rate)+'%':L.split(' ')[0].slice(0,9);
  $('#lfs').textContent=c?(on?(cpOk(c)?'Appliqué ✓':'Appliqué · '+Math.min(cartQty(),c.minQty)+'/'+c.minQty+' pcs'):'−'+pctS(c.rate)+'% · dès '+c.minQty+' pcs'):(g.sub||'');
  [...w.classList].forEach(k=>/^[ca]-/.test(k)&&w.classList.remove(k));w.classList.add('c-'+(g.color||'orange'),'a-'+(g.anim||'slide'));w.classList.toggle('ok',!!on)}
@@ -976,11 +976,11 @@ window.lefeSync=function(){const L=list();
  if(st.view!=='home'||gone||!L.length){clearTimeout(timer);w.classList.remove('show');w.classList.add('off');shown=null;return}
  if(shown!==null&&w.classList.contains('show')){const g=L.find(x=>key(x)===shown);if(g){label(g);return}}
  clearTimeout(timer);loop()};
-function act(){const g=list().find(x=>key(x)===shown);if(!g)return;const K=g.code,PP=g.link==='product'&&P.find(x=>x.id==g.product_id);
+function act(){const g=list().find(x=>key(x)===shown);if(!g)return;const K=g.code,PP=g.link==='product'&&TP(g.product_id);
  if(PP){sfx('tap');if(K&&COUPONS[K])st.coupon=K;openDetail(PP.id);setTimeout(()=>{try{if(!isOut(PP)){mxSpread(PP,st.mxT);drawDetail()}}catch(e){}toast(isOut(PP)?'Produit épuisé pour le moment':'Commande pré-remplie : '+st.qty+' pcs'+(K&&COUPONS[K]?' · code '+K+' appliqué':'')+'. Vérifie puis ajoute au panier.')},80);return}
  if(K&&COUPONS[K]){if(st.coupon===K){sfx('tap');go('offers');return}st.coupon=K;sfx('pop');label(g);
   toast(cpOk(COUPONS[K])?K+' appliqué à ton panier':K+' ajouté : '+COUPONS[K].minQty+' pcs minimum ('+cartQty()+' dans le panier)');return}
- sfx('tap');if(g.link==='offers')go('offers');else if(g.link==='shop'){const f=$('#feat');f&&f.scrollIntoView({behavior:'smooth'})}else if(g.link==='product'){const p=P.find(x=>x.id==g.product_id);p&&openDetail(p.id)}}
+ sfx('tap');if(g.link==='offers')go('offers');else if(g.link==='shop'){const f=$('#feat');f&&f.scrollIntoView({behavior:'smooth'})}else if(g.link==='product'){const p=TP(g.product_id);p&&openDetail(p.id)}}
 t.addEventListener('click',e=>{if(e.target.closest('#lfx'))return;act()});
 t.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();act()}});
 $('#lfx').addEventListener('click',e=>{e.stopPropagation();sfx('tap');gone=true;clearTimeout(timer);try{sessionStorage.setItem('bm_lfx','1')}catch(_){}
