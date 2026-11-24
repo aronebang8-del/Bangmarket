@@ -478,7 +478,8 @@ const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',
 const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Validée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
 const pill=s=>`<span class="pill s-${ST[s][1]}">${ST[s][0]}</span>`;
-const prod=id=>S.products.find(p=>p.id===id);
+const prod=id=>S.products.find(p=>p.id===id)||(S.allProducts||[]).find(p=>p.id===id);
+const visProducts=()=>{const H=new Set((S.catRows||[]).filter(c=>c.hidden).flatMap(c=>[c.name,CAT_LBL[c.id]]).filter(Boolean));return (S.allProducts||[]).filter(p=>S.pni||((p.images||[]).length&&!H.has(p.cat)))};
 const vari=i=>{const p=prod(i.pid);return p&&p.variants.find(v=>v.color===i.color&&v.size===i.size)};
 const pref=id=>'P'+String(id).padStart(3,'0');
 function waLines(o){const g=new Map();o.items.forEach(i=>{if(!g.has(i.pid))g.set(i.pid,[]);g.get(i.pid).push(i)});
@@ -521,6 +522,7 @@ async function loadAll(){
  va.forEach(v=>{const p=byP.get(v.product_id);if(p)p.variants.push({id:v.id,color:v.color,size:v.size,stock:v.stock,reserved:v.reserved||0})});
  let pim=[];try{pim=await fetchAll('product_images')}catch(e){pim=[]}
  pim.forEach(i=>{const p=byP.get(i.product_id);if(p)p.images.push({id:i.id,key:'i'+i.id,color:i.color||'',path:i.path,main:i.is_main,url:imgUrl(i.path)})});
+ S.allProducts=S.products;S.products=visProducts();
  const byO=new Map();
  S.orders=or.map(o=>{const x={dbId:o.id,id:o.number,client:o.client_name,wa:o.whatsapp,prov:o.province||'',lieu:o.lieu||'',d:new Date(o.created_at),status:o.status,held:o.held,pcode:o.pay_code||'',promo:o.promo_code||'',deliv:o.delivered_at?new Date(o.delivered_at):null,claim:o.pay_claimed_at?new Date(o.pay_claimed_at):null,items:[]};if(o.paid_at)x.pay={mode:o.pay_mode||'',date:new Date(o.paid_at)};byO.set(o.id,x);return x});
  oi.forEach(i=>{const o=byO.get(i.order_id);if(o)o.items.push({dbId:i.id,pid:i.product_id,color:i.color,size:i.size,qty:i.qty,price:+i.unit_price,cp:i.cost_price==null?null:+i.cost_price,lp:i.list_price==null?null:+i.list_price,lbl:i.promo_label||''})});
@@ -729,7 +731,7 @@ function paintCodes(l){
 const tierTxt=p=>p.tmin==null&&p.toff==null?'Règle du site':(+p.toff>0?`Dès ${p.tmin} pcs : −${fmt(p.toff)}/pc`:'Aucun');
 function paintDisc(l){
  if(!S.pricingOk){l.innerHTML=noSql();return}
- S.pc=S.pc||'Toutes';const cats=['Toutes',...allCats()],noimg=S.products.filter(p=>!(p.images||[]).length),list=S.products.filter(p=>(S.pc==='Toutes'||p.cat===S.pc)&&(S.pni||(p.images||[]).length)),on=S.products.filter(p=>p.pct>0&&(p.images||[]).length).length;
+ S.pc=S.pc||'Toutes';const cats=['Toutes',...allCats()],noimg=(S.allProducts||[]).filter(p=>!(p.images||[]).length),list=S.products.filter(p=>S.pc==='Toutes'||p.cat===S.pc),on=S.products.filter(p=>p.pct>0).length;
  l.innerHTML=`<div class="hlp"><b>Comment ça marche :</b> tapez un pourcentage à côté d'un produit. Le client voit l'ancien prix barré, un badge rouge « −X% » et paie le nouveau prix. Mettez <b>0</b> pour retirer la réduction. <b>${on}</b> produit${on>1?'s':''} en promotion actuellement.</div>
  <div class="card pbulk"><b>Nouvelle réduction</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Choisissez les produits, le pourcentage, et créez au besoin une étiquette pour l'annoncer.</span><button class="btn pri sm" data-act="discnew">Ajouter une réduction</button></div></div>
  <div class="card pbulk"><b>Étiquette d'accueil</b><div class="prow"><span class="mut" style="flex:1;font-size:13px">Annoncez vos réductions avec une étiquette sur l'accueil.</span><button class="btn sm" data-act="tagfrom" data-k="disc">Créer l'étiquette</button></div></div>
@@ -772,7 +774,7 @@ function ppPrev(){const f=$('[data-form="promo"]');if(!f||!PP)return;const code=
  $('#ppv').innerHTML='<div class="lb2">Aperçu sur la boutique</div>'+promoCard({code,pct:f.elements.pct.value||0,min:f.elements.min.value||0,img:PP.photo?PP.photo.url:LEFE_IMG});
  $('#ppimg').innerHTML=PP.photo?`<img src="${PP.photo.url}" alt="">`:'<span>＋<small>Image</small></span>'}
 /* ============ Produits ============ */
-VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>
+VIEWS.products=()=>`<div class="top"><div><h1>Produits</h1><p>Ce que vous modifiez ici change ce que les clients voient sur la boutique.</p></div><button class="btn pri" data-act="newprod">${ic('plus')}Ajouter un produit</button></div>${(S.allProducts||[]).length>S.products.length||S.pni?`<div class="cpw" style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap"><span>👁 ${S.pni?'Les produits masqués du site (sans photo ou catégorie retirée) sont affichés.':(S.allProducts.length-S.products.length)+' produit(s) masqué(s) du site (sans photo ou catégorie retirée) ne sont plus listés.'}</span><button class="btn sm" data-act="pnoimg">${S.pni?'Les cacher':'Les afficher pour ajouter une photo'}</button></div>`:''}
  <div class="chips">${['Toutes',...allCats()].map(c=>`<button class="chip ${S.pcat===c?'on':''}" data-act="pcat" data-c="${esc(c)}">${esc(c)}<em>${S.products.filter(p=>c==='Toutes'||p.cat===c).length}</em></button>`).join('')}<button class="chip" data-act="addcat">+ Catégorie</button></div>
  <label class="search">${ic('search')}<input id="pq" type="search" placeholder="Rechercher un produit" value="${esc(S.pq)}" aria-label="Rechercher un produit"></label><div id="pgrid"></div>`;
 AFTER.products=paintProducts;
@@ -1192,7 +1194,7 @@ const A={
  scat:d=>{S.sc=d.c;paintStock()},
  ptab:d=>{S.pt=d.t;render()},
  pdcat:d=>{S.pc=d.c;paintPromos()},
- pnoimg:()=>{S.pni=!S.pni;paintPromos()},
+ pnoimg:()=>{S.pni=!S.pni;S.products=visProducts();render()},
  pbapply:()=>{const c=$('#pbc').value,v=nz($('#pbp').value);if(!okPct(v,'sur « '+c+' »'))return;const n=S.products.filter(p=>p.cat===c).length;if(!n)return toast('Aucun produit dans cette catégorie');
   if(!confirm(v?`Appliquer −${v}% aux ${n} produit(s) de « ${c} » ?`:`Retirer les réductions des ${n} produit(s) de « ${c} » ?`))return;
   run(async()=>must(await sb.from('products').update({discount_pct:v}).eq('category',CAT_ID[c]||c)),v?`−${v}% appliqué à « ${c} »`:'Réductions retirées')},
