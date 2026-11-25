@@ -478,6 +478,9 @@ const S={view:'dash',sel:null,f:'tous',q:'',pq:'',pcat:'Toutes',iq:'',mf:'tous',
  products:[],orders:[],invoices:[],pays:[],pf:'apayer',sales:[],moves:[],achats:[],depenses:[]};
 const ST={nouvelle:['Nouvelle','n'],contacte:['Client contacté','c'],confirmee:['Validée','f'],payee:['Payée','p'],facturee:['Facturée','i'],annulee:['Annulée','x']};
 const FLOW=['nouvelle','contacte','payee','facturee'];
+const confMsg=o=>{const pr=o.client.split(' ')[0];
+ if(o.status==='confirmee')return `Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅\n💰 Montant : *${fmt(total(o))}*\n\n*Pour payer :*\n1️⃣ Revenez sur la page précédente (Bang Pay)\n2️⃣ Touchez *« Générer mon code paiement »* : le site vous ouvre l’accès au paiement\n3️⃣ Réglez, puis envoyez votre preuve\n\n⏳ Vous avez *12 h* pour payer, sinon la commande est annulée et les produits ne sont plus réservés.\n\nMerci pour votre confiance ! 🙏`;
+ return `Bonjour ${pr} 👋\nVotre commande *${o.id}* (${fmt(total(o))}) est bien reçue chez *Bang Market*.\nNous la confirmons très vite : vous pourrez ensuite générer votre code paiement sur la page Bang Pay.\n\nMerci ! 🙏`};
 const expLeft=o=>{if(o.status!=='confirmee'||!o.conf||(S.pays||[]).some(p=>p.orderId===o.id&&['attente','valide'].includes(p.status)))return null;return o.conf.getTime()+43200000-Date.now()};
 const expTxt=ms=>ms>=3600000?Math.floor(ms/3600000)+' h '+String(Math.floor(ms%3600000/60000)).padStart(2,'0')+' min':Math.max(0,Math.ceil(ms/60000))+' min';
 const expTag=o=>{const l=expLeft(o);if(l!=null)return l<=0?' · <b style="color:#c0392b">⏰ délai de 12 h dépassé</b>':l<1800000?' · <b style="color:#c0392b">⏰ reste '+expTxt(l)+'</b>':' · ⏳ reste '+expTxt(l);return o.status==='annulee'&&o.reason?' · <b style="color:#c0392b">annulée auto</b>':''};
@@ -632,7 +635,7 @@ function detail(o){
 ${payBlock(o)}
  ${o.deliv?`<div class="banner" style="background:#e2f6ea;color:#0f8a4f">✅ <b>Livrée le ${fdatel(o.deliv)}</b> · commande clôturée, anti-fraude : toute nouvelle réclamation est à vérifier.</div>`:''}
  <div class="acts">
-  <button class="act ${o.status==='confirmee'?'go':''}" data-act="paycode" data-id="${o.id}" ${o.status==='confirmee'?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>${o.status==='confirmee'?'Relancer le client · code paiement':'Relancer le client avec son code'}</b><br><small>${o.status==='confirmee'?(o.pcode?'Code '+esc(o.pcode)+' · message prêt pour '+esc(o.wa):'Part sur WhatsApp vers '+esc(o.wa)):'Validez d’abord la commande'}</small></span></button>
+  <button class="act ${o.status==='confirmee'?'go':''}" data-act="paycode" data-id="${o.id}" ${o.status==='confirmee'?'':'disabled'}><span class="ico">${ic('wa')}</span><span><b>${o.status==='confirmee'?'Confirmer la commande au client':'Confirmer au client sur WhatsApp'}</b><br><small>${o.status==='confirmee'?'Message de confirmation prêt pour '+esc(o.wa):'Validez d’abord la commande'}</small></span></button>
   <button class="act" data-act="delorder" data-id="${o.id}" style="color:#c0392b"><span class="ico">${ic('x')}</span><span><b>Supprimer la commande</b><br><small>Disparaît définitivement de l'espace admin</small></span></button>
   <button class="act ${o.status==='facturee'&&!o.deliv?'go':''}" data-act="deliver" data-id="${o.id}" ${o.deliv||o.status!=='facturee'?'disabled':''}><span class="ico">${ic('box')}</span><span><b>${o.deliv?'Commande livrée ✓':'Marquer comme livrée'}</b><br><small>${o.deliv?fdatel(o.deliv):o.status==='facturee'?'À confirmer après remise au client':'Disponible une fois la facture émise'}</small></span></button>
   <button class="act" data-act="manage" data-id="${o.id}" ${['facturee','annulee'].includes(o.status)||o.deliv?'disabled':''}><span class="ico">${ic('sliders')}</span><span><b>Confirmer, ajuster ou annuler</b><br><small>${manageLabel}</small></span></button>
@@ -1123,15 +1126,12 @@ const A={
  back:()=>{S.sel=null;paintOrders()},
  goorder:d=>{S.view='orders';S.sel=d.id;render()},
  wa:d=>{const o=order(d.id),pr=o.client.split(' ')[0];
-  const msg=`Bonjour ${pr} 👋\nMerci pour votre commande *${o.id}* chez *Bang Market*.\n\n━━━━━━━━━━━━━━\n🛒 *VOTRE COMMANDE*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL : ${fmt(total(o))}* (${count(o)} pcs)\n━━━━━━━━━━━━━━\n📍 Livraison : ${[o.prov,o.lieu].filter(Boolean).join(' · ')||'à préciser'}\n\n✅ Pour valider, répondez *OUI* puis réglez le montant. Merci !`;
+  const msg=`Bonjour ${pr} 👋\nMerci pour votre commande *${o.id}* chez *Bang Market*.\n\n━━━━━━━━━━━━━━\n🛒 *VOTRE COMMANDE*\n━━━━━━━━━━━━━━\n${waLines(o)}\n\n━━━━━━━━━━━━━━\n*TOTAL : ${fmt(total(o))}* (${count(o)} pcs)\n━━━━━━━━━━━━━━\n📍 Livraison : ${[o.prov,o.lieu].filter(Boolean).join(' · ')||'à préciser'}\n\n✅ Nous confirmons votre commande très vite. Vous pourrez ensuite générer votre code paiement sur la page Bang Pay. Merci !`;
   window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
   if(o.status==='nouvelle')run(async()=>must(await sb.from('orders').update({status:'contacte'}).eq('id',o.dbId)),'Statut : client contacté')},
- paycode:async d=>{const o=order(d.id);if(o.status!=='confirmee')return toast('Validez d’abord la commande, puis relancez le client avec son code.');let c=o.pcode;
-  if(!c){const rp=await sb.rpc('next_pay_code',{p_order:o.dbId});S.codes=undefined;if(!rp.error&&rp.data){c=rp.data;o.pcode=c}else return toast('Code non généré : '+((rp.error&&rp.error.message)||'exécutez bangmarket_parcours.sql'))}
-  const pr=o.client.split(' ')[0],base=location.href.replace(/[^/]*$/,''),
-  msg=`Bonjour ${pr} 👋\nBonne nouvelle : votre commande *${o.id}* est *confirmée* ✅ (${fmt(total(o))}).\n\n⏳ Vous avez *12 h* pour payer : passé ce délai, la commande est annulée et les produits ne sont plus réservés.\n\nVous pouvez *générer votre code paiement* directement sur le site (bouton « Générer mon code paiement ») ou utiliser celui-ci :\n🔑 *${c}*\n\nPour payer via Bang Pay, touchez ce lien (votre code est déjà rempli) :\n👉 ${base}pay.html?c=${encodeURIComponent(o.id)}&k=${encodeURIComponent(c)}\n\nCe code est personnel, ne le partagez pas. Merci de votre confiance ! 🙏`;
-  window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(msg),'_blank','noopener');
-  sb.from('orders').update({pay_code_sent_at:new Date().toISOString()}).eq('id',o.dbId).then(()=>{});toast('Message prêt dans WhatsApp')},
+ paycode:async d=>{const o=order(d.id);if(o.status!=='confirmee')return toast('Validez d’abord la commande, puis confirmez-la au client.');
+  window.open('https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(confMsg(o)),'_blank','noopener');
+  sb.from('orders').update({pay_code_sent_at:new Date().toISOString()}).eq('id',o.dbId).then(()=>{});toast('Message de confirmation prêt dans WhatsApp')},
  deliver:d=>{const o=order(d.id);if(o.deliv)return;
   if(!confirm('Confirmer que la commande '+o.id+' a bien été livrée au client ?\nCette action est définitive : elle sert de preuve contre les réclamations frauduleuses.'))return;
   run(async()=>must(await sb.from('orders').update({delivered_at:new Date().toISOString()}).eq('id',o.dbId)),'Commande marquée comme livrée')},
@@ -1204,7 +1204,8 @@ const A={
   const name=`Facture-${f.no}.pdf`,file=new File([blob],name,{type:'application/pdf'});
   let dl='';try{const path=f.no+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8)+'.pdf',up=await sb.storage.from('invoices-pdf').upload(path,blob,{contentType:'application/pdf',upsert:false});if(up.error)throw up.error;dl=sb.storage.from('invoices-pdf').getPublicUrl(path).data.publicUrl}catch(e){console.error(e);toast('Lien PDF indisponible (exécutez bangmarket_facture_pdf.sql) : PDF téléchargé à joindre')}
   const pay=S.pays.find(p=>p.orderId===o.id&&p.status==='valide'),pm=pay?(PM[pay.method]||[''])[0]:'',mode=o.pay?(o.pay.mode||pm||'—'):(pm||'—'),sub=total(o);
-  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVotre facture *${f.no}* — *${COMPANY.name}*\nCommande ${o.id}\n\n💰 *TOTAL : ${fmt(sub)}*\nMontant payé : ${fmt(sub)}\nSolde dû : ${fmt(0)}\n\n💳 *DÉTAILS DU PAIEMENT*\nMode : ${mode}\nDate : ${o.pay?fdatel(o.pay.date):fdatel(new Date())}\n${pay&&pay.code?`Code de transaction : ${pay.code}\n`:''}Statut : ✅ Payée intégralement\n\n${dl?`📄 *Télécharger ma facture (PDF)* :\n${dl}\n\n`:''}🔒 Vérifier l'authenticité (code ${f.code}) :\n${vurl(f)}\n\n${o.deliv?`✅ Votre commande a été *livrée le ${fdatel(o.deliv)}*.`:`📦 Votre commande est *déjà en cours de préparation* : nous rassemblons vos articles.`}\n\nMerci pour votre confiance ! 🙏`;
+  const ville=/kinshasa/i.test(o.prov||'')?'Kinshasa':(o.lieu||o.prov||'votre ville');
+  const txt=`Bonjour ${o.client.split(' ')[0]} 👋\nVotre facture *${f.no}* est prête ✅\n💰 Total : *${fmt(sub)}* · Payée\n\n${dl?`📄 *Télécharger ma facture :*\n${dl}\n\n`:''}${o.deliv?`✅ Commande *livrée le ${fdatel(o.deliv)}*.`:`📦 *Retrait de votre commande :* passez à notre *entrepôt de ${ville}*, présentez cette facture et récupérez vos produits.`}\n\n🔒 *Vérification de la facture :*\n${vurl(f)}\n\nMerci pour votre confiance ! 🙏`;
   if(!dl){const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
   else toast('Lien de la facture créé · conversation WhatsApp ouverte');
   const url='https://wa.me/'+o.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(txt);if(w)w.location.href=url;else window.open(url,'_blank','noopener')},
@@ -1212,11 +1213,11 @@ const A={
  viewinv:d=>showInvoice(S.invoices.find(f=>f.no===d.n)),
  reveal:d=>{S.reveal.has(d.n)?S.reveal.delete(d.n):S.reveal.add(d.n);paintInvoices()},
  pfil:d=>{S.pf=d.k;paintPay()},
- accept:d=>{const o=order(d.id);run(async()=>must(await sb.rpc('accept_order',{p_order:o.dbId})),'Commande validée.').then(ok=>{if(ok){closeModal();const o2=order(d.id);toast(o2&&o2.pcode?'Commande validée · code paiement généré : '+o2.pcode+'. Relancez le client.':'Commande validée. Relancez le client avec son code.')}})},
+ accept:d=>{const o=order(d.id);run(async()=>must(await sb.rpc('accept_order',{p_order:o.dbId})),'Commande validée.').then(ok=>{if(ok){closeModal();const o2=order(d.id);toast('Commande validée · le code paiement est prêt côté client. Confirmez-lui sur WhatsApp.')}})},
  gopay2:()=>{S.view='pay';S.pf='attente';render()},
  gopay:()=>{closeModal();S.view='pay';S.pf='apayer';render()},
  payman:d=>openPayManual(d.id),
- relance:d=>{const o=order(d.id),base=location.href.replace(/[^/]*$/,''),m='Bonjour '+o.client.split(' ')[0]+' 👋\nVotre commande *'+o.id+'* chez Bang Market ('+fmt(total(o))+') est '+(o.status==='confirmee'?'validée':'bien reçue')+'. Il ne reste que le paiement :\n👉 '+base+'pay.html?c='+encodeURIComponent(o.id)+'\n\nMerci !';window.open('https://wa.me/'+String(o.wa).replace(/\D/g,'')+'?text='+encodeURIComponent(m),'_blank','noopener')},
+ relance:d=>{const o=order(d.id);window.open('https://wa.me/'+String(o.wa).replace(/\D/g,'')+'?text='+encodeURIComponent(confMsg(o)),'_blank','noopener')},
  proof:async d=>{const p=S.pays.find(x=>x.id==d.id);if(!p||!p.proof)return;const u=await proofUrl(p.proof);if(!u)return toast('Capture introuvable');const o=order(p.orderId),m=(PM[p.method]||['Opérateur'])[0];
   document.getElementById('lbx')&&document.getElementById('lbx').remove();
   document.body.insertAdjacentHTML('beforeend',`<div class="lbx" id="lbx" role="dialog" aria-label="Preuve de paiement"><div class="lbh"><div><b>${esc(m)} · $${fmt(p.amount)}${o?' · '+esc(o.client):''}</b><small>Code ${esc(p.code)}${p.phone?' · '+esc(p.phone):''}</small></div><button type="button" data-act="lbclose" aria-label="Fermer">✕</button></div><div class="lbs" id="lbs"><img src="${u}" alt="Preuve de paiement" data-act="lbzoom"></div><div class="lbf"><button type="button" data-act="lbzoom">Zoom</button><a href="${u}" target="_blank" rel="noopener">Ouvrir en plein écran</a></div></div>`)},
